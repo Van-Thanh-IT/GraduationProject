@@ -1,0 +1,111 @@
+src/
+├── api/                  # Cấu hình Axios chung (Interceptors cho JWT)
+├── assets/               # CSS toàn cục, Fonts, Logos
+├── components/           # UI Components dùng chung cho cả 2 bên (Button, Modal, Input)
+├── constants/            # Các hằng số (Role, API Endpoints, Message)
+├── context/              # Lưu trữ Global State (ví dụ: AuthContext)
+├── hooks/                # Custom hooks dùng chung (useLocalStorage, useDebounce)
+├── layouts/              # Các khung bao ngoài
+│   ├── AdminLayout.jsx   # Sidebar + Header Admin
+│   └── ClientLayout.jsx  # Navbar + Footer Client
+├── modules/              # CHỖ NÀY LÀ TRỌNG TÂM
+│   ├── admin/            # Toàn bộ logic Dashboard/Quản trị
+│   └── client/           # Toàn bộ logic Trang chủ/Mua hàng
+├── routes/               # Cấu hình phân luồng (Private/Public routes)
+├── utils/                # Helper functions (formatDate, validate)
+├── App.jsx
+└── main.jsx
+
+
+modules/admin/
+├── dashboard/            # Trang thống kê
+├── users/                # Quản lý người dùng
+│   ├── components/       # UserTable.jsx, UserModal.jsx
+│   ├── hooks/            # useUsers.js, useDeleteUser.js (React Query)
+│   ├── services/         # adminUserService.js (Gọi API /api/admin/users)
+│   └── UserManagement.jsx# Page component chính
+├── products/             # Quản lý sản phẩm
+└── orders/               # Quản lý đơn hàng
+
+modules/client/
+├── home/                 # Trang chủ (Banner, New Products)
+├── auth/                 # Login, Register, Forgot Password
+├── products/             # Trang danh sách & Chi tiết sản phẩm
+│   ├── components/       # ProductCard.jsx, ProductFilter.jsx
+│   ├── hooks/            # useProductDetail.js
+│   ├── services/         # clientProductService.js (Gọi API /api/products)
+│   └── ProductList.jsx
+└── cart/                 # Giỏ hàng & Thanh toán
+
+
+
+
+
+
+
+src/modules/admin/products/
+│
+├── ProductManagement.jsx            👉 Trang chủ của module (Render ra ProductList)
+│
+├── services/
+│   └── product.service.js           👉 Chứa toàn bộ 14 hàm API gọi xuống Spring Boot
+│
+└── components/
+    ├── ProductList.jsx              👉 Hiển thị Bảng danh sách, ô Tìm kiếm
+    ├── AddProductForm.jsx           👉 Khung Modal để Tạo Sản phẩm mới (Chỉ chứa thông tin cơ bản)
+    ├── EditProductForm.jsx          👉 Khung Modal Sửa (Đóng vai trò làm "Người quản lý" chứa 3 Tabs)
+    │
+    └── tab/                         👉 Thư mục chứa "ruột" của 3 Tab Sửa
+        │
+        ├── basic/                   👉 TAB 1: THÔNG TIN CƠ BẢN
+        │   └── BasicInfoForm.jsx    (Form sửa Tên, Hãng, Danh mục, Bảo hành, Mô tả)
+        │
+        ├── attribute/               👉 TAB 2: THÔNG SỐ KỸ THUẬT
+        │   ├── AttributeList.jsx    (Bảng chứa các thông số của sản phẩm)
+        │   └── AttributeForm.jsx    (Khung nhỏ để Thêm/Sửa 1 thông số)
+        │
+        └── variant/                 👉 TAB 3: QUẢN LÝ BIẾN THỂ & ẢNH
+            ├── VariantList.jsx      (Danh sách các thẻ hiển thị biến thể hiện có)
+            ├── AddVariantForm.jsx   (Khung để Tạo mới 1 biến thể - Đã sửa chữ "From" thành "Form")
+            └── EditVariantAndImageForm.jsx (Khung to chia 2 cột: Cột trái sửa Giá/Kho, Cột phải Upload ẢNH)
+
+
+
+
+
+
+
+
+
+📁 src
+ ├── 📁 hooks          (Hooks dùng chung: useAuth, useTheme...)
+ ├── 📁 services       (Services gọi API dùng chung)
+ ├── 📁 layouts        (ClientLayout.jsx, AdminLayout.jsx)
+ │
+ └── 📁 modules
+      ├── 📁 admin     (Giữ nguyên nhánh này cho Quản trị viên)
+      │
+      └── 📁 client    (Nhánh cho Khách hàng)
+           │
+           ├── 📁 auth
+           ├── 📁 cart
+           ├── 📁 checkout
+           │
+           ├── 📁 home
+           │    ├── 📁 components         👈 Tạo thư mục này
+           │    │    ├── HeroBanner.jsx
+           │    │    └── NewsSection.jsx
+           │    └── Home.jsx              👈 File Page nằm ngoài cùng module
+           │
+           ├── 📁 products                👈 Đã gộp chung category vào đây
+           │    ├── 📁 components
+           │    │    ├── ProductList.jsx
+           │    │    ├── ProductCard.jsx
+           │    │    └── CategoryFilter.jsx 👈 Filter danh mục nằm ở đây
+           │    ├── ProductPage.jsx       (Trang danh sách SP)
+           │    └── ProductDetailPage.jsx (Trang chi tiết 1 SP)
+           │
+           ├── 📁 profile
+           │
+           └── 📁 about                   👈 Tách About ra một cõi riêng
+                └── About.jsx

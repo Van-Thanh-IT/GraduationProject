@@ -1,0 +1,31 @@
+src/main/java/com/dientu/shop/
+├── ...
+├── controller/
+│   ├── admin/
+│   │   ├── AdminUserController.java     // Các API /api/admin/users/**
+│   │   ├── AdminProductController.java  // Các API /api/admin/products/**
+│   │   └── AdminOrderController.java    // Các API /api/admin/orders/**
+│   ├── staff/
+│   │   └── StaffOrderController.java    // Các API /api/staff/orders/**
+│   └── user/
+│       ├── UserProfileController.java   // Các API /api/users/profile/**
+│       ├── UserCartController.java      // Các API /api/users/cart/**
+│       └── PublicProductController.java // Các API /api/home/products/**
+│
+├── service/
+│   ├── UserService.java                 // Phục vụ cho cả Admin, Staff, User
+│   ├── ProductService.java              // Xử lý logic đồ điện tử
+│   └── OrderService.java                // Xử lý luồng đặt hàng, duyệt đơn
+│
+├── repository/
+│   ├── UserRepository.java
+
+
+
+
+Products Table
+    ↓ click Edit
+Product Detail Page
+    ├── Product Info
+    ├── Variants Table
+            └── Manage Images (modal)

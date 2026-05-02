@@ -1,0 +1,78 @@
+spring:
+  application:
+  name: TechStoreManager
+  datasource:
+            url: jdbc:postgresql://localhost:5432/TechStoreManager
+            username: postgres
+            password: 592002
+            driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+          format_sql: true
+          type:
+            json_format_mapper: org.hibernate.type.format.jackson.JacksonJsonFormatMapper
+  sql:
+    init:
+      mode: always
+
+  jwt:
+    expiration: 360000000000
+    refresh-expiration: 604800000
+    secret: 7A24432646294A404E635266556A586E3272357538782F413F4428472B4B6250655368566D597133743677397A24432646294A404E635266556A586E
+    google-client-id: 595448726961-kvt4kksrmn17de509lksfsidkfcflh9q.apps.googleusercontent.com
+    facebook:
+      app-id: 2016734672462629
+      secret: 13376117c3fc11184eb29f7d6b042a4e
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: lovanthanh34523@gmail.com
+    password: vjbzrpgfbnxorcuu
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  cloudinary:
+    cloud_name: drhh1gzoz
+    api_key: 143578314419377
+    api_secret: cjL80NcQ6uxZG5li9Cj60JBa4iU
+
+  gemini:
+    api-key: "AIzaSyAPm4t61tcSIuI-J9Y6QF6s4WUiR_tE9XE"
+    url:  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 200MB
+
+  goship:
+    api:
+      url: https://sandbox.goship.io/api/v2
+      token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImJiODhhZjUwNzg5YzU3Mjg5ZjM2YmUwYTE1ODk1YzhmYzQzNDRhMjlhNzFiNjNjOGVlOGYyY2UyZDhiMzRiODk2YTBhOTMzZWU1ZTNjY2VhIn0.eyJhdWQiOiIxMyIsImp0aSI6ImJiODhhZjUwNzg5YzU3Mjg5ZjM2YmUwYTE1ODk1YzhmYzQzNDRhMjlhNzFiNjNjOGVlOGYyY2UyZDhiMzRiODk2YTBhOTMzZWU1ZTNjY2VhIiwiaWF0IjoxNzY0NzQ4MTc2LCJuYmYiOjE3NjQ3NDgxNzYsImV4cCI6MjA4MDI4MDk3Niwic3ViIjoiNDAzNCIsInNjb3BlcyI6W119.WCho0ykPKQ-WFIMGaK19c3Hhdd4aV1WR7ZOYj3ew3I6ltP1Sj09J5GBJ9K_CfsCeJbOREWMa1GgNI9PH-vqNgsyowu82P3AE1VwwFbV7UYvxtou4-SepxGklolOFo-h4F-Obi1BOhPR-YTFZVi-HCxGNOEozXRl50_5M_15gbGA8ldtXb0VoZjRL7iNbaOgOm76JvImNc2LfjoQe4bsjwgZE1dWB9KxPrEsR59G0aVoQbiEuaRnRBKYAC9QXA63oSdnt-wr3mclQ5o95JizttLbmFGmo9JEXkiQuKT2406Dtb_4Ljk_9F_d13P_PzDaUeObrrx8PcT3asBBJypUVKJVOb-dZ_KWGe7byu4sj5Alb2Pd1MfM3vRVduG1RceLJ6uzlL5AVLQtOhG5H0E2BCt3tk5V9S1m__Rbs_FnxY0NJ8mexkTTU7e6yZUspIUnrM5AACoA59OKOpxN1v8ur4FxvUH4nvDdy-CglNaJKVEebWqDhlqzJMEKk4KWn1ND5KAVhbPjcaP7wd6Vh_lndMJn5jTyZf5_at6HQX1DnUH0INOxngvAcHfhajeoxZvrBKtOHHxOM7xKbGjguocWZkKfZSECRCmhUJHbw8Zzwogk7GSU10UmAEkrTKe7v4ssWTiWE2bNP6pHdzxXLg64IwU77anC75Re1d_k3aIUshMs
+    shop:
+      name: "TechStore"
+      phone: "0353198531"
+      address: "123 Đường ABC"
+      city: "100000"
+      district: "100900"
+      ward: "113"
+
+  vnpay:
+    url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    returnUrl: http://localhost:8080/api/public/orders/vnpay-callback
+    tmnCode: UNCKAZXT
+    hashSecret: 9HD2E6TASNJELY09W6UUZORRRWMEQEOD
+    version: 2.1.0
+    command: pay
+    currCode: VND
