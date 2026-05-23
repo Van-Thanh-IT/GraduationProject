@@ -15,6 +15,7 @@ const API = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
     },
     withCredentials: true, // RẤT QUAN TRỌNG: Để trình duyệt tự gửi HttpOnly Cookie chứa Refresh Token
     timeout: 10000,
