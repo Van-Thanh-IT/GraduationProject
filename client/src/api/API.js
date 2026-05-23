@@ -1,5 +1,6 @@
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useNavigate, useNavigate } from "react-router-dom";
 
 // 1. BIẾN RAM (MEMORY) - Đây là nơi an toàn nhất để giấu Access Token
 let inMemoryAccessToken = null;
@@ -145,6 +146,7 @@ API.interceptors.response.use(
 // ==============================================================================
 export const handleLogout = () => {
     const hasToken = getAccessToken();
+    const navigate = useNavigate();
     if (!hasToken) return;
 
     isLoggingOut = true;
@@ -154,7 +156,7 @@ export const handleLogout = () => {
 
     axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`, {}, { withCredentials: true });
 
-    window.location.href = "/login";
+   navigate('/login');
 };
 
 export default API;
