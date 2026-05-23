@@ -1,10 +1,13 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.DiscountType;
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.DiscountType;
+
+import lombok.*;
 
 @Entity
 @Table(name = "vouchers")

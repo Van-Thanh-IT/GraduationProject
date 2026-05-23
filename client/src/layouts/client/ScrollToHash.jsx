@@ -14,7 +14,7 @@ const ScrollToHash = () => {
       }, 0);
     } else {
       // nếu không có hash thì scroll lên đầu trang
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 2, behavior: 'smooth' });
     }
   }, [pathname, hash]);
 

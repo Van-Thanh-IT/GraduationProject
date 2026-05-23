@@ -81,8 +81,8 @@ export default function AttributeManagement() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+    <div className="space-y-2">
+      <div className="flex justify-between items-center bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
         <Input
           placeholder="Tìm tên hoặc mã thuộc tính..."
           prefix={<SearchOutlined className="text-slate-400" />}

@@ -1,6 +1,5 @@
 // File: src/modules/admin/orders/OrderManagement.jsx
 import React, { useState, useMemo } from 'react';
-import { message } from 'antd';
 import { 
   ShoppingBag, Search, SlidersHorizontal, 
   Printer, Loader2, Clock, Truck, CheckCircle2, XCircle 
@@ -15,6 +14,7 @@ import {
   useCancelOrder,
 } from '@/hooks/useOrders';
 import { useDownloadInvoice, usePrintDeliveryNotes } from '@/hooks/useExportFilePdf';
+import { toast } from 'react-toastify';
 
 const STATUS_TABS = [
   { key: 'ALL', label: 'Tất cả đơn' },
@@ -67,30 +67,30 @@ const OrderManagement = () => {
   const handleCancelOrder = (code, reason) => {
     cancelOrder({ code, reason }, {
       onSuccess: () => {
-        message.success('Đã hủy đơn hàng thành công!');
+        toast.success('Đã hủy đơn hàng thành công!');
         setIsModalOpen(false); 
       },
-      onError: (error) => message.error(error.response?.data?.messages || 'Lỗi hủy đơn!')
+      onError: (error) => toast.error(error.response?.data?.messages || 'Lỗi hủy đơn!')
     });
   };
 
   const handleConfirmOrder = (id) => {
     confirmOrder(id, {
       onSuccess: () => {
-        message.success('Đã xác nhận đơn hàng thành công!');
+        toast.success('Đã xác nhận đơn hàng thành công!');
         setIsModalOpen(false); 
       },
-      onError: (error) => message.error(error.response?.data?.messages || 'Có lỗi xảy ra!')
+      onError: (error) => toast.error(error.response?.data?.messages || 'Có lỗi xảy ra!')
     });
   };
 
   const handlePackOrder = (id, payload) => {
     packOrder({ id, payload }, {
       onSuccess: () => {
-        message.success('Đã chốt đóng gói thành công!');
+        toast.success('Đã chốt đóng gói thành công!');
         setIsModalOpen(false); 
       },
-      onError: (error) => message.error(error.response?.data?.messages || 'Có lỗi xảy ra!')
+      onError: (error) => toast.error(error.response?.data?.messages || 'Có lỗi xảy ra!')
     });
   };
 
@@ -124,14 +124,14 @@ const OrderManagement = () => {
       : filteredOrders.map(order => order.code);
 
     if (codesToPrint.length === 0) {
-      message.warning('Không có đơn hàng nào để in!');
+      toast.warning('Không có đơn hàng nào để in!');
       return;
     }
 
     printDeliveryNotes(codesToPrint, {
        onSuccess: () => {
-          message.success(`Đã xuất phiếu giao hàng cho ${codesToPrint.length} đơn.`);
-          setSelectedRowKeys([]); // Xóa tick sau khi in xong
+          toast.success(`Đã xuất phiếu giao hàng cho ${codesToPrint.length} đơn.`);
+          setSelectedRowKeys([]); 
           setSelectedCodes([]);
        }
     });
@@ -192,7 +192,7 @@ const OrderManagement = () => {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-3.5 py-1.5 rounded-lg text-[13px] font-bold whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 rounded-lg text-[13px] font-bold whitespace-nowrap transition-all ${
                 statusFilter === tab.key 
                   ? 'bg-gray-900 text-white shadow-md' 
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200/60'
@@ -224,7 +224,7 @@ const OrderManagement = () => {
             <input
               type="text"
               placeholder="Tìm mã đơn, tên, SĐT..."
-              className="w-64 pl-9 pr-9 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[13px] transition-all outline-none font-medium shadow-sm"
+              className="w-74 pl-9 pr-9 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[13px] transition-all outline-none font-medium shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

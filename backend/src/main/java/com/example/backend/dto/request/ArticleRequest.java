@@ -1,13 +1,18 @@
 package com.example.backend.dto.request;
 
-import com.example.backend.enums.ArticleStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+
 import org.springframework.web.multipart.MultipartFile;
 
-@Data
+import com.example.backend.enums.ArticleStatus;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class ArticleRequest {
     @NotBlank(message = "Tiêu đề không được để trống")
     @Size(max = 255, message = "Tiêu đề không được quá 255 ký tự")
@@ -24,5 +29,5 @@ public class ArticleRequest {
     @NotNull(message = "Trạng thái không được để trống")
     private ArticleStatus status;
 
-    private MultipartFile thumbnail; // File ảnh bìa
+    private MultipartFile thumbnail;
 }

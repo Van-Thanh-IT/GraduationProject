@@ -24,9 +24,10 @@ export const useAuthMutations = () => {
 
     const roles = userData.roles || [];
     if (roles.includes("ADMIN") || roles.includes("STAFF")) {
-      window.location.href = "/admin"; 
+
+      navigate("/admin");
     } else {
-      window.location.href = "/";
+     navigate("/");
     }
   };
 

@@ -1,15 +1,15 @@
 package com.example.backend.dto.response;
 
-import com.example.backend.enums.UserStatus;
-import lombok.*;
-
 import java.util.Set;
+
+import com.example.backend.enums.UserStatus;
+
+import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class AuthenticationResponse {
     private String token;
     private String refreshToken;

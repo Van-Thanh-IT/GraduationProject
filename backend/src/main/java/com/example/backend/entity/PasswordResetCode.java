@@ -1,29 +1,30 @@
 package com.example.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import lombok.*;
+
 @Entity
-@Table(name =   "password_reset_codes")
+@Table(name = "password_reset_codes")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PasswordResetCode {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Quan hệ Many-To-One với User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 100)
     private String code;
 
     @Column(name = "expired_at", nullable = false)

@@ -95,11 +95,11 @@
 			<artifactId>google-api-client</artifactId>
 			<version>2.7.0</version> <!-- hoặc mới nhất -->
 		</dependency>
+
 		<dependency>
 			<groupId>com.google.http-client</groupId>
-			<artifactId>google-http-client-jackson2</artifactId>
-			<version>1.43.3</version> <!-- bản ổn định, phù hợp với Boot 3 -->
-		</dependency>
+			<artifactId>google-http-client-gson</artifactId>
+			<version>1.43.3</version> </dependency>
 
 
 		<!--Thư viện Facebook Graph API Client -->
@@ -196,6 +196,29 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.43.0</version>
+				<configuration>
+					<java>
+						<removeUnusedImports />
+						<toggleOffOn/>
+						<trimTrailingWhitespace/>
+						<endWithNewline/>
+						<indent>
+							<tabs>true</tabs>
+							<spacesPerTab>4</spacesPerTab>
+						</indent>
+						<palantirJavaFormat/>
+						<importOrder>
+							<order>java,jakarta,org,com,com.diffplug,</order>
+						</importOrder>
+					</java>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 

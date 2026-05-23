@@ -1,14 +1,18 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.ReferenceType;
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.ReferenceType;
+
+import lombok.*;
 
 @Entity
 @Table(name = "inventory_history")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class InventoryHistory {

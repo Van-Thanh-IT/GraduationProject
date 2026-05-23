@@ -50,9 +50,6 @@ export default function CheckoutAddress({
     detail: touched.detail && !address.detail?.trim() ? 'Vui lòng nhập địa chỉ cụ thể' : '',
   };
 
-  // =========================================================================
-  // FIX LỖI HIỂN THỊ SỐ: Tạo Option ảo tạm thời trong lúc chờ API Load
-  // =========================================================================
   const cityOptions = cities?.map(c => ({ value: c.id, label: c.name })) || [];
   if (address.city && !cityOptions.some(o => o.value === address.city)) {
     cityOptions.push({ value: address.city, label: address.cityName || address.city });
@@ -69,63 +66,63 @@ export default function CheckoutAddress({
   }
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 relative">
+    <div className="bg-white p-4 md:p-5 rounded-xl border border-gray-200 relative font-sans">
        
        {loadingAddresses && (
-         <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-[1px] flex items-center justify-center rounded-3xl">
-           <Spin size="large" />
+         <div className="absolute inset-0 z-10 bg-white/60 flex items-center justify-center rounded-xl">
+           <Spin />
          </div>
        )}
 
-       <div className="flex items-center justify-between mb-5">
-         <h3 className="text-[16px] font-black text-slate-800 flex items-center gap-2">
-           <ShopOutlined className="text-indigo-500" /> 1. Địa chỉ giao hàng
+       <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+         <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-1.5 m-0 uppercase tracking-wide">
+           <ShopOutlined className="text-blue-500" /> 1. Địa chỉ giao hàng
          </h3>
          {hasAutoFilled && (
-           <span className="flex items-center gap-1 text-[12px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-             <MapPin size={14} /> Đang dùng địa chỉ mặc định
+           <span className="flex items-center gap-1 text-[11px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200">
+             <MapPin size={12} /> Địa chỉ mặc định
            </span>
          )}
        </div>
        
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div className="flex flex-col">
             <Input 
               placeholder="Họ và tên người nhận" 
-              size="large" 
-              className="rounded-xl h-12 font-medium"
+              size="middle" 
+              className={`rounded-md ${errors.fullName ? 'border-red-500' : ''}`}
               status={errors.fullName ? 'error' : ''}
               value={address.fullName} 
               onBlur={() => handleBlur('fullName')}
               onChange={(e) => setAddress({...address, fullName: e.target.value})} 
             />
-            {errors.fullName && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1">{errors.fullName}</span>}
+            {errors.fullName && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1">{errors.fullName}</span>}
           </div>
           
           <div className="flex flex-col">
             <Input 
               placeholder="Số điện thoại" 
-              size="large" 
-              className="rounded-xl h-12 font-medium"
+              size="middle" 
+              className={`rounded-md ${errors.phone ? 'border-red-500' : ''}`}
               status={errors.phone ? 'error' : ''}
               value={address.phone} 
               onBlur={() => handleBlur('phone')}
               onChange={(e) => setAddress({...address, phone: e.target.value})} 
             />
-            {errors.phone && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1">{errors.phone}</span>}
+            {errors.phone && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1">{errors.phone}</span>}
           </div>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
           <div className="flex flex-col">
             <Select 
               showSearch 
               placeholder="Chọn Tỉnh / Thành" 
-              size="large" 
-              className="w-full custom-checkout-select"
+              size="middle" 
+              className="w-full"
               status={errors.city ? 'error' : ''}
               value={address.city}
-              options={cityOptions} // Đã dùng mảng option an toàn
+              options={cityOptions}
               onBlur={() => handleBlur('city')}
               onChange={(val, option) => {
                 setAddress({ 
@@ -137,20 +134,20 @@ export default function CheckoutAddress({
                 if (touched.city) handleBlur('city');
               }}
             />
-            {errors.city && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1">{errors.city}</span>}
+            {errors.city && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1">{errors.city}</span>}
           </div>
 
           <div className="flex flex-col">
             <Select 
               showSearch 
               placeholder="Chọn Quận / Huyện" 
-              size="large" 
-              className="w-full custom-checkout-select"
+              size="middle" 
+              className="w-full"
               disabled={!address.city} 
               loading={loadingDistricts} 
               value={address.district}
               status={errors.district ? 'error' : ''}
-              options={districtOptions} // Đã dùng mảng option an toàn
+              options={districtOptions}
               onBlur={() => handleBlur('district')}
               onChange={(val, option) => {
                 setAddress({ 
@@ -161,57 +158,57 @@ export default function CheckoutAddress({
                 if (touched.district) handleBlur('district');
               }}
             />
-            {errors.district && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1">{errors.district}</span>}
+            {errors.district && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1">{errors.district}</span>}
           </div>
 
           <div className="flex flex-col">
             <Select 
               showSearch 
               placeholder="Chọn Phường / Xã" 
-              size="large" 
-              className="w-full custom-checkout-select"
+              size="middle" 
+              className="w-full"
               disabled={!address.district} 
               loading={loadingWards} 
               value={address.ward}
               status={errors.ward ? 'error' : ''}
-              options={wardOptions} // Đã dùng mảng option an toàn
+              options={wardOptions}
               onBlur={() => handleBlur('ward')}
               onChange={(val, option) => {
                 setAddress({ ...address, ward: val, wardName: option.label });
                 if (touched.ward) handleBlur('ward');
               }}
             />
-            {errors.ward && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1">{errors.ward}</span>}
+            {errors.ward && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1">{errors.ward}</span>}
           </div>
        </div>
        
-       <div className="flex flex-col gap-4">
+       <div className="flex flex-col gap-3">
            <div>
-               <span className="text-[12px] font-bold text-slate-600 mb-1.5 block">
-                 Địa chỉ cụ thể <span className="text-rose-500">*</span>
+               <span className="text-[12px] font-semibold text-gray-600 mb-1 block">
+                 Địa chỉ cụ thể <span className="text-red-500">*</span>
                </span>
                <Input.TextArea 
-                  placeholder="Số nhà, tên đường, tòa nhà..." 
-                  rows={2} 
-                  className="rounded-xl p-3 resize-none font-medium"
-                  status={errors.detail ? 'error' : ''}
-                  value={address.detail} 
-                  onBlur={() => handleBlur('detail')}
-                  onChange={(e) => setAddress({...address, detail: e.target.value})} 
+                 placeholder="Số nhà, tên đường, tòa nhà..." 
+                 rows={2} 
+                 className="rounded-md p-2 resize-none text-sm font-medium"
+                 status={errors.detail ? 'error' : ''}
+                 value={address.detail} 
+                 onBlur={() => handleBlur('detail')}
+                 onChange={(e) => setAddress({...address, detail: e.target.value})} 
                />
-               {errors.detail && <span className="text-rose-500 text-[11px] font-semibold mt-1 pl-1 block">{errors.detail}</span>}
+               {errors.detail && <span className="text-red-500 text-[11px] font-medium mt-0.5 ml-1 block">{errors.detail}</span>}
            </div>
 
            <div>
-               <span className="text-[12px] font-bold text-slate-600 mb-1.5 block">
+               <span className="text-[12px] font-semibold text-gray-600 mb-1 block">
                  Ghi chú đơn hàng (Tùy chọn)
                </span>
                <Input.TextArea 
-                  placeholder="Giao giờ hành chính, để ở quầy lễ tân..." 
-                  rows={2} 
-                  className="rounded-xl p-3 resize-none font-medium"
-                  value={note} 
-                  onChange={(e) => setNote(e.target.value)} 
+                 placeholder="Giao giờ hành chính, để ở quầy lễ tân..." 
+                 rows={2} 
+                 className="rounded-md p-2 resize-none text-sm font-medium"
+                 value={note} 
+                 onChange={(e) => setNote(e.target.value)} 
                />
            </div>
        </div>

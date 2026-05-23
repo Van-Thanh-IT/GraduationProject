@@ -1,19 +1,25 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.GoshipDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import tools.jackson.databind.JsonNode;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.example.backend.dto.request.GoshipDto;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -21,7 +27,7 @@ import java.util.Map;
 public class GoshipService {
 
     private final RestTemplate restTemplate;
-    private final tools.jackson.databind.ObjectMapper objectMapper; // Jackson dùng để parse JSON
+    private final ObjectMapper objectMapper;
 
     @Value("${spring.goship.api.url}")
     private String baseUrl;
@@ -29,17 +35,29 @@ public class GoshipService {
     @Value("${spring.goship.api.token}")
     private String token;
 
-    // Cấu hình Shop
-    @Value("${spring.goship.shop.name}") private String shopName;
-    @Value("${spring.goship.shop.phone}") private String shopPhone;
-    @Value("${spring.goship.shop.address}") private String shopAddress;
-    @Value("${spring.goship.shop.city}") private String shopCityCode;
-    @Value("${spring.goship.shop.district}") private String shopDistrictCode;
-    @Value("${spring.goship.shop.ward}") private String shopWardCode;
+    @Value("${spring.goship.shop.name}")
+    private String shopName;
 
-    // ==========================================
-    // HÀM TIỆN ÍCH: TẠO HEADER AUTHENTICATION
-    // ==========================================
+    @Value("${spring.goship.shop.phone}")
+    private String shopPhone;
+
+    @Value("${spring.goship.shop.address}")
+    private String shopAddress;
+
+    @Value("${spring.goship.shop.city}")
+    private String shopCityCode;
+
+    @Value("${spring.goship.shop.district}")
+    private String shopDistrictCode;
+
+    @Value("${spring.goship.shop.ward}")
+    private String shopWardCode;
+
+    private static final int DEFAULT_WIDTH = 10;
+    private static final int DEFAULT_HEIGHT = 10;
+    private static final int DEFAULT_LENGTH = 10;
+    private static final int DEFAULT_WEIGHT = 220;
+
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(token);
@@ -48,164 +66,176 @@ public class GoshipService {
         return headers;
     }
 
-    // ==========================================
-    // 1. LẤY DANH SÁCH TỈNH / THÀNH PHỐ
-    // ==========================================
     public Map<String, Object> getCities() {
-        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
-        ResponseEntity<Map> response = restTemplate.exchange(
-                baseUrl + "/cities", HttpMethod.GET, entity, Map.class);
-        return response.getBody();
+        return executeGetRequest("/cities");
     }
 
     public Map<String, Object> getDistrictsByCity(String cityCode) {
-        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
-        ResponseEntity<Map> response = restTemplate.exchange(
-                baseUrl + "/cities/" + cityCode + "/districts", HttpMethod.GET, entity, Map.class);
-        return response.getBody();
+        return executeGetRequest("/cities/" + cityCode + "/districts");
     }
 
     public Map<String, Object> getWardsByDistrict(String districtCode) {
-        HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
-        ResponseEntity<Map> response = restTemplate.exchange(
-                baseUrl + "/districts/" + districtCode + "/wards", HttpMethod.GET, entity, Map.class);
-        return response.getBody();
+        return executeGetRequest("/districts/" + districtCode + "/wards");
     }
 
-    // ==========================================
-    // TÍNH PHÍ VẬN CHUYỂN (CHUẨN ENTERPRISE DÙNG DTO)
-    // ==========================================
-    public List<JsonNode> calculateShippingFee(GoshipDto.FeeRequest request) {
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> executeGetRequest(String endpoint) {
         try {
-            // 1. Lắp ráp dữ liệu gửi đi (Dùng Builder cực kỳ rõ ràng)
+            HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
+            ResponseEntity<Map> response = restTemplate.exchange(baseUrl + endpoint, HttpMethod.GET, entity, Map.class);
+            return response.getBody();
+        } catch (RestClientException e) {
+            log.error("Lỗi khi lấy dữ liệu địa lý từ Goship [{}]: {}", endpoint, e.getMessage());
+            throw new CustomException(
+                    ErrorCode.GOSHIP_API_ERROR, "Không thể tải dữ liệu địa lý từ máy chủ vận chuyển.");
+        }
+    }
+
+    public List<Map<String, Object>> calculateShippingFee(GoshipDto.FeeRequest request) {
+        try {
+            int weight = request.getWeight() != null && request.getWeight() > 0 ? request.getWeight() : DEFAULT_WEIGHT;
+
             GoshipDto.RatePayload payload = GoshipDto.RatePayload.builder()
                     .shipment(GoshipDto.RatePayload.Shipment.builder()
-                            // Địa chỉ Shop (Lấy từ biến @Value)
                             .addressFrom(GoshipDto.RatePayload.Address.builder()
                                     .city(shopCityCode)
                                     .district(shopDistrictCode)
                                     .ward(shopWardCode)
                                     .build())
-
-                            // Địa chỉ Khách (Lấy từ Request)
                             .addressTo(GoshipDto.RatePayload.Address.builder()
                                     .city(request.getCity())
                                     .district(request.getDistrict())
                                     .ward(request.getWard())
                                     .build())
-
-                            // Thông tin gói hàng
                             .parcel(GoshipDto.RatePayload.Parcel.builder()
                                     .cod(request.getCod())
                                     .amount(request.getAmount())
-                                    .weight(request.getWeight())
-                                    .width(10)
-                                    .height(10)
-                                    .length(10)
+                                    .weight(weight)
+                                    .width(DEFAULT_WIDTH)
+                                    .height(DEFAULT_HEIGHT)
+                                    .length(DEFAULT_LENGTH)
                                     .build())
                             .build())
                     .build();
 
-            // 2. Gọi API Goship (RestTemplate tự động parse Object Payload thành JSON)
             HttpEntity<GoshipDto.RatePayload> entity = new HttpEntity<>(payload, createHeaders());
             ResponseEntity<String> response = restTemplate.postForEntity(baseUrl + "/rates", entity, String.class);
 
-            // 3. Đọc kết quả và lọc ra GHN
-            JsonNode rootNode = objectMapper.readTree(response.getBody());
+            return parseRatesResponse(response.getBody());
+
+        } catch (HttpClientErrorException e) {
+            log.error("Goship từ chối tính phí: {}", e.getResponseBodyAsString());
+            throw new CustomException(ErrorCode.GOSHIP_REJECTED, "Dữ liệu địa chỉ không hợp lệ.");
+        } catch (Exception e) {
+            log.error("Lỗi hệ thống tính phí Goship: ", e);
+            throw new CustomException(ErrorCode.GOSHIP_API_ERROR, "Hệ thống vận chuyển đang bận.");
+        }
+    }
+
+    private List<Map<String, Object>> parseRatesResponse(String responseBody) {
+        try {
+            JsonNode rootNode = objectMapper.readTree(responseBody);
             JsonNode dataArray = rootNode.path("data");
 
-            List<JsonNode> availableRates = new ArrayList<>();
+            List<Map<String, Object>> availableRates = new ArrayList<>();
 
             if (dataArray.isArray()) {
                 for (JsonNode rateNode : dataArray) {
-                    availableRates.add(rateNode);
+                    Map<String, Object> rateMap = objectMapper.convertValue(rateNode, new TypeReference<>() {});
+                    availableRates.add(rateMap);
                 }
             }
             return availableRates;
         } catch (Exception e) {
-            log.error("Lỗi tính phí Goship: {}", e.getMessage());
-            throw new RuntimeException("Không thể tính phí vận chuyển!");
+            log.error("Lỗi parse JSON", e);
+            return new ArrayList<>();
         }
     }
 
-    // ==========================================
-    // 3. TẠO VẬN ĐƠN (GOSHIP)
-    // ==========================================
+    @SuppressWarnings("unchecked")
     public Map<String, Object> createShipment(Map<String, Object> data) {
         try {
-            log.info("Bắt đầu tạo đơn Goship với data: {}", data);
+            log.info("Bắt đầu tạo đơn Goship với rate_id: {}", data.get("rate_id"));
 
-            Map<String, Object> payload = new HashMap<>();
-            Map<String, Object> shipment = new HashMap<>();
+            // Tối ưu hóa việc tạo cấu trúc Map lồng nhau để code dễ đọc và tránh typo
+            Map<String, Object> addressFrom = Map.of(
+                    "name",
+                    shopName,
+                    "phone",
+                    shopPhone,
+                    "street",
+                    shopAddress,
+                    "city",
+                    shopCityCode,
+                    "district",
+                    shopDistrictCode,
+                    "ward",
+                    shopWardCode);
 
-            shipment.put("rate", data.get("rate_id"));
-            shipment.put("payer", 0); // 0: Người nhận trả phí, 1: Shop trả
+            Map<String, Object> addressTo = Map.of(
+                    "name",
+                    data.get("name"),
+                    "phone",
+                    data.get("phone"),
+                    "street",
+                    data.get("address_detail"),
+                    "city",
+                    data.get("city"),
+                    "district",
+                    data.get("district"),
+                    "ward",
+                    data.get("ward"));
 
-            shipment.put("address_from", Map.of(
-                    "name", shopName,
-                    "phone", shopPhone,
-                    "street", shopAddress,
-                    "city", shopCityCode,
-                    "district", shopDistrictCode,
-                    "ward", shopWardCode
-            ));
+            Map<String, Object> parcel = Map.of(
+                    "cod",
+                    Integer.parseInt(data.get("cod").toString()),
+                    "amount",
+                    Integer.parseInt(data.get("amount").toString()),
+                    "weight",
+                    DEFAULT_WEIGHT,
+                    "width",
+                    DEFAULT_WIDTH,
+                    "height",
+                    DEFAULT_HEIGHT,
+                    "length",
+                    DEFAULT_LENGTH,
+                    "metadata",
+                    "Hàng dễ vỡ, vui lòng nhẹ tay.");
 
-            shipment.put("address_to", Map.of(
-                    "name", data.get("name"),
-                    "phone", data.get("phone"),
-                    "street", data.get("address_detail"),
-                    "city", data.get("city"),
-                    "district", data.get("district"),
-                    "ward", data.get("ward")
-            ));
+            Map<String, Object> shipment = Map.of(
+                    "rate", data.get("rate_id"),
+                    "payer", 0,
+                    "address_from", addressFrom,
+                    "address_to", addressTo,
+                    "parcel", parcel);
 
-            shipment.put("parcel", Map.of(
-                    "cod", Integer.parseInt(data.get("cod").toString()),
-                    "amount", Integer.parseInt(data.get("amount").toString()),
-                    "weight", 220,
-                    "width", 1,
-                    "height", 1,
-                    "length", 1,
-                    "metadata", "Hàng dễ vỡ, vui lòng nhẹ tay."
-            ));
-
-            payload.put("shipment", shipment);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, createHeaders());
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(Map.of("shipment", shipment), createHeaders());
             ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl + "/shipments", entity, Map.class);
 
             return response.getBody();
 
         } catch (HttpClientErrorException e) {
-            // Bắt lỗi 4xx (Ví dụ: truyền sai rate_id, thiếu trường...)
-            log.error("Lỗi 4xx từ Goship: {}", e.getResponseBodyAsString());
-            throw new RuntimeException("Lỗi tạo đơn Goship: " + e.getResponseBodyAsString());
+            log.error("Lỗi 4xx từ Goship khi tạo đơn: {}", e.getResponseBodyAsString());
+            throw new CustomException(ErrorCode.GOSHIP_REJECTED, "Dữ liệu tạo đơn không được Goship chấp nhận.");
         } catch (Exception e) {
-            log.error("Lỗi hệ thống khi tạo đơn Goship: {}", e.getMessage());
-            throw new RuntimeException("Lỗi tạo đơn Goship!");
+            log.error("Lỗi hệ thống khi tạo đơn Goship: ", e);
+            throw new CustomException(ErrorCode.GOSHIP_API_ERROR, "Không thể kết nối đến máy chủ giao hàng.");
         }
     }
 
-    // ==========================================
-    // 4. HỦY VẬN ĐƠN
-    // ==========================================
-    public Map<String, Object> cancelShipment(String shipmentId) {
-        Map<String, Object> result = new HashMap<>();
+    @SuppressWarnings("unchecked")
+    public void cancelShipment(String shipmentId) {
         try {
             HttpEntity<Void> entity = new HttpEntity<>(createHeaders());
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/shipments/" + shipmentId, HttpMethod.DELETE, entity, Map.class);
-            return response.getBody();
+            restTemplate.exchange(baseUrl + "/shipments/" + shipmentId, HttpMethod.DELETE, entity, Map.class);
+            log.info("Đã hủy thành công mã vận đơn Goship: {}", shipmentId);
+
         } catch (HttpClientErrorException e) {
-            log.error("API Goship từ chối hủy đơn: {}", e.getResponseBodyAsString());
-            result.put("success", false);
-            result.put("message", "Lỗi từ Goship: " + e.getResponseBodyAsString());
-            return result;
+            log.error("API Goship từ chối hủy đơn [{}]: {}", shipmentId, e.getResponseBodyAsString());
+            throw new CustomException(ErrorCode.GOSHIP_REJECTED, "Bên vận chuyển từ chối hủy đơn hàng này.");
         } catch (Exception e) {
-            log.error("Lỗi kết nối Goship khi hủy đơn: {}", e.getMessage());
-            result.put("success", false);
-            result.put("message", "Lỗi kết nối Goship");
-            return result;
+            log.error("Lỗi kết nối Goship khi hủy đơn [{}]: {}", shipmentId, e.getMessage());
+            throw new CustomException(ErrorCode.GOSHIP_API_ERROR, "Lỗi kết nối đến máy chủ giao hàng.");
         }
     }
 }

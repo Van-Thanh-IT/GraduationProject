@@ -1,5 +1,5 @@
-import React, { useState, useEffect} from 'react';
-import { message, Tooltip } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { message } from 'antd';
 import { PictureOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -14,10 +14,12 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
     description: '' 
   });
   
+  // State lưu lỗi từ Backend trả về
+  const [errors, setErrors] = useState({});
+  
   const [logoFile, setLogoFile] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
 
-  // Sync dữ liệu ban đầu
   useEffect(() => {
     if (initialData) {
       setFormData({ 
@@ -28,7 +30,6 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
     }
   }, [initialData]);
 
-  // Clean up URL tránh Memory Leak
   useEffect(() => {
     return () => { 
       if (previewLogo?.startsWith('blob:')) URL.revokeObjectURL(previewLogo);
@@ -46,6 +47,9 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
     setLogoFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewLogo(objectUrl);
+    
+    // Xóa lỗi logo nếu có
+    if (errors.logo) setErrors({ ...errors, logo: null });
   };
 
   const removeLogo = () => {
@@ -55,13 +59,17 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return message.error("Tên thương hiệu không được để trống!");
+    setErrors({}); // Xóa hết lỗi cũ trước khi submit
+    
+    if (!formData.name.trim()) {
+      setErrors({ name: "Tên thương hiệu không được để trống!" });
+      return;
+    }
 
     const data = new FormData();
     data.append('name', formData.name.trim());
     data.append('description', (formData.description || '').trim());
     
-    // Nếu có file mới thì gửi file, nếu xóa trắng thì tùy backend xử lý (gửi rỗng hoặc null)
     if (logoFile) {
       data.append('logo', logoFile);
     }
@@ -74,7 +82,13 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
           onSuccess();
         },
         onError: (err) => {
-          message.error(err.response?.data?.message || "Thao tác thất bại!");
+          const resData = err.response?.data;
+          
+          if (resData?.errors) {
+            setErrors(resData.errors);
+          } else {
+            message.error(resData?.messages || resData?.message || "Thao tác thất bại!");
+          }
         }
       }
     );
@@ -82,7 +96,6 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="relative flex flex-col gap-5 py-2">
-      {/* Overlay Loading mờ khi đang submit để tránh user bấm linh tinh */}
       {isPending && (
         <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center rounded-lg">
           <div className="bg-white p-4 rounded-full shadow-lg">
@@ -93,30 +106,50 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
 
       <div className={`flex flex-col gap-5 transition-opacity duration-300 ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
         
-        <Input 
-          label={<span className="text-slate-700 font-bold">Tên thương hiệu <span className="text-red-500">*</span></span>}
-          placeholder="VD: Apple, Samsung, Nike..." 
-          value={formData.name} 
-          onChange={e => setFormData({...formData, name: e.target.value})} 
-          className="hover:border-blue-400 focus:border-blue-500 transition-all rounded-lg"
-        />
+        {/* INPUT: TÊN THƯƠNG HIỆU */}
+        <div className="flex flex-col gap-1">
+          <Input 
+            label={<span className="text-slate-700 font-bold">Tên thương hiệu <span className="text-red-500">*</span></span>}
+            placeholder="VD: Apple, Samsung, Nike..." 
+            value={formData.name} 
+            onChange={e => {
+              setFormData({...formData, name: e.target.value});
+              if (errors.name) setErrors({...errors, name: null}); // Đang gõ thì xóa lỗi đi
+            }} 
+            className={`transition-all rounded-lg ${
+              errors.name 
+                ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
+                : 'hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+            }`}
+          />
+          {/* HIỆN CHỮ ĐỎ BÁO LỖI Ở ĐÂY */}
+          {errors.name && <span className="text-[13px] text-red-500 font-semibold mt-0.5 ml-1">{errors.name}</span>}
+        </div>
 
+        {/* INPUT: MÔ TẢ */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-bold text-slate-700">Mô tả</label>
           <textarea 
             rows={3}
             placeholder="Nhập mô tả ngắn về thương hiệu..."
-            className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none text-slate-600"
+            className={`w-full px-4 py-2 border rounded-lg outline-none transition-all resize-none text-slate-600 ${
+              errors.description 
+                ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
+                : 'border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
+            }`}
             value={formData.description}
-            onChange={e => setFormData({...formData, description: e.target.value})}
+            onChange={e => {
+              setFormData({...formData, description: e.target.value});
+              if (errors.description) setErrors({...errors, description: null});
+            }}
           />
+          {errors.description && <span className="text-[13px] text-red-500 font-semibold ml-1">{errors.description}</span>}
         </div>
 
-        {/* Upload Logo Zone */}
+        {/* UPLOAD LOGO */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-bold text-slate-700">Logo nhận diện</label>
-          <div className="flex items-start gap-5 p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
-            {/* Ảnh xem trước */}
+          <div className={`flex items-start gap-5 p-4 bg-slate-50 border border-dashed rounded-xl ${errors.logo ? 'border-red-400' : 'border-slate-300'}`}>
             <div className="relative group w-24 h-24 bg-white border border-slate-200 rounded-lg flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               {previewLogo ? (
                 <>
@@ -143,10 +176,11 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
               </p>
             </div>
           </div>
+          {/* HIỆN LỖI LOGO NẾU CÓ */}
+          {errors.logo && <span className="text-[13px] text-red-500 font-semibold ml-1">{errors.logo}</span>}
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-slate-100">
         <button 
           type="button" 
@@ -159,8 +193,8 @@ export default function BrandForm({ initialData, onSuccess, onCancel }) {
         <Button 
           type="submit" 
           loading={isPending} 
-          className={`px-8 py-2 rounded-lg font-bold shadow-lg shadow-blue-200 transition-transform active:scale-95 ${
-            isEdit ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-600 hover:bg-blue-700'
+          className={`px-8 py-2 rounded-lg font-bold shadow-lg transition-transform active:scale-95 ${
+            isEdit ? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
           } text-white`}
         >
           {isEdit ? 'Cập nhật ngay' : 'Tạo thương hiệu'}

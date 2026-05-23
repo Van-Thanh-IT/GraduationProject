@@ -1,12 +1,15 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.OrderStatus;
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.OrderStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "orders")
@@ -23,7 +26,6 @@ public class Order {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    // NULL nếu là Guest mua
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -32,7 +34,6 @@ public class Order {
     @JoinColumn(name = "voucher_id")
     private Voucher voucher;
 
-    // THÔNG TIN GIAO HÀNG SNAPSHOT
     @Column(name = "customer_name", nullable = false, length = 100)
     private String customerName;
 
@@ -63,7 +64,6 @@ public class Order {
     @Column(name = "shipping_city_code", length = 20)
     private String shippingCityCode;
 
-    // HÓA ĐƠN VAT
     @Column(name = "is_vat_required")
     @Builder.Default
     private Boolean isVatRequired = false;
@@ -77,7 +77,6 @@ public class Order {
     @Column(name = "company_address")
     private String companyAddress;
 
-    // TÀI CHÍNH
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
@@ -92,7 +91,6 @@ public class Order {
     @Column(name = "final_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal finalAmount;
 
-    // VẬN CHUYỂN
     @Column(name = "goship_shipment_id", length = 50)
     private String goshipShipmentId;
 
@@ -107,12 +105,6 @@ public class Order {
     @Builder.Default
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
-//    @Column(name = "shipping_status", length = 50)
-//    private String shippingStatus;
-
-//    @Column(name = "shipment_status_txt")
-//    private String shipmentStatusTxt;
-
     @Column(name = "cancel_reason")
     private String cancelReason;
 
@@ -125,7 +117,6 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // QUAN HỆ VỚI ORDER ITEMS VÀ PAYMENTS
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();

@@ -1,15 +1,18 @@
 package com.example.backend.controller.management;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.example.backend.dto.request.AttributeRequest;
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.AttributeResponse;
 import com.example.backend.enums.AttributeStatus;
 import com.example.backend.service.AttributeService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/attributes")
@@ -23,11 +26,6 @@ public class AttributeManagementController {
         return APIResponse.success(attributeService.getAllAttributes());
     }
 
-    @GetMapping("/{id}")
-    public APIResponse<AttributeResponse> getAttributeById(@PathVariable Integer id) {
-        return APIResponse.success(attributeService.getAttributeById(id));
-    }
-
     @PostMapping
     public APIResponse<AttributeResponse> createAttribute(@Valid @RequestBody AttributeRequest request) {
         AttributeResponse response = attributeService.createAttribute(request);
@@ -38,11 +36,9 @@ public class AttributeManagementController {
                 .build();
     }
 
-    // Dùng @RequestBody
     @PutMapping("/{id}")
     public APIResponse<AttributeResponse> updateAttribute(
-            @PathVariable Integer id,
-            @Valid @RequestBody AttributeRequest request) {
+            @PathVariable Integer id, @Valid @RequestBody AttributeRequest request) {
         AttributeResponse response = attributeService.updateAttribute(id, request);
         return APIResponse.<AttributeResponse>builder()
                 .code(200)
@@ -58,9 +54,6 @@ public class AttributeManagementController {
                 ? "Đã kích hoạt thông số kỹ thuật thành công!"
                 : "Đã ẩn thông số kỹ thuật thành công!";
 
-        return APIResponse.<Void>builder()
-                .code(200)
-                .messages(message)
-                .build();
+        return APIResponse.<Void>builder().code(200).messages(message).build();
     }
 }

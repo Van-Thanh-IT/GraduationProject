@@ -1,12 +1,14 @@
 package com.example.backend.dto.request;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+
 import lombok.Data;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 public class FlashSaleRequest {

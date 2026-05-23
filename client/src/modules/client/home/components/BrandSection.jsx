@@ -1,55 +1,112 @@
+// File: src/modules/client/home/components/BrandSection.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CrownFilled, RightOutlined } from '@ant-design/icons';
+import { RightOutlined, LeftOutlined } from '@ant-design/icons';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
 
-export default function BrandSection({ brands }) {
+import 'swiper/css';
+import 'swiper/css/navigation';
+
+export default function BrandSection({ brands = [] }) {
   const navigate = useNavigate();
 
-  // Nếu không có thương hiệu nào thì ẩn section này đi
   if (!brands || brands.length === 0) return null;
 
+  // Kiểm tra điều kiện để bật tính năng Slider (nếu > 6 thương hiệu)
+  const isSliderRequired = brands.length > 6;
+
   return (
-    <section className="bg-white p-5 lg:p-7 rounded-2xl shadow-sm border border-slate-100">
+    <section className="bg-white p-4 rounded-xl border border-gray-200 font-sans relative group/section">
       
-      {/* Tiêu đề Section */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
-        <h2 className="text-xl lg:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2 m-0">
-          <div className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">
-            <CrownFilled />
-          </div>
-          THƯƠNG HIỆU CHÍNH HÃNG
+      {/* TIÊU ĐỀ SECTION */}
+      <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-gray-100">
+        <h2 className="text-[16px] lg:text-lg font-bold text-gray-800 uppercase tracking-wide m-0">
+          Thương hiệu chính hãng
         </h2>
         <button 
+          type="button"
           onClick={() => navigate('/products?brands')}
-          className="text-indigo-600 font-bold text-sm flex items-center gap-1 hover:text-indigo-700 transition-colors group"
+          className="text-blue-600 font-semibold text-[13px] flex items-center gap-0.5 hover:text-blue-700 transition-colors group"
         >
           Xem tất cả <RightOutlined className="text-[10px] group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
-      {/* Lưới Logo Thương hiệu */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-        {brands.map((brand) => (
-          <div
-            key={brand.id}
-            // Bấm vào Logo -> Chuyển sang trang Products kèm filter brand
-            onClick={() => navigate(`/products?brand=${brand.slug}`)}
-            className="cursor-pointer group flex flex-col items-center gap-2"
-          >
-            {/* Hộp chứa Logo */}
-            <div className="w-full aspect-[2/1] md:aspect-video rounded-xl border border-slate-100 bg-white p-2 md:p-4 flex items-center justify-center transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-md">
-              <img 
-                src={brand.logoUrl} 
-                alt={brand.name} 
-                className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-300" 
-              />
-            </div>
-            {/* Tên thương hiệu */}
-            <span className="text-[13px] font-bold text-slate-600 group-hover:text-blue-600 line-clamp-1 text-center transition-colors">
-              {brand.name}
-            </span>
-          </div>
-        ))}
+      {/* VÙNG CHỨA SLIDER / GRID */}
+      <div className="relative px-1">
+        <Swiper
+          modules={[Autoplay, Navigation]}
+          spaceBetween={12}
+          slidesPerView={3} // Mặc định mobile hiện 3 cột
+          allowTouchMove={isSliderRequired} // Chỉ cho vuốt trượt khi cần slider
+          autoplay={
+            isSliderRequired
+              ? {
+                  delay: 3000,
+                  disableOnInteraction: false,
+                  pauseOnMouseEnter: true,
+                }
+              : false
+          }
+          navigation={{
+            prevEl: '.brand-prev-btn',
+            nextEl: '.brand-next-btn',
+          }}
+          breakpoints={{
+            // Trên tablet (md) hiện 4 cột
+            768: {
+              slidesPerView: 4,
+              spaceBetween: 16,
+            },
+            // Trên desktop (lg) hiện 6 cột
+            1024: {
+              slidesPerView: 6,
+              spaceBetween: 16,
+            },
+          }}
+          className="w-full"
+        >
+          {brands.map((brand) => (
+            <SwiperSlide key={brand.id}>
+              <div
+                onClick={() => navigate(`/products?brand=${brand.slug}`)}
+                className="cursor-pointer group flex flex-col items-center gap-2 py-0.5"
+              >
+                <div className="w-full h-14 md:h-16 rounded-lg border border-gray-200 bg-white flex items-center justify-center transition-colors group-hover:border-blue-400">
+                  <img 
+                    src={brand.logoUrl} 
+                    alt={brand.name} 
+                    className="max-w-[70%] max-h-[60%] object-contain mix-blend-multiply transition-transform group-hover:scale-103 duration-300" 
+                  />
+                </div>
+                <span className="text-[12px] md:text-[13px] font-medium text-gray-600 group-hover:text-blue-600 line-clamp-1 text-center transition-colors">
+                  {brand.name}
+                </span>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        {/* NÚT CLICK ĐIỀU HƯỚNG < > (Chỉ hiển thị khi có nhiều hơn 6 thương hiệu) */}
+        {isSliderRequired && (
+          <>
+            <button 
+              type="button"
+              className="brand-prev-btn absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center transition-all opacity-0 group-hover/section:opacity-100 group-hover/section:translate-x-0"
+              aria-label="Previous brands"
+            >
+              <LeftOutlined className="text-[11px]" />
+            </button>
+            <button 
+              type="button"
+              className="brand-next-btn absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center transition-all opacity-0 group-hover/section:opacity-100 group-hover/section:-translate-x-0"
+              aria-label="Next brands"
+            >
+              <RightOutlined className="text-[11px]" />
+            </button>
+          </>
+        )}
       </div>
 
     </section>

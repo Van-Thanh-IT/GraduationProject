@@ -1,21 +1,19 @@
 package com.example.backend.controller.management;
 
-import com.example.backend.dto.response.APIResponse;
-import com.example.backend.dto.response.DashboardResponse;
-import com.example.backend.repository.*;
+import java.util.HashMap;
+import java.util.Map;
 
-// Bạn nhớ import thêm Repository quản lý thông số của sản phẩm nhé (nếu có)
-// import com.example.backend.repository.ProductAttributeValueRepository;
-
-import com.example.backend.service.DashboardService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.example.backend.dto.response.APIResponse;
+import com.example.backend.dto.response.DashboardResponse;
+import com.example.backend.repository.*;
+import com.example.backend.service.DashboardService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/management/dashboard")

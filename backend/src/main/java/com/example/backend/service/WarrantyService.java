@@ -1,16 +1,21 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.response.WarrantyResponse;
-import com.example.backend.repository.OrderRepository;
-import com.example.backend.repository.projection.WarrantyProjection;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import com.example.backend.dto.response.WarrantyResponse;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.repository.OrderRepository;
+import com.example.backend.repository.projection.WarrantyProjection;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -18,67 +23,86 @@ public class WarrantyService {
 
     private final OrderRepository orderRepository;
 
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("\\d+");
+
+    private static final int DEFAULT_WARRANTY_MONTHS = 12;
+    private static final int LIFETIME_WARRANTY_YEARS = 100;
+
+    private static final String STATUS_VALID = "HỢP LỆ (CÒN BẢO HÀNH)";
+    private static final String STATUS_EXPIRED = "ĐÃ HẾT HẠN";
+    private static final String STATUS_NO_WARRANTY = "KHÔNG BẢO HÀNH";
+
+    private static final String DEFAULT_WARRANTY_TEXT = "Mặc định 12 tháng";
+    private static final String NO_IMEI_TEXT = "Không có";
+
+    @Transactional(readOnly = true)
     public List<WarrantyResponse> lookupWarranty(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            throw new RuntimeException("Vui lòng nhập Số điện thoại, Mã đơn hàng hoặc IMEI");
+
+        if (!StringUtils.hasText(keyword)) {
+            throw new CustomException(ErrorCode.WARRANTY_KEYWORD_REQUIRED);
         }
 
         List<WarrantyProjection> results = orderRepository.searchWarranty(keyword.trim());
 
         if (results.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy dữ liệu bảo hành cho thông tin này! Vui lòng kiểm tra lại.");
+            throw new CustomException(ErrorCode.WARRANTY_NOT_FOUND);
         }
 
         LocalDateTime now = LocalDateTime.now();
 
-        return results.stream().map(p -> {
-            // 1. Tính toán ngày hết hạn
-            LocalDateTime expireDate = calculateExpireDate(p.getPurchaseDate(), p.getWarrantyPeriodText());
-
-            // 2. Xác định trạng thái
-            String status;
-            if (expireDate == null) {
-                status = "KHÔNG BẢO HÀNH";
-            } else {
-                status = expireDate.isAfter(now) ? "HỢP LỆ (CÒN BẢO HÀNH)" : "ĐÃ HẾT HẠN";
-            }
-
-            return WarrantyResponse.builder()
-                    .orderCode(p.getOrderCode())
-                    .customerName(p.getCustomerName())
-                    .phone(p.getPhone())
-                    .productName(p.getProductName())
-                    .thumbnail(p.getThumbnail())
-                    .imei(p.getImei() != null ? p.getImei() : "Không có")
-                    .warrantyText(p.getWarrantyPeriodText() != null ? p.getWarrantyPeriodText() : "Mặc định 12 tháng")
-                    .purchaseDate(p.getPurchaseDate())
-                    .expireDate(expireDate)
-                    .status(status)
-                    .build();
-        }).collect(Collectors.toList());
+        return results.stream().map(p -> mapToResponse(p, now)).toList();
     }
 
-    // --- HÀM HELPER: BÓC TÁCH SỐ THÁNG TỪ CHUỖI TEXT ---
+    private WarrantyResponse mapToResponse(WarrantyProjection p, LocalDateTime now) {
+        LocalDateTime expireDate = calculateExpireDate(p.getPurchaseDate(), p.getWarrantyPeriodText());
+        String status = determineWarrantyStatus(expireDate, now);
+
+        return WarrantyResponse.builder()
+                .orderCode(p.getOrderCode())
+                .customerName(p.getCustomerName())
+                .phone(p.getPhone())
+                .productName(p.getProductName())
+                .thumbnail(p.getThumbnail())
+                .imei(StringUtils.hasText(p.getImei()) ? p.getImei() : NO_IMEI_TEXT)
+                .warrantyText(
+                        StringUtils.hasText(p.getWarrantyPeriodText())
+                                ? p.getWarrantyPeriodText()
+                                : DEFAULT_WARRANTY_TEXT)
+                .purchaseDate(p.getPurchaseDate())
+                .expireDate(expireDate)
+                .status(status)
+                .build();
+    }
+
+    private String determineWarrantyStatus(LocalDateTime expireDate, LocalDateTime now) {
+        if (expireDate == null) {
+            return STATUS_NO_WARRANTY;
+        }
+        return expireDate.isAfter(now) ? STATUS_VALID : STATUS_EXPIRED;
+    }
+
     private LocalDateTime calculateExpireDate(LocalDateTime purchaseDate, String warrantyText) {
         if (purchaseDate == null) return null;
-        if (warrantyText == null || warrantyText.isBlank()) {
-            return purchaseDate.plusMonths(12); // Mặc định 12 tháng nếu DB rỗng
+
+        if (!StringUtils.hasText(warrantyText)) {
+            return purchaseDate.plusMonths(DEFAULT_WARRANTY_MONTHS);
         }
 
         String lowerText = warrantyText.toLowerCase();
 
-        // Trích xuất các con số ra khỏi chuỗi (VD: "12 tháng" -> lấy số 12)
-        Matcher matcher = Pattern.compile("\\d+").matcher(lowerText);
+        Matcher matcher = NUMBER_PATTERN.matcher(lowerText);
         int number = matcher.find() ? Integer.parseInt(matcher.group()) : 0;
 
         if (lowerText.contains("năm") && number > 0) {
-            return purchaseDate.plusYears(number); // VD: "2 năm" -> +2 năm
-        } else if (lowerText.contains("tháng") && number > 0) {
-            return purchaseDate.plusMonths(number); // VD: "18 tháng" -> +18 tháng
-        } else if (lowerText.contains("trọn đời") || lowerText.contains("life time")) {
-            return purchaseDate.plusYears(100); // Trọn đời cho hẳn 100 năm
+            return purchaseDate.plusYears(number);
+        }
+        if (lowerText.contains("tháng") && number > 0) {
+            return purchaseDate.plusMonths(number);
+        }
+        if (lowerText.contains("trọn đời") || lowerText.contains("life time")) {
+            return purchaseDate.plusYears(LIFETIME_WARRANTY_YEARS);
         }
 
-        return purchaseDate.plusMonths(12); // Fallback an toàn
+        return purchaseDate.plusMonths(DEFAULT_WARRANTY_MONTHS); // Fallback an toàn
     }
 }

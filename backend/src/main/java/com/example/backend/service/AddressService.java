@@ -1,126 +1,128 @@
 package com.example.backend.service;
 
+import java.util.List;
 
-import com.example.backend.dto.request.AddressRequest;
-import com.example.backend.dto.response.AddressResponse;
-import com.example.backend.entity.Address;
-import com.example.backend.entity.User;
-import com.example.backend.mapper.AddressMapper; // Bổ sung import
-import com.example.backend.repository.AddressRepository;
-import com.example.backend.repository.UserRepository;
-import com.example.backend.utils.SecurityUtils;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.example.backend.dto.request.AddressRequest;
+import com.example.backend.dto.response.client.AddressResponse;
+import com.example.backend.entity.Address;
+import com.example.backend.entity.User;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.AddressMapper;
+import com.example.backend.repository.AddressRepository;
+import com.example.backend.repository.UserRepository;
+import com.example.backend.utils.SecurityUtils;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
-
-    // 1. TIÊM MAPPER VÀO ĐÂY
     private final AddressMapper addressMapper;
 
-    public List<AddressResponse> getMyAddresses() {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        List<Address> addresses = addressRepository.findByUserIdOrderByIsDefaultDescCreatedAtDesc(userId);
+    private static final int MAX_ADDRESSES_PER_USER = 5;
 
-        // DÙNG MAPPER RẤT NGẮN GỌN
-        return addresses.stream()
-                .map(addressMapper::toResponse)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<AddressResponse> getMyAddresses() {
+        return addressRepository.findByUserIdOrderByIsDefaultDescCreatedAtDesc(getCurrentUserId()).stream()
+                .map(addressMapper::toAddressResponse)
+                .toList();
     }
 
     @Transactional
     public AddressResponse createAddress(AddressRequest request) {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        Integer userId = getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        boolean isFirstAddress = addressRepository.countByUserId(userId) == 0;
-        boolean wantsDefault = request.getIsDefault() != null && request.getIsDefault();
+        long totalAddresses = addressRepository.countByUserId(userId);
 
-        if (isFirstAddress) wantsDefault = true;
-        if (wantsDefault && !isFirstAddress) addressRepository.clearDefaultAddress(userId);
+        if (totalAddresses >= MAX_ADDRESSES_PER_USER) {
+            log.warn("User {} attempted to create more than {} addresses", userId, MAX_ADDRESSES_PER_USER);
+            throw new CustomException(ErrorCode.ADDRESS_LIMIT_EXCEEDED);
+        }
 
-        Address address = Address.builder()
-                .user(user)
-                .fullName(request.getFullName())
-                .phone(request.getPhone())
-                .addressDetail(request.getAddressDetail())
-                .city(request.getCity())
-                .district(request.getDistrict())
-                .ward(request.getWard())
-                .cityCode(request.getCityCode())
-                .districtCode(request.getDistrictCode())
-                .wardCode(request.getWardCode())
-                .isDefault(wantsDefault)
-                .build();
+        boolean isFirstAddress = (totalAddresses == 0);
+        boolean wantsDefault = Boolean.TRUE.equals(request.getIsDefault());
 
-        // DÙNG MAPPER TRẢ VỀ LUÔN
-        return addressMapper.toResponse(addressRepository.save(address));
+        if (isFirstAddress) {
+            wantsDefault = true;
+        }
+
+        if (wantsDefault && !isFirstAddress) {
+            addressRepository.clearDefaultAddress(userId);
+        }
+
+        Address address = addressMapper.toAddress(request);
+        address.setUser(user);
+        address.setIsDefault(wantsDefault);
+
+        return addressMapper.toAddressResponse(addressRepository.save(address));
     }
 
     @Transactional
     public AddressResponse updateAddress(Integer id, AddressRequest request) {
-        Integer userId = SecurityUtils.getCurrentUserId();
+        Integer userId = getCurrentUserId();
+        Address address = getMyAddressOrThrow(id, userId);
 
-        Address address = addressRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ hoặc bạn không có quyền!"));
+        boolean oldDefault = Boolean.TRUE.equals(address.getIsDefault());
+        boolean newDefault = request.getIsDefault() != null ? request.getIsDefault() : oldDefault;
 
-        boolean wantsDefault = request.getIsDefault() != null && request.getIsDefault();
-
-        if (wantsDefault && !address.getIsDefault()) {
+        if (newDefault && !oldDefault) {
             addressRepository.clearDefaultAddress(userId);
         }
 
-        address.setFullName(request.getFullName());
-        address.setPhone(request.getPhone());
-        address.setAddressDetail(request.getAddressDetail());
-        address.setCity(request.getCity());
-        address.setDistrict(request.getDistrict());
-        address.setWard(request.getWard());
-        address.setCityCode(request.getCityCode());
-        address.setDistrictCode(request.getDistrictCode());
-        address.setWardCode(request.getWardCode());
-
-        if (address.getIsDefault() && !wantsDefault) {
-            throw new RuntimeException("Không thể bỏ địa chỉ mặc định. Hãy chọn một địa chỉ khác làm mặc định thay thế!");
+        if (oldDefault && !newDefault) {
+            throw new CustomException(ErrorCode.ADDRESS_DEFAULT_REQUIRED);
         }
 
-        address.setIsDefault(wantsDefault);
+        addressMapper.toUpdateAddress(request, address);
+        address.setIsDefault(newDefault);
 
-        // DÙNG MAPPER
-        return addressMapper.toResponse(addressRepository.save(address));
+        return addressMapper.toAddressResponse(addressRepository.save(address));
     }
 
     @Transactional
     public void deleteAddress(Integer id) {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        Address address = addressRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ"));
+        Integer userId = getCurrentUserId();
+        Address address = getMyAddressOrThrow(id, userId);
 
-        if (address.getIsDefault()) {
-            throw new RuntimeException("Không thể xóa địa chỉ đang được đặt làm mặc định!");
+        if (Boolean.TRUE.equals(address.getIsDefault())) {
+            long totalAddresses = addressRepository.countByUserId(userId);
+            if (totalAddresses > 1) {
+                throw new CustomException(ErrorCode.ADDRESS_CANNOT_DELETE_DEFAULT);
+            }
         }
+
         addressRepository.delete(address);
     }
 
     @Transactional
     public void setDefaultAddress(Integer id) {
-        Integer userId = SecurityUtils.getCurrentUserId();
-        Address address = addressRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ"));
+        Integer userId = getCurrentUserId();
+        Address address = getMyAddressOrThrow(id, userId);
 
-        if (!address.getIsDefault()) {
+        if (!Boolean.TRUE.equals(address.getIsDefault())) {
             addressRepository.clearDefaultAddress(userId);
             address.setIsDefault(true);
             addressRepository.save(address);
         }
+    }
+
+    private Integer getCurrentUserId() {
+        return SecurityUtils.getCurrentUserId();
+    }
+
+    private Address getMyAddressOrThrow(Integer id, Integer userId) {
+        return addressRepository
+                .findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ADDRESS_NOT_FOUND));
     }
 }

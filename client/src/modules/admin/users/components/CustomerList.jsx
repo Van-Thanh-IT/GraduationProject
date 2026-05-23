@@ -189,7 +189,7 @@ export default function CustomerList() {
           columns={columns} 
           loading={isLoading} 
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+         
         />
       </div>
 

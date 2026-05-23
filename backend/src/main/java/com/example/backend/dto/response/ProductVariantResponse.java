@@ -1,8 +1,9 @@
 package com.example.backend.dto.response;
 
-import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class ProductVariantResponse {

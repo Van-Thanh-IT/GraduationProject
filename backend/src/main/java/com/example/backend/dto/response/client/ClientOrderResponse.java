@@ -1,12 +1,15 @@
 package com.example.backend.dto.response.client;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -20,7 +23,19 @@ public class ClientOrderResponse {
     private String paymentMethod;
     private String paymentStatus;
     private String fullShippingAddress;
-    private List<Map<String, Object>> items;
+    private List<OrderItem> items;
 
-
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OrderItem {
+        private String productName;
+        private String thumbnail;
+        private String variantInfo;
+        private Integer quantity;
+        private BigDecimal price;
+        private Boolean isReviewed;
+    }
 }

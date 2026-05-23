@@ -1,129 +1,131 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.ArticleRequest;
-import com.example.backend.dto.response.ArticleResponse;
-import com.example.backend.entity.Article;
-import com.example.backend.enums.ArticleStatus;
-import com.example.backend.repository.ArticleRepository;
-import com.example.backend.utils.Cloudinaryutil;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.text.Normalizer;
-import java.util.Locale;
-import java.util.regex.Pattern;
+import com.example.backend.dto.request.ArticleRequest;
+import com.example.backend.dto.response.ArticleResponse;
+import com.example.backend.entity.Article;
+import com.example.backend.enums.ArticleStatus;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.ArticleMapper;
+import com.example.backend.repository.ArticleRepository;
+import com.example.backend.utils.CloudinaryUtil;
+import com.example.backend.utils.SlugUtil;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
-    private final Cloudinaryutil cloudinaryutil;
+    private final ArticleMapper articleMapper;
+    private final CloudinaryUtil cloudinaryutil;
 
-    // --- CLIENT ---
+    @Transactional(readOnly = true)
     public Page<ArticleResponse> getPublishedArticles(Pageable pageable) {
-        return articleRepository.findAllByStatus(ArticleStatus.PUBLISHED, pageable)
-                .map(this::mapToResponse);
+        return articleRepository
+                .findAllByStatus(ArticleStatus.PUBLISHED, pageable)
+                .map(articleMapper::toArticleResponse);
     }
 
-    @Transactional
     public ArticleResponse getArticleBySlug(String slug) {
-        Article article = articleRepository.findBySlugAndStatus(slug, ArticleStatus.PUBLISHED)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài viết!"));
+        Article article = articleRepository
+                .findBySlugAndStatus(slug, ArticleStatus.PUBLISHED)
+                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        articleRepository.incrementViewCount(article.getId()); // Tăng lượt xem
-        return mapToResponse(article);
+        increaseViewCountSafely(article.getId());
+
+        return articleMapper.toArticleResponse(article);
     }
 
-    // --- ADMIN ---
-
+    @Transactional(readOnly = true)
     public Page<ArticleResponse> getAllArticlesForAdmin(Pageable pageable) {
-        return articleRepository.findAll(pageable).map(this::mapToResponse);
+        return articleRepository.findAll(pageable).map(articleMapper::toArticleResponse);
     }
 
     @Transactional
     public ArticleResponse createArticle(ArticleRequest request) {
-        String slug = generateSlug(request.getTitle());
-        if (articleRepository.existsBySlug(slug)) {
-            slug += "-" + System.currentTimeMillis() / 1000;
-        }
 
-        Article article = Article.builder()
-                .title(request.getTitle())
-                .slug(slug)
-                .content(request.getContent())
-                .shortDescription(request.getShortDescription())
-                .authorName(request.getAuthorName())
-                .status(request.getStatus())
-                .viewCount(0)
-                .build();
+        Article article = articleMapper.toArticle(request);
+        article.setSlug(generateUniqueSlug(request.getTitle()));
+        article.setViewCount(0);
 
-        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
-            article.setThumbnailUrl(cloudinaryutil.saveFile(request.getThumbnail()));
-        }
+        handleThumbnail(article, request.getThumbnail());
 
-        return mapToResponse(articleRepository.save(article));
+        return articleMapper.toArticleResponse(articleRepository.save(article));
     }
 
     @Transactional
     public ArticleResponse updateArticle(Integer id, ArticleRequest request) {
-        Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bài viết không tồn tại"));
 
-        article.setTitle(request.getTitle());
-        article.setContent(request.getContent());
-        article.setShortDescription(request.getShortDescription());
-        article.setAuthorName(request.getAuthorName());
-        article.setStatus(request.getStatus());
+        Article article = getArticleOrThrow(id);
 
-        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
-            if (article.getThumbnailUrl() != null) {
-                cloudinaryutil.deleteFile(article.getThumbnailUrl());
-            }
-            article.setThumbnailUrl(cloudinaryutil.saveFile(request.getThumbnail()));
-        }
+        articleMapper.updateArticle(article, request);
 
-        return mapToResponse(articleRepository.save(article));
+        handleThumbnail(article, request.getThumbnail());
+
+        return articleMapper.toArticleResponse(articleRepository.save(article));
     }
 
     @Transactional
     public void deleteArticle(Integer id) {
-        Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bài viết không tồn tại"));
+        Article article = getArticleOrThrow(id);
+
+        String thumbnailUrl = article.getThumbnailUrl();
+        articleRepository.delete(article);
+
+        if (thumbnailUrl != null) {
+            deleteThumbnailSafely(thumbnailUrl);
+        }
+    }
+
+    private Article getArticleOrThrow(Integer id) {
+        return articleRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
+    }
+
+    private String generateUniqueSlug(String title) {
+        String baseSlug = SlugUtil.toSlug(title);
+        String slug = baseSlug;
+        if (articleRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + (System.currentTimeMillis() / 1000);
+        }
+        return slug;
+    }
+
+    private void handleThumbnail(Article article, MultipartFile thumbnail) {
+        if (thumbnail == null || thumbnail.isEmpty()) return;
 
         if (article.getThumbnailUrl() != null) {
-            cloudinaryutil.deleteFile(article.getThumbnailUrl());
+            deleteThumbnailSafely(article.getThumbnailUrl());
         }
-        articleRepository.delete(article);
+
+        String newUrl = cloudinaryutil.saveFile(thumbnail);
+        if (newUrl != null) {
+            article.setThumbnailUrl(newUrl);
+        }
     }
 
-    // --- HELPER ---
-    private ArticleResponse mapToResponse(Article article) {
-        return ArticleResponse.builder()
-                .id(article.getId())
-                .title(article.getTitle())
-                .slug(article.getSlug())
-                .thumbnailUrl(article.getThumbnailUrl())
-                .shortDescription(article.getShortDescription())
-                .content(article.getContent())
-                .authorName(article.getAuthorName())
-                .viewCount(article.getViewCount())
-                .status(article.getStatus())
-                .createdAt(article.getCreatedAt())
-                .build();
+    private void deleteThumbnailSafely(String url) {
+        try {
+            cloudinaryutil.deleteFile(url);
+        } catch (Exception e) {
+            log.error("Lỗi xóa ảnh bài viết trên Cloudinary: {}", url, e);
+        }
     }
 
-    private String generateSlug(String title) {
-        String nfdNormalizedString = Normalizer.normalize(title, Normalizer.Form.NFD);
-        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
-        String nospecial = pattern.matcher(nfdNormalizedString).replaceAll("")
-                .replace('đ', 'd').replace('Đ', 'D')
-                .replace(' ', '-')
-                .replaceAll("[^a-zA-Z0-9-]", "")
-                .toLowerCase(Locale.ENGLISH);
-        return nospecial.replaceAll("-+", "-").replaceAll("^-|-$", "");
+    private void increaseViewCountSafely(Integer articleId) {
+        try {
+            articleRepository.incrementViewCount(articleId);
+        } catch (Exception e) {
+            log.error("Failed to increment view count for article: {}", articleId, e);
+        }
     }
 }

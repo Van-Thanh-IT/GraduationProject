@@ -1,13 +1,15 @@
 package com.example.backend.dto.response.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude; // <--- Import cái này
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data @Builder
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProductCardResponse {
     private Integer id;
@@ -23,5 +25,4 @@ public class ProductCardResponse {
     private Boolean isNew;
     private List<String> specs;
     private FlashSaleInfo flashSale;
-
 }

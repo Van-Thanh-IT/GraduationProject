@@ -1,7 +1,8 @@
+// File: src/modules/admin/articles/components/ArticleModal.jsx
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Upload, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import Button from '@/components/ui/Button'; // Custom Button của bạn
+import { Modal, Form, Input, Select, Upload, message, Spin } from 'antd';
+import { PlusOutlined, PictureOutlined } from '@ant-design/icons';
+import Button from '@/components/ui/Button';
 
 const STATUS_OPTIONS = [
   { label: 'Xuất bản (PUBLISHED)', value: 'PUBLISHED' },
@@ -9,7 +10,7 @@ const STATUS_OPTIONS = [
   { label: 'Đã ẩn (HIDDEN)', value: 'HIDDEN' },
 ];
 
-export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, isPending }) {
+export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, isPending, backendError }) {
   const [form] = Form.useForm();
   const isEditing = !!initialData;
   const [fileList, setFileList] = useState([]);
@@ -25,7 +26,6 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
           status: initialData.status,
         });
 
-        // Hiển thị ảnh cũ nếu có
         if (initialData.thumbnailUrl) {
           setFileList([{
             uid: '-1',
@@ -38,23 +38,36 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
         }
       } else {
         form.resetFields();
-        form.setFieldsValue({ status: 'PUBLISHED' }); // Mặc định là Published
+        form.setFieldsValue({ status: 'PUBLISHED' });
         setFileList([]);
       }
     }
   }, [isOpen, initialData, form, isEditing]);
 
+  useEffect(() => {
+    if (backendError) {
+      if (backendError.messages && backendError.messages !== "Validation failed") {
+        message.error(backendError.messages);
+      }
+      if (backendError.errors) {
+        const formFieldsError = Object.keys(backendError.errors).map((key) => ({
+          name: key,
+          errors: [backendError.errors[key]],
+        }));
+        form.setFields(formFieldsError);
+      }
+    }
+  }, [backendError, form]);
+
   const handleFinish = (values) => {
     const formData = new FormData();
     
-    // Nạp dữ liệu Text
     formData.append('title', values.title);
     formData.append('content', values.content);
     formData.append('status', values.status);
     if (values.shortDescription) formData.append('shortDescription', values.shortDescription);
     if (values.authorName) formData.append('authorName', values.authorName);
 
-    // Xử lý File ảnh bìa
     const newFile = fileList.length > 0 && fileList[0].originFileObj ? fileList[0].originFileObj : null;
     if (newFile) {
       formData.append('thumbnail', newFile);
@@ -66,77 +79,133 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
   };
 
   const uploadButton = (
-    <div className="flex flex-col items-center justify-center text-gray-500 hover:text-indigo-500 transition-colors">
-      <PlusOutlined className="text-2xl mb-2" />
-      <div className="text-sm font-medium">Tải ảnh lên</div>
+    <div className="flex flex-col items-center justify-center text-slate-400 hover:text-blue-500 transition-colors w-full h-full py-4">
+      <PlusOutlined className="text-xl mb-1" />
+      <div className="text-xs font-semibold">Tải ảnh lên</div>
     </div>
   );
 
   return (
     <Modal
-      title={<div className="text-2xl font-black text-slate-800 tracking-tight pb-2 border-b border-gray-100">{isEditing ? 'Sửa Bài Viết' : 'Thêm Bài Viết Mới'}</div>}
+      title={
+        <div className="text-base font-bold text-gray-800 uppercase tracking-wide pb-2 border-b border-gray-100">
+          {isEditing ? 'Sửa Bài Viết' : 'Thêm Bài Viết Mới'}
+        </div>
+      }
       open={isOpen}
       onCancel={onClose}
       footer={null}
-      width={900} // Form bài viết thường cần rộng hơn
+      width={960}
       destroyOnClose
       centered
     >
-      <Form form={form} layout="vertical" onFinish={handleFinish} className="mt-6">
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Cột trái: Ảnh và Trạng thái */}
-          <div className="md:col-span-1 flex flex-col gap-5">
-            <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-              <h4 className="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wider">Ảnh bìa <span className="text-red-500">*</span></h4>
-              <Upload
-                listType="picture-card"
-                fileList={fileList}
-                onChange={({ fileList }) => setFileList(fileList)}
-                beforeUpload={() => false}
-                maxCount={1}
-                accept="image/png, image/jpeg, image/webp"
-                className="w-full"
+      <Spin spinning={isPending} tip="Đang xử lý dữ liệu...">
+        <Form 
+          form={form} 
+          layout="vertical" 
+          onFinish={handleFinish} 
+          className="mt-4"
+          requiredMark={false}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            
+            <div className="lg:col-span-2 space-y-3.5">
+              <Form.Item 
+                name="title" 
+                label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Tiêu đề bài viết <span className="text-red-500">*</span></span>} 
+                rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
               >
-                {fileList.length >= 1 ? null : uploadButton}
-              </Upload>
-              <span className="text-xs text-gray-400 mt-2 block">Tỷ lệ khuyên dùng: 16:9</span>
+                <Input placeholder="Nhập tiêu đề..." className="h-9 rounded-md text-sm font-medium" />
+              </Form.Item>
+
+              <Form.Item 
+                name="shortDescription" 
+                label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Mô tả ngắn (Sapo)</span>}
+              >
+                <Input.TextArea 
+                  placeholder="Đoạn văn ngắn tóm tắt nội dung..." 
+                  rows={2} 
+                  className="rounded-md text-sm resize-none" 
+                  maxLength={500} 
+                  showCount 
+                />
+              </Form.Item>
+
+              <Form.Item 
+                name="content" 
+                label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Nội dung chi tiết <span className="text-red-500">*</span></span>} 
+                rules={[{ required: true, message: 'Nội dung không được để trống!' }]}
+              >
+                <Input.TextArea 
+                  placeholder="Nhập nội dung bài viết..." 
+                  rows={10} 
+                  className="rounded-md font-sans text-sm bg-gray-50/50 resize-none" 
+                />
+              </Form.Item>
             </div>
 
-            <Form.Item name="status" label={<span className="font-semibold text-gray-700">Trạng thái</span>} rules={[{ required: true }]}>
-              <Select options={STATUS_OPTIONS} size="large" className="rounded-lg" />
-            </Form.Item>
+            <div className="lg:col-span-1 space-y-4">
+              
+              <div className="bg-gray-50/60 p-3.5 rounded-lg border border-gray-200/60">
+                <h4 className="text-xs font-bold text-gray-600 mb-2.5 flex items-center gap-1.5 uppercase tracking-wide m-0">
+                  <PictureOutlined className="text-gray-400" /> Ảnh bìa bài viết <span className="text-red-500">*</span>
+                </h4>
+                <Upload
+                  listType="picture-card"
+                  fileList={fileList}
+                  onChange={({ fileList }) => setFileList(fileList)}
+                  beforeUpload={() => false}
+                  maxCount={1}
+                  accept="image/*"
+                  className="w-full [&_.ant-upload]:!w-full [&_.ant-upload]:!h-32 [&_.ant-upload-list-item-container]:!w-full [&_.ant-upload-list-item-container]:!h-32 m-0"
+                >
+                  {fileList.length >= 1 ? null : uploadButton}
+                </Upload>
+                <span className="text-[10px] text-gray-400 mt-1.5 block italic font-medium">Khuyên dùng ảnh tỷ lệ chữ nhật 16:9</span>
+              </div>
 
-            <Form.Item name="authorName" label={<span className="font-semibold text-gray-700">Tên Tác giả</span>}>
-              <Input placeholder="VD: Admin, Nhóm Nội Dung..." size="large" className="rounded-lg" />
-            </Form.Item>
+              <div className="bg-gray-50/60 p-3.5 rounded-lg border border-gray-200/60 space-y-3">
+                <Form.Item 
+                  name="status" 
+                  label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Trạng thái hiển thị</span>} 
+                  rules={[{ required: true }]}
+                  className="m-0"
+                >
+                  <Select options={STATUS_OPTIONS} className="h-9 text-sm" />
+                </Form.Item>
+
+                <Form.Item 
+                  name="authorName" 
+                  label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Tên tác giả</span>}
+                  className="m-0"
+                >
+                  <Input placeholder="VD: Ban Biên Tập" className="h-9 rounded-md text-sm" />
+                </Form.Item>
+              </div>
+
+            </div>
           </div>
-
-          {/* Cột phải: Nội dung bài viết */}
-          <div className="md:col-span-2 flex flex-col gap-1">
-            <Form.Item name="title" label={<span className="font-semibold text-gray-700">Tiêu đề bài viết</span>} rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}>
-              <Input placeholder="Nhập tiêu đề hấp dẫn..." size="large" className="rounded-lg font-medium" />
-            </Form.Item>
-
-            <Form.Item name="shortDescription" label={<span className="font-semibold text-gray-700">Mô tả ngắn (Sapo)</span>}>
-              <Input.TextArea placeholder="Đoạn văn ngắn xuất hiện ở trang danh sách..." rows={3} className="rounded-lg" maxLength={500} showCount />
-            </Form.Item>
-
-            <Form.Item name="content" label={<span className="font-semibold text-gray-700">Nội dung chi tiết (HTML)</span>} rules={[{ required: true, message: 'Nội dung không được để trống!' }]}>
-              {/* LƯU Ý: Ở dự án thực tế, hãy thay Input.TextArea bằng thư viện Rich Text Editor (ví dụ: react-quill) */}
-              <Input.TextArea placeholder="Nhập nội dung bài viết ở đây..." rows={12} className="rounded-lg font-mono text-sm bg-slate-50" />
-            </Form.Item>
+          
+          <div className="flex justify-end items-center gap-2 mt-5 pt-3 border-t border-gray-100">
+            <button 
+              type="button" 
+              onClick={onClose} 
+              disabled={isPending} 
+              className="h-9 px-5 rounded-md font-bold text-xs uppercase tracking-wide text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors border-none cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            
+            <Button 
+              type="submit" 
+              loading={isPending} 
+              className="h-9 px-6 rounded-md font-bold text-xs uppercase tracking-wide text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
+              {isEditing ? 'Lưu thay đổi' : 'Đăng bài viết'}
+            </Button>
           </div>
-        </div>
-        
-        {/* Footer Buttons */}
-        <div className="flex justify-end gap-3 mt-4 pt-5 border-t border-gray-100">
-          <Button variant="outline" onClick={onClose} disabled={isPending} type="button" className="px-6">Hủy bỏ</Button>
-          <Button type="submit" variant="primary" loading={isPending} className="px-8 shadow-md">
-            {isEditing ? 'Lưu thay đổi' : 'Đăng bài viết'}
-          </Button>
-        </div>
-      </Form>
+        </Form>
+      </Spin>
     </Modal>
   );
 }

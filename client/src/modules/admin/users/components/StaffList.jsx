@@ -135,7 +135,6 @@ export default function StaffList() {
         const items = [
           { key: 'ACTIVE', label: 'Hoạt động' },
           { key: 'INACTIVE', label: 'Tạm khóa' },
-          { key: 'BANNED', label: 'Bị cấm', danger: true },
           { type: 'divider' },
           { key: 'TERMINATED', label: 'Nghỉ việc', disabled: isTerminated },
         ];
@@ -211,7 +210,7 @@ export default function StaffList() {
           columns={columns} 
           loading={isLoading} 
           rowKey="id" 
-          pagination={{ pageSize: 10 }}
+        
         />
       </div>
 

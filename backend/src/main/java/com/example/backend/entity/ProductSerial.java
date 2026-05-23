@@ -1,9 +1,12 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.SerialStatus;
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.SerialStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "product_serials")

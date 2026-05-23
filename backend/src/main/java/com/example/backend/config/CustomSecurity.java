@@ -1,12 +1,15 @@
 package com.example.backend.config;
-import com.example.backend.entity.User;
-import com.example.backend.repository.UserRepository;
+
+import java.util.Objects;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import java.util.Objects;
 
-@Component("customSecurity") // Đặt tên Bean để gọi trong @PreAuthorize
+import com.example.backend.entity.User;
+import com.example.backend.repository.UserRepository;
+
+@Component("customSecurity")
 public class CustomSecurity {
 
     private final UserRepository userRepository;
@@ -15,7 +18,9 @@ public class CustomSecurity {
         this.userRepository = userRepository;
     }
 
-    // Chek UserId login có phải chủ sở hữu hay ko
+    /**
+     * Chek UserId login có phải chủ sở hữu hay ko
+     */
     public boolean isOwner(Integer targetUserId) {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -29,7 +34,6 @@ public class CustomSecurity {
             return false;
         }
 
-        // So sánh ID của người đang đăng nhập với targetUserId truyền vào từ đường dẫn API
         return Objects.equals(loggedInUser.getId(), targetUserId);
     }
 }

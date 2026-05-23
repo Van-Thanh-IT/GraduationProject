@@ -1,12 +1,15 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.ChatStatus;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
-import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import com.example.backend.enums.ChatStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "conversations")
@@ -16,7 +19,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Conversation {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

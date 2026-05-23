@@ -1,29 +1,29 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.BrandStatus;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
-import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import com.example.backend.enums.BrandStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "brands")
-@NamedQueries({
-        @NamedQuery(name = "Brand.countBy", query = "select count(b) from Brand b")
-})
+@NamedQueries({@NamedQuery(name = "Brand.countBy", query = "select count(b) from Brand b")})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Brand {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String name;
 
     @Column(nullable = false, unique = true)

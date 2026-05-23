@@ -133,20 +133,20 @@ const FlashSaleManagement = () => {
   ];
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100">
+    <div className=" bg-white rounded-2xl shadow-sm border border-slate-100">
     
     {/* HEADER */}
-    <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center mb-8">
+    <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center mb-1">
 
       {/* TITLE */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         <div className="p-3 bg-orange-500 text-white rounded-2xl shadow-lg shadow-orange-200">
           <Zap size={24} fill="currentColor" />
         </div>
 
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
-            Flash Sale Hub
+            Flash Sale
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 font-medium">
             Quản lý các đợt giảm giá chớp nhoáng

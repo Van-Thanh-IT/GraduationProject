@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Spin, Select, message } from 'antd';
-import { X, Save, Tag, AlertCircle, CalendarClock, Settings2 } from 'lucide-react';
+import { Spin, Select} from 'antd';
+import { X, Save, Tag, Settings2, CalendarClock } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useSaveVoucher } from '@/hooks/useVouchers';
 import { formatNumber, parseNumber } from '@/utils/format';
+import { toast } from 'react-toastify';
 
 export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
-  // 1. React Query
   const { mutate: saveVoucher, isPending } = useSaveVoucher();
   const isEdit = !!initialData;
 
-  // 2. State
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     discountType: 'FIXED',
     discountValue: '',
     maxDiscountValue: '',
@@ -26,7 +26,6 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [errors, setErrors] = useState({});
   const [minDateTime, setMinDateTime] = useState('');
 
-  // 3. Khởi tạo
   useEffect(() => {
     if (!isOpen) return;
 
@@ -37,6 +36,7 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
     if (initialData) {
       setFormData({
         name: initialData.name || '',
+        code: initialData.code || '',
         discountType: initialData.discountType || 'FIXED',
         discountValue: initialData.discountValue ? parseNumber(initialData.discountValue) : '',
         maxDiscountValue: initialData.maxDiscountValue ? parseNumber(initialData.maxDiscountValue) : '',
@@ -47,16 +47,20 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
       });
     } else {
       setFormData({
-        name: '', discountType: 'FIXED', discountValue: '',
+        name: '', code: '', discountType: 'FIXED', discountValue: '',
         maxDiscountValue: '', minOrderValue: '', startDate: '', endDate: '', usageLimit: '',
       });
     }
     setErrors({});
   }, [initialData, isOpen]);
 
-  // 4. Handlers
   const handleGenericChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    
+    if (name === 'code') {
+        value = value.toUpperCase().replace(/\s/g, '');
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
@@ -67,38 +71,57 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
-  // 5. Validation
+  // Khớp 100% logic với DTO Backend
   const validateForm = () => {
     const newErrors = {};
     const now = new Date();
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
 
-    if (!formData.name.trim()) newErrors.name = "Tên chương trình không được để trống";
-    if (!formData.discountValue || Number(formData.discountValue) <= 0) {
+    // Validate Name
+    if (!formData.name.trim()) {
+        newErrors.name = "Tên chương trình không được để trống";
+    } else if (formData.name.length > 150) {
+        newErrors.name = "Tên không được vượt quá 150 ký tự";
+    } else if (!/^[\p{L}0-9\s\-]+$/u.test(formData.name)) {
+        newErrors.name = "Tên chỉ chứa chữ, số, khoảng trắng và dấu -";
+    }
+
+    // Validate Code
+    if (formData.code) {
+        if (formData.code.length > 50) newErrors.code = "Mã CODE không vượt quá 50 ký tự";
+        else if (!/^[A-Z0-9-]*$/.test(formData.code)) newErrors.code = "Mã CODE chỉ chứa chữ cái in hoa và số";
+    }
+
+    // Validate Discount Value
+    const dValue = Number(formData.discountValue);
+    if (!formData.discountValue || dValue < 1) {
       newErrors.discountValue = "Mức giảm phải lớn hơn 0";
-    }
-    if (formData.discountType === 'PERCENT' && Number(formData.discountValue) > 100) {
-      newErrors.discountValue = "Mức giảm phần trăm không được vượt quá 100%";
+    } else if (formData.discountType === 'PERCENT' && dValue > 100) {
+      newErrors.discountValue = "Mức giảm phần trăm không vượt quá 100%";
     }
 
+    if(!formData.usageLimit){
+        newErrors.usageLimit ="Giới hạn số lượng sử dụng không được để trống";
+    }
+    
+
+    // Validate Dates
     if (!formData.startDate) {
-        newErrors.startDate = "Vui lòng chọn ngày bắt đầu";
-    } else if (!isEdit && start < now) {
-        newErrors.startDate = "Ngày bắt đầu không được nằm trong quá khứ";
+        newErrors.startDate = "Ngày bắt đầu không được để trống";
     }
-
     if (!formData.endDate) {
-        newErrors.endDate = "Vui lòng chọn ngày kết thúc";
+        newErrors.endDate = "Ngày kết thúc không được để trống";
     } else if (formData.startDate && end <= start) {
         newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+    } else if (!isEdit && end <= now) {
+        newErrors.endDate = "Ngày kết thúc phải ở tương lai";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 6. Submit
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -115,16 +138,16 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
 
     saveVoucher({ id: initialData?.id, data: payload }, {
       onSuccess: () => {
-        message.success(isEdit ? 'Cập nhật Voucher thành công!' : 'Đã tạo Voucher mới!');
+        toast.success(isEdit ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
         onSuccess();
       },
       onError: (error) => {
         const errData = error.response?.data;
-        if (errData?.errors && Array.isArray(errData.errors)) {
-          errData.errors.forEach(err => message.error(`Lỗi: ${err.defaultMessage || err.message}`));
-          return;
+        if (errData?.errors) {
+            setErrors(errData.errors);
+        } else {
+            toast.error(errData?.messages || errData?.message || "Thao tác thất bại!");
         }
-        message.error(errData?.messages || errData?.error || errData?.message || "Lỗi lưu dữ liệu!");
       }
     });
   };
@@ -132,46 +155,42 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all">
-      <div className="bg-white rounded-3xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-3xl max-h-[95vh] flex flex-col shadow-lg relative">
         
-        {/* Loading Overlay */}
         {isPending && (
-          <div className="absolute inset-0 z-20 bg-white/50 backdrop-blur-[2px] flex items-center justify-center rounded-3xl">
-            <Spin tip="Đang lưu Voucher..." size="large" />
+          <div className="absolute inset-0 z-20 bg-white/60 flex items-center justify-center rounded-xl">
+            <Spin tip="Đang xử lý..." size="large" />
           </div>
         )}
 
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-indigo-100 bg-indigo-50/50">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200">
-              <Tag size={22} fill="currentColor" className="text-white" />
+            <div className="p-2 bg-blue-600 text-white rounded-lg">
+              <Tag size={20} />
             </div>
-            <div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">
-                {isEdit ? 'Chỉnh Sửa Voucher' : 'Tạo Mã Giảm Giá'}
-              </h2>
-              <p className="text-xs text-slate-500 font-medium">Thiết lập các chương trình khuyến mãi cho khách hàng</p>
-            </div>
+            <h2 className="text-xl font-bold text-gray-800">
+              {isEdit ? 'Chỉnh sửa Voucher' : 'Tạo mã giảm giá'}
+            </h2>
           </div>
-          <button onClick={onClose} disabled={isPending} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+          <button onClick={onClose} disabled={isPending} className="text-gray-400 hover:text-gray-700">
             <X size={24} />
           </button>
         </div>
         
         {/* Form Body */}
-        <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-6 overflow-y-auto flex-1">
           <form id="voucher-form" onSubmit={handleSubmit} className="space-y-6">
             
             {/* THÔNG TIN CƠ BẢN */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm space-y-5">
-              <h3 className="text-sm font-black text-indigo-600 flex items-center gap-2 uppercase tracking-wider">
+            <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-bold text-blue-600 flex items-center gap-2 mb-4 uppercase">
                 <Settings2 size={18} /> Cấu hình mã giảm
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-1 md:col-span-2">
                    <Input 
                       label="Tên chương trình ưu đãi" 
                       name="name" 
@@ -179,18 +198,31 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                       onChange={handleGenericChange} 
                       placeholder="VD: Mừng Lễ Lớn - Giảm 50K"
                       disabled={isPending}
-                      className={`h-11 rounded-xl ${errors.name ? 'border-red-500 focus:ring-red-100' : 'focus:ring-indigo-100'}`}
+                      className={`h-10 rounded-md ${errors.name ? 'border-red-500' : ''}`}
                     />
-                    {errors.name && <p className="text-red-500 text-[11px] font-bold mt-1 flex items-center gap-1"><AlertCircle size={12}/>{errors.name}</p>}
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                </div>
+
+                <div className="col-span-1 md:col-span-2">
+                   <Input 
+                      label="Mã CODE (Bỏ trống hệ thống sẽ tự sinh)" 
+                      name="code" 
+                      value={formData.code} 
+                      onChange={handleGenericChange} 
+                      placeholder="VD: SUMMER2026"
+                      disabled={isPending}
+                      className={`h-10 rounded-md uppercase ${errors.code ? 'border-red-500' : ''}`}
+                    />
+                    {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code}</p>}
                 </div>
                 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-700">Hình thức giảm</label>
+                <div>
+                  <label className="text-sm font-bold text-gray-700 block mb-1">Hình thức giảm</label>
                   <Select
                     value={formData.discountType}
                     onChange={(val) => setFormData({...formData, discountType: val, discountValue: '', maxDiscountValue: ''})}
                     disabled={isPending}
-                    className="h-11 custom-select-ui"
+                    className="w-full h-10"
                     options={[
                       { value: 'FIXED', label: 'Giảm theo Số tiền (VND)' },
                       { value: 'PERCENT', label: 'Giảm theo Phần trăm (%)' },
@@ -198,7 +230,7 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                   />
                 </div>
                 
-                <div className="flex flex-col gap-1.5">
+                <div>
                     <Input 
                       label={formData.discountType === 'PERCENT' ? 'Mức giảm (%)' : 'Mức giảm (VND)'} 
                       name="discountValue" 
@@ -207,34 +239,34 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                       onChange={formData.discountType === 'PERCENT' ? handleGenericChange : handlePriceChange} 
                       placeholder="Nhập giá trị giảm"
                       disabled={isPending}
-                      className="h-11 rounded-xl"
+                      className={`h-10 rounded-md ${errors.discountValue ? 'border-red-500' : ''}`}
                     />
-                    {errors.discountValue && <p className="text-red-500 text-[11px] font-bold mt-1 flex items-center gap-1"><AlertCircle size={12}/>{errors.discountValue}</p>}
+                    {errors.discountValue && <p className="text-red-500 text-xs mt-1">{errors.discountValue}</p>}
                 </div>
 
-                <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5">
+                <div className="col-span-1 md:col-span-2">
                   <Input 
-                    label="Giảm tối đa (VND) - Bỏ trống nếu không giới hạn" 
+                    label="Giảm tối đa (VND)" 
                     name="maxDiscountValue" 
                     type="text" 
                     value={formatNumber(formData.maxDiscountValue)} 
                     onChange={handlePriceChange} 
                     placeholder={formData.discountType === 'FIXED' ? "Không áp dụng cho giảm tiền mặt" : "VD: Tối đa 50.000đ"}
                     disabled={formData.discountType === 'FIXED' || isPending} 
-                    className={`h-11 rounded-xl ${formData.discountType === 'FIXED' ? "bg-slate-100 text-slate-400 cursor-not-allowed" : ""}`}
+                    className={`h-10 rounded-md ${formData.discountType === 'FIXED' ? "bg-gray-100 text-gray-400" : ""}`}
                   />
                 </div>
               </div>
             </div>
 
             {/* ĐIỀU KIỆN SỬ DỤNG */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm space-y-5">
-              <h3 className="text-sm font-black text-indigo-600 flex items-center gap-2 uppercase tracking-wider">
+            <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-bold text-blue-600 flex items-center gap-2 mb-4 uppercase">
                 <CalendarClock size={18} /> Điều kiện & Thời gian
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-1.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <Input 
                     label="Đơn hàng tối thiểu (VND)" 
                     name="minOrderValue" 
@@ -243,11 +275,12 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                     onChange={handlePriceChange} 
                     disabled={isPending}
                     placeholder="VD: 200.000"
-                    className="h-11 rounded-xl"
+                    className="h-10 rounded-md"
                   />
+                  
                 </div>
                 
-                <div className="flex flex-col gap-1.5">
+                <div>
                   <Input 
                     label="Tổng số lượt sử dụng" 
                     name="usageLimit" 
@@ -255,12 +288,13 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                     value={formData.usageLimit} 
                     onChange={handleGenericChange} 
                     disabled={isPending}
-                    placeholder="VD: 100 (Để trống = Vô hạn)"
-                    className="h-11 rounded-xl"
+                    placeholder="VD: 100"
+                    className="h-10 rounded-md"
                   />
+                  {errors.usageLimit && <p className="text-red-500 text-xs mt-1">{errors.usageLimit}</p>}
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div>
                     <Input 
                       label="Bắt đầu từ" 
                       name="startDate" 
@@ -269,12 +303,12 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                       min={!isEdit ? minDateTime : undefined} 
                       onChange={handleGenericChange} 
                       disabled={isPending}
-                      className="h-11 rounded-xl"
+                      className={`h-10 rounded-md ${errors.startDate ? 'border-red-500' : ''}`}
                     />
-                    {errors.startDate && <p className="text-red-500 text-[11px] font-bold mt-1 flex items-center gap-1"><AlertCircle size={12}/>{errors.startDate}</p>}
+                    {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
                 </div>
                 
-                <div className="flex flex-col gap-1.5">
+                <div>
                     <Input 
                       label="Kết thúc lúc" 
                       name="endDate" 
@@ -283,9 +317,9 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
                       min={formData.startDate || (!isEdit ? minDateTime : undefined)} 
                       onChange={handleGenericChange} 
                       disabled={isPending}
-                      className="h-11 rounded-xl"
+                      className={`h-10 rounded-md ${errors.endDate ? 'border-red-500' : ''}`}
                     />
-                    {errors.endDate && <p className="text-red-500 text-[11px] font-bold mt-1 flex items-center gap-1"><AlertCircle size={12}/>{errors.endDate}</p>}
+                    {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
                 </div>
               </div>
             </div>
@@ -294,12 +328,12 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/80 flex justify-end gap-3 relative z-30">
+        <div className="p-5 border-t border-gray-200 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
           <Button 
             variant="outline"
             onClick={onClose} 
             disabled={isPending}
-            className="px-6 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-200 border-transparent transition-all"
+            className="px-6 py-2 rounded-md font-semibold text-gray-600 bg-white border-gray-300 hover:bg-gray-100"
           >
             Hủy bỏ
           </Button>
@@ -308,7 +342,7 @@ export const VoucherForm = ({ isOpen, onClose, onSuccess, initialData }) => {
             form="voucher-form"
             loading={isPending}
             disabled={isPending}
-            className="px-8 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+            className="px-6 py-2 rounded-md font-semibold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
           >
             <Save size={18} />
             {isEdit ? 'Lưu thay đổi' : 'Phát hành Voucher'}

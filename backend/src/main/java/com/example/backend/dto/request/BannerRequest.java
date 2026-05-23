@@ -1,12 +1,18 @@
 package com.example.backend.dto.request;
 
-import com.example.backend.enums.BannerPlacement;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 
-@Data
+import jakarta.validation.constraints.*;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.backend.enums.BannerPlacement;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class BannerRequest {
 
     @NotBlank(message = "Tên chiến dịch không được để trống")
@@ -21,13 +27,11 @@ public class BannerRequest {
 
     private Boolean isActive = true;
 
-    // Validate link: Phải bắt đầu bằng http hoặc https, hoặc rỗng
     @Pattern(regexp = "^(https?://.*)?$", message = "Đường dẫn đích (Target URL) không hợp lệ")
     private String targetUrl;
 
-    // Không dùng @NotNull ở đây vì khi Update có thể không cần đổi ảnh
-    // Việc bắt buộc có ảnh lúc Create sẽ được xử lý chặt ở Service
     private MultipartFile desktopImage;
+
     private MultipartFile mobileImage;
 
     @FutureOrPresent(message = "Thời gian bắt đầu không được nằm trong quá khứ")

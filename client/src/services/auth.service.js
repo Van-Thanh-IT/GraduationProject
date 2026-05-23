@@ -17,6 +17,7 @@ export const AuthService = {
   },
 
   facebookLogin: async (accessToken) => {
+    console.log("accessToken: ", accessToken);
     const response = await API.post("/auth/facebook-login", accessToken);
     return response.data;
   },

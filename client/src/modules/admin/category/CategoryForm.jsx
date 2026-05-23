@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { message, Select, Spin, Tooltip} from 'antd';
-
+import { message, Select, Spin, Tooltip } from 'antd';
 import { 
   PictureOutlined, 
   LoadingOutlined, 
@@ -20,6 +19,9 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
   const [formData, setFormData] = useState({ name: '', description: '', parentId: null });
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  
+  // State lưu lỗi từ Backend
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (initialData) {
@@ -42,6 +44,9 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
       if (file.size > 2 * 1024 * 1024) return message.error("Ảnh tối đa 2MB!");
       setImageFile(file);
       setPreviewImage(URL.createObjectURL(file)); 
+      
+      // Xóa lỗi ảnh nếu đang có
+      if (errors.image) setErrors({ ...errors, image: null });
     }
   };
 
@@ -52,7 +57,12 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return message.error("Vui lòng nhập tên danh mục!");
+    setErrors({}); // Xóa hết lỗi cũ trước khi gửi
+
+    if (!formData.name.trim()) {
+      setErrors({ name: "Tên danh mục không được để trống!" });
+      return;
+    }
 
     const data = new FormData();
     data.append('name', formData.name.trim());
@@ -63,14 +73,20 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
     saveCategory({ id: initialData?.id, formData: data }, {
       onSuccess: () => {
         toast.success(`${isEdit ? 'Cập nhật' : 'Thêm'} thành công!`, {
-          autoClose:1000
+          autoClose: 1000
         });
-        
-     
-
         onSuccess();
       },
-      onError: (err) => message.error(err.response?.data?.message || "Thao tác thất bại!")
+      onError: (err) => {
+        const resData = err.response?.data;
+        
+        // Bắt lỗi Validation từ Backend (DTO)
+        if (resData?.errors) {
+          setErrors(resData.errors);
+        } else {
+          message.error(resData?.messages || resData?.message || "Thao tác thất bại!");
+        }
+      }
     });
   };
 
@@ -89,6 +105,8 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
         {/* Section: Thông tin cơ bản */}
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-5">
+            
+            {/* Tên danh mục */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 flex items-center gap-1">
                 Tên danh mục <span className="text-red-500">*</span>
@@ -96,11 +114,20 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
               <Input 
                 placeholder="VD: Điện thoại, Phụ kiện..." 
                 value={formData.name} 
-                onChange={e => setFormData({...formData, name: e.target.value})} 
-                className="w-full h-10 border-slate-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-lg transition-all"
+                onChange={e => {
+                  setFormData({...formData, name: e.target.value});
+                  if (errors.name) setErrors({...errors, name: null}); // Đang gõ thì xóa lỗi
+                }} 
+                className={`w-full h-10 rounded-lg transition-all ${
+                  errors.name 
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' 
+                    : 'border-slate-200 hover:border-blue-400 focus:ring-2 focus:ring-blue-100'
+                }`}
               />
+              {errors.name && <span className="text-[13px] text-red-500 font-semibold mt-0.5 ml-1">{errors.name}</span>}
             </div>
 
+            {/* Danh mục cha */}
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-slate-700 flex items-center gap-1">
                 Danh mục cha
@@ -113,29 +140,45 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
                 placeholder="Chọn cấp cha"
                 options={parentOptions}
                 value={formData.parentId}
-                onChange={(val) => setFormData({...formData, parentId: val})}
+                onChange={(val) => {
+                  setFormData({...formData, parentId: val});
+                  if (errors.parentId) setErrors({...errors, parentId: null});
+                }}
                 className="w-full h-10 custom-select-ui"
                 dropdownStyle={{ borderRadius: '8px' }}
+                status={errors.parentId ? 'error' : ''} // Ant Design hỗ trợ báo lỗi viền đỏ tự động
               />
+              {errors.parentId && <span className="text-[13px] text-red-500 font-semibold mt-0.5 ml-1">{errors.parentId}</span>}
             </div>
           </div>
 
+          {/* Mô tả ngắn */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-bold text-slate-700">Mô tả ngắn</label>
             <textarea 
               rows={2}
               placeholder="Nhập vài dòng giới thiệu về danh mục này..."
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none text-slate-600 italic text-sm"
+              className={`w-full px-4 py-2 border rounded-lg outline-none transition-all resize-none text-slate-600 italic text-sm ${
+                errors.description 
+                  ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' 
+                  : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+              }`}
               value={formData.description} 
-              onChange={e => setFormData({...formData, description: e.target.value})} 
+              onChange={e => {
+                setFormData({...formData, description: e.target.value});
+                if (errors.description) setErrors({...errors, description: null});
+              }} 
             />
+            {errors.description && <span className="text-[13px] text-red-500 font-semibold ml-1">{errors.description}</span>}
           </div>
         </div>
 
         {/* Section: Media (Ảnh đại diện) */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-bold text-slate-700">Hình ảnh đại diện</label>
-          <div className="flex items-center gap-6 p-5 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 hover:bg-slate-50 hover:border-blue-300 transition-all group">
+          <div className={`flex items-center gap-6 p-5 border-2 border-dashed rounded-2xl transition-all group ${
+            errors.image ? 'border-red-400 bg-red-50/30' : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50 hover:border-blue-300'
+          }`}>
             
             {/* Image Preview Card */}
             <div className="relative w-24 h-24 bg-white border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0 shadow-sm group-hover:shadow-md transition-shadow">
@@ -168,6 +211,7 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
               </span>
             </div>
           </div>
+          {errors.image && <span className="text-[13px] text-red-500 font-semibold ml-1">{errors.image}</span>}
         </div>
 
         {/* Action Buttons */}

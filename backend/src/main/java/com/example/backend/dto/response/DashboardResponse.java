@@ -1,10 +1,11 @@
 package com.example.backend.dto.response;
 
-import lombok.Builder;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder
@@ -17,8 +18,8 @@ public class DashboardResponse {
     private List<RecentReviewDto> recentReviews;
     private List<AlertDto> alerts;
 
-
-    @Data @Builder
+    @Data
+    @Builder
     public static class KpiDto {
         private BigDecimal totalRevenue;
         private Double revenueGrowth; // % tăng trưởng so với tháng trước
@@ -27,25 +28,29 @@ public class DashboardResponse {
         private Long productsSold;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class ChartDataDto {
         private String date;
         private BigDecimal revenue;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class CategoryShareDto {
         private String categoryName;
         private BigDecimal revenue;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class TopProductDto {
         private String productName;
         private Long totalSold;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class RecentOrderDto {
         private String orderCode;
         private String customerName;
@@ -54,7 +59,8 @@ public class DashboardResponse {
         private LocalDateTime createdAt;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class RecentReviewDto {
         private String productName;
         private Integer rating;
@@ -62,7 +68,8 @@ public class DashboardResponse {
         private LocalDateTime createdAt;
     }
 
-    @Data @Builder
+    @Data
+    @Builder
     public static class AlertDto {
         private String type; // LOW_STOCK, FLASH_SALE_ENDING
         private String message;

@@ -1,21 +1,6 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.AIChatRequest;
-import com.example.backend.dto.request.AiSearchCriteria;
-import com.example.backend.dto.response.AIChatResponse;
-import com.example.backend.dto.response.ActionItem;
-import com.example.backend.dto.response.AiProductResult;
-import com.example.backend.entity.ChatMessageAI;
-import com.example.backend.entity.ChatSessionAI;
-import com.example.backend.enums.RoleAI;
-import com.example.backend.repository.ChatMessageAIRepository;
-import com.example.backend.repository.ChatSessionAIRepository;
-import com.example.backend.repository.OrderRepository;
-import com.example.backend.repository.ProductRepository;
-import com.example.backend.utils.GeminiPromptBuilder;
-import com.example.backend.utils.SecurityUtils;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,21 +8,45 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+
+import com.example.backend.dto.request.AIChatRequest;
+import com.example.backend.dto.request.AiSearchCriteria;
+import com.example.backend.dto.response.client.AIChatResponse;
+import com.example.backend.dto.response.client.ActionItem;
+import com.example.backend.dto.response.client.AiProductResult;
+import com.example.backend.entity.ChatMessageAI;
+import com.example.backend.entity.ChatSessionAI;
+import com.example.backend.enums.IntentType;
+import com.example.backend.enums.NavType;
+import com.example.backend.enums.RoleAI;
+import com.example.backend.repository.ChatMessageAIRepository;
+import com.example.backend.repository.ChatSessionAIRepository;
+import com.example.backend.utils.GeminiPromptBuilder;
+import com.example.backend.utils.SecurityUtils;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class GeminiChatService {
 
+    private static final Map<NavType, List<String>> KEYWORD_MAP = Map.of(
+            NavType.ORDER, List.of("ORDER", "ĐƠN", "LỊCH SỬ"),
+            NavType.CART, List.of("CART", "GIỎ"),
+            NavType.AUTH, List.of("TÀI KHOẢN", "PASS", "ĐĂNG", "LOGIN"),
+            NavType.WARRANTY, List.of("BẢO HÀNH", "TRA CỨU"),
+            NavType.CONTACT, List.of("LIÊN HỆ", "HOTLINE", "CONTACT"),
+            NavType.PRODUCT, List.of("SẢN PHẨM", "DANH MỤC", "MUA HÀNG", "TẤT CẢ"),
+            NavType.ABOUT, List.of("GIỚI THIỆU", "TIN TỨC", "BLOG")
+    );
+
     private final ChatSessionAIRepository sessionRepository;
     private final ChatMessageAIRepository messageRepository;
-    private final ProductRepository productRepository;
     private final ProductService productService;
-    private final OrderRepository orderRepository;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final GeminiPromptBuilder promptBuilder;
@@ -48,131 +57,145 @@ public class GeminiChatService {
     @Value("${spring.gemini.url}")
     private String url;
 
+    // Lớp chứa dữ liệu ngữ cảnh sau khi phân tích Routing
+    private record RoutingResult(String dynamicContext, Object productAttachment, List<ActionItem> actions) {}
+
+    // ==========================================
+    // LUỒNG XỬ LÝ CHÍNH (ORCHESTRATOR)
+    // ==========================================
     @Transactional
     public AIChatResponse processChat(AIChatRequest request, String guestSessionKey) {
+        // 1. Khởi tạo phiên & Lưu lịch sử
         ChatSessionAI session = getOrCreateSession(request, guestSessionKey);
-        List<ChatMessageAI> history = messageRepository.findTop2BySessionOrderByCreatedAtDesc(session);
+        List<ChatMessageAI> history = messageRepository.findTop6BySessionOrderByCreatedAtDesc(session);
         Collections.reverse(history);
-
         saveMessage(session, RoleAI.USER, request.getMessage(), null);
 
-        // ==========================================
-        // NHỊP 1: TRÍCH XUẤT INTENT (CÓ LỊCH SỬ)
-        // ==========================================
-        StringBuilder historyCtx = new StringBuilder();
-        for (ChatMessageAI msg : history) {
-            historyCtx.append(msg.getRole()).append(": ").append(msg.getContent()).append("\n");
-        }
+        // 2. Trích xuất Intent (Ý định khách hàng)
+        AiSearchCriteria criteria = extractIntent(request.getMessage());
 
-//        String intentPrompt = promptBuilder.buildIntentExtractionPrompt(historyCtx.toString(), request.getMessage());
-//        String intentJsonString = callGeminiApi(intentPrompt, new ArrayList<>());
-        // Gọi hàm Prompt nén (chỉ truyền đúng câu hỏi của khách)
-        String intentPrompt = promptBuilder.buildIntentExtractionPrompt(request.getMessage());
-        // Gọi AI với List rỗng (Không gửi lịch sử)
-        String intentJsonString = callGeminiApi(intentPrompt, new ArrayList<>());
+        // 3. Xử lý Routing & Lấy Dữ liệu (RAG)
+        RoutingResult routingResult = processRoutingLogic(criteria, session);
+
+        // 4. Sinh câu trả lời tự nhiên
+        String aiResponseText = generateFinalResponse(criteria.getIntent(), routingResult.dynamicContext(), request.getMessage(), history);
+
+        // 5. Lưu DB & Trả về kết quả
+        return buildAndSaveResponse(session, aiResponseText, criteria, routingResult);
+    }
+
+    // ==========================================
+    // CÁC HÀM XỬ LÝ NGHIỆP VỤ ĐƯỢC TÁCH NHỎ
+    // ==========================================
+
+    private AiSearchCriteria extractIntent(String userMessage) {
+        String intentPrompt = promptBuilder.buildIntentExtractionPrompt(userMessage);
+
+        // SỬA LỖI TOKEN LEAK: Không truyền 'history' vào đây, chỉ cần prompt để đoán Intent
+        String intentJsonString = callGeminiApi(intentPrompt, Collections.emptyList());
 
         AiSearchCriteria criteria = new AiSearchCriteria();
-        criteria.setIntent("CHAT"); // Mặc định nếu lỗi
+        criteria.setIntent("CHAT"); // Fallback mặc định
 
         try {
-            intentJsonString = intentJsonString.replaceAll("```json", "").replaceAll("```", "").trim();
-            criteria = objectMapper.readValue(intentJsonString, AiSearchCriteria.class);
-            if(criteria.getIntent() == null) criteria.setIntent("CHAT");
+            // Tối ưu parse JSON: Lấy chính xác từ dấu { đến dấu }
+            int startIndex = intentJsonString.indexOf("{");
+            int endIndex = intentJsonString.lastIndexOf("}");
+            if (startIndex != -1 && endIndex != -1) {
+                String cleanJson = intentJsonString.substring(startIndex, endIndex + 1);
+                criteria = objectMapper.readValue(cleanJson, AiSearchCriteria.class);
+            }
+            if (criteria.getIntent() == null) criteria.setIntent("CHAT");
             log.info("AI Intent Detected: {}", criteria.getIntent());
         } catch (Exception e) {
-            log.warn("Lỗi parse JSON Intent, fallback về CHAT");
+            log.error("Lỗi parse JSON Intent. Fallback về CHAT. Raw: {}", intentJsonString);
         }
+        return criteria;
+    }
 
-        // ==========================================
-        // NHỊP 2: ĐỊNH TUYẾN THEO INTENT
-        // ==========================================
+    private RoutingResult processRoutingLogic(AiSearchCriteria criteria, ChatSessionAI session) {
         String dynamicContext = "";
         Object productAttachment = null;
         List<ActionItem> actions = new ArrayList<>();
 
-        switch (criteria.getIntent().toUpperCase()) {
-            case "SEARCH":
+        IntentType intent = IntentType.valueOf(criteria.getIntent().toUpperCase());
+        boolean isLoggedIn = session.getUserId() != null;
+
+        switch (intent) {
+            case SEARCH -> {
                 if (criteria.getKeyword() != null || criteria.getBrandName() != null || criteria.getCategoryName() != null) {
                     AiProductResult result = productService.findBestProductContextForAI(criteria);
                     dynamicContext = result.getContextText();
                     productAttachment = result.getProductData();
                 } else {
-                    dynamicContext = "Khách muốn tìm mua nhưng chưa rõ loại nào. Hãy hỏi thêm.";
+                    dynamicContext = "Khách muốn tìm mua nhưng chưa rõ loại nào. Hãy hỏi thêm để làm rõ.";
                 }
-                break;
-
-            case "NAVIGATION":
-                boolean isLoggedIn = session.getUserId() != null;
-                String key = criteria.getKeyword() != null ? criteria.getKeyword().toUpperCase() : "MENU";
-
-                if (key.contains("ORDER") || key.contains("ĐƠN")) {
-                    if (isLoggedIn) {
-                        actions.add(new ActionItem("Đơn hàng của tôi", "/user/orders", "LINK"));
-                        dynamicContext = "Khách đã đăng nhập. Báo khách bấm nút xem đơn hàng bên dưới.";
-                    } else {
-                        actions.add(new ActionItem("Đăng nhập", "/login", "LINK"));
-                        dynamicContext = "Khách CHƯA đăng nhập. Hãy thông báo lịch sự rằng khách cần đăng nhập để xem lịch sử mua hàng, hoặc có thể dùng nút Tra cứu mã vận đơn bên dưới.";
-                    }
-                }
-                else if (key.contains("AUTH") || key.contains("TÀI KHOẢN") || key.contains("ĐĂNG") || key.contains("PASS") || key.contains("MẬT KHẨU")) {
-                    if (isLoggedIn) {
-                        actions.add(new ActionItem("Trang cá nhân", "/user/profile", "LINK"));
-                        actions.add(new ActionItem("Địa chỉ", "/user/address", "LINK"));
-                        dynamicContext = "Khách đã đăng nhập. Hướng dẫn khách bấm nút bên dưới để vào trang cá nhân hoặc đổi mật khẩu.";
-                    } else {
-                        actions.add(new ActionItem("Đăng nhập", "/login", "LINK"));
-                        actions.add(new ActionItem("Đăng ký", "/register", "LINK"));
-                        actions.add(new ActionItem("Quên mật khẩu", "/forgot-password", "LINK"));
-                        dynamicContext = "Khách chưa đăng nhập. Hướng dẫn khách sử dụng các nút Đăng nhập, Đăng ký hoặc Quên mật khẩu bên dưới.";
-                    }
-                }
-                else if (key.contains("CART") || key.contains("GIỎ")) {
-                    actions.add(new ActionItem("Xem giỏ hàng", "/cart", "LINK"));
-                    dynamicContext = "Link giỏ hàng đã có. Mời khách bấm nút.";
-                }
-                // =============================================================
-                // CÁC ACTION MỚI ĐƯỢC THÊM VÀO DỰA THEO MENU HEADER CỦA REACT
-                // =============================================================
-                else if (key.contains("BẢO HÀNH") || key.contains("WARRANTY") || key.contains("TRA CỨU")) {
-                    actions.add(new ActionItem("Tra cứu bảo hành", "/warranty", "LINK"));
-                    dynamicContext = "Đã đính kèm nút Tra cứu bảo hành. Mời khách bấm nút bên dưới để nhập mã đơn hoặc SĐT kiểm tra bảo hành.";
-                }
-                else if (key.contains("LIÊN HỆ") || key.contains("HOTLINE") || key.contains("ĐỊA CHỈ") || key.contains("CONTACT")) {
-                    actions.add(new ActionItem("Liên hệ cửa hàng", "/contact", "LINK"));
-                    dynamicContext = "Đã đính kèm link Liên hệ. Mời khách bấm nút để xem bản đồ cửa hàng, số hotline và email hỗ trợ.";
-                }
-                else if (key.contains("SẢN PHẨM") || key.contains("DANH MỤC") || key.contains("TẤT CẢ") || key.contains("MUA HÀNG")) {
-                    actions.add(new ActionItem("Xem tất cả sản phẩm", "/products", "LINK"));
-                    dynamicContext = "Mời khách bấm nút để vào trang danh mục tổng hợp và sử dụng bộ lọc tìm kiếm sản phẩm.";
-                }
-                else if (key.contains("GIỚI THIỆU") || key.contains("TIN TỨC") || key.contains("BLOG") || key.contains("ABOUT")) {
-                    actions.add(new ActionItem("Về chúng tôi", "/abouts", "LINK"));
-                    actions.add(new ActionItem("Tin tức công nghệ", "/abouts", "LINK")); // Đang trỏ tạm về /abouts theo Header của bạn
-                    dynamicContext = "Mời khách bấm nút để xem lịch sử hình thành cửa hàng hoặc đọc tin tức mới nhất.";
-                }
-                // =============================================================
-                else {
-                    actions.add(new ActionItem("Trang chủ", "/", "LINK"));
-                    dynamicContext = "Mời khách bấm nút về Trang chủ.";
-                }
-                break;
+            }
+            case NAVIGATION -> {
+                NavType type = resolveNavType(criteria.getKeyword());
+                handleNavigation(type, isLoggedIn, actions);
+                dynamicContext = buildNavigationContext(type, isLoggedIn);
+            }
+            default -> {
+                actions.add(new ActionItem("Trang chủ", "/", "LINK"));
+                dynamicContext = "Hệ thống chuyển về chế độ CHAT thông thường.";
+            }
         }
+        return new RoutingResult(dynamicContext, productAttachment, actions);
+    }
 
-        // ==========================================
-        // NHỊP 3: AI SINH CÂU TRẢ LỜI TỰ NHIÊN
-        // ==========================================
-        String systemPrompt = promptBuilder.buildSystemPrompt(criteria.getIntent(), dynamicContext);
-        String enrichedPrompt = systemPrompt + "\n\n👤 Khách hỏi: " + request.getMessage();
+    private void handleNavigation(NavType type, boolean isLoggedIn, List<ActionItem> actions) {
+        switch (type) {
+            case ORDER -> {
+                if (isLoggedIn) actions.add(new ActionItem("Đơn hàng của tôi", "/user/orders", "LINK"));
+                else actions.add(new ActionItem("Đăng nhập", "/login", "LINK"));
+            }
+            case AUTH -> {
+                if (isLoggedIn) {
+                    actions.add(new ActionItem("Trang cá nhân", "/user/profile", "LINK"));
+                    actions.add(new ActionItem("Địa chỉ", "/user/address", "LINK"));
+                } else {
+                    actions.add(new ActionItem("Đăng nhập", "/login", "LINK"));
+                    actions.add(new ActionItem("Đăng ký", "/register", "LINK"));
+                    actions.add(new ActionItem("Quên mật khẩu", "/forgot-password", "LINK"));
+                }
+            }
+            case CART -> actions.add(new ActionItem("Xem giỏ hàng", "/cart", "LINK"));
+            case WARRANTY -> actions.add(new ActionItem("Tra cứu bảo hành", "/warranty", "LINK"));
+            case CONTACT -> actions.add(new ActionItem("Liên hệ cửa hàng", "/contact", "LINK"));
+            case PRODUCT -> actions.add(new ActionItem("Xem tất cả sản phẩm", "/products", "LINK"));
+            case ABOUT -> {
+                actions.add(new ActionItem("Về chúng tôi", "/abouts", "LINK"));
+                actions.add(new ActionItem("Tin tức công nghệ", "/abouts", "LINK"));
+            }
+            default -> actions.add(new ActionItem("Trang chủ", "/", "LINK"));
+        }
+    }
 
-        String aiResponseText = callGeminiApi(enrichedPrompt, history);
+    private String buildNavigationContext(NavType type, boolean isLoggedIn) {
+        return switch (type) {
+            case ORDER -> isLoggedIn ? "Khách đã đăng nhập. Xem đơn hàng." : "Cần đăng nhập để xem đơn hàng.";
+            case AUTH -> isLoggedIn ? "Quản lý tài khoản." : "Bạn chưa đăng nhập.";
+            case CART -> "Giỏ hàng của bạn.";
+            case WARRANTY -> "Tra cứu bảo hành sản phẩm.";
+            case CONTACT -> "Thông tin liên hệ.";
+            case PRODUCT -> "Danh sách sản phẩm.";
+            case ABOUT -> "Thông tin cửa hàng.";
+            default -> "Trang chủ.";
+        };
+    }
 
-        // ==========================================
-        // LƯU DB (METADATA) & TRẢ VỀ FRONTEND
-        // ==========================================
+    private String generateFinalResponse(String intent, String dynamicContext, String userMessage, List<ChatMessageAI> history) {
+        String systemPrompt = promptBuilder.buildSystemPrompt(intent, dynamicContext);
+        String enrichedPrompt = systemPrompt + "\n\n👤 Khách hỏi: " + userMessage;
+        return callGeminiApi(enrichedPrompt, history);
+    }
+
+    private AIChatResponse buildAndSaveResponse(ChatSessionAI session, String aiResponseText, AiSearchCriteria criteria, RoutingResult routing) {
         Map<String, Object> meta = new HashMap<>();
         meta.put("intent", criteria.getIntent());
-        if (productAttachment != null) meta.put("attachment", productAttachment);
-        if (!actions.isEmpty()) meta.put("actions", actions);
+        if (routing.productAttachment() != null) meta.put("attachment", routing.productAttachment());
+        if (!routing.actions().isEmpty()) meta.put("actions", routing.actions());
 
         saveMessage(session, RoleAI.ASSISTANT, aiResponseText, meta);
 
@@ -180,21 +203,31 @@ public class GeminiChatService {
                 .sessionId(session.getId())
                 .role(RoleAI.ASSISTANT.name())
                 .content(aiResponseText)
-                .attachment(productAttachment)
-                .actions(actions.isEmpty() ? null : actions)
+                .attachment(routing.productAttachment())
+                .actions(routing.actions().isEmpty() ? null : routing.actions())
                 .build();
     }
 
-    // Nhận guestSessionKey để lưu vào DB nếu là tạo mới
+    private NavType resolveNavType(String rawKey) {
+        if (rawKey == null || rawKey.isBlank()) return NavType.DEFAULT;
+        String key = rawKey.toUpperCase();
+        return KEYWORD_MAP.entrySet().stream()
+                .filter(e -> e.getValue().stream().anyMatch(key::contains))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(NavType.DEFAULT);
+    }
+
+    // ==========================================
+    // CÁC HÀM TIỆN ÍCH & GIAO TIẾP API
+    // ==========================================
+
     private ChatSessionAI getOrCreateSession(AIChatRequest request, String guestSessionKey) {
         if (request.getSessionId() != null) {
             return sessionRepository.findById(request.getSessionId())
-                    .orElseThrow(() -> new RuntimeException("Session không tồn tại"));
+                    .orElseThrow(() -> new RuntimeException("Phiên chat không tồn tại trong hệ thống!"));
         }
-
-        Integer userId = null;
-        try { userId = SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
-
+        Integer userId = SecurityUtils.getCurrentUserId();
         ChatSessionAI newSession = ChatSessionAI.builder()
                 .userId(userId)
                 .sessionKey(userId == null ? guestSessionKey : null)
@@ -205,74 +238,37 @@ public class GeminiChatService {
         return sessionRepository.save(newSession);
     }
 
-    private Object fetchContextData(ChatSessionAI session) {
-        if (session.getContextId() == null) return "Không có dữ liệu ngữ cảnh.";
-        if ("PRODUCT".equalsIgnoreCase(session.getContextType())) {
-            return productRepository.findById(session.getContextId()).orElse(null);
-        } else if ("ORDER".equalsIgnoreCase(session.getContextType())) {
-            return orderRepository.findById(session.getContextId()).orElse(null);
-        }
-        return "Cửa hàng E-commerce";
-    }
-
-    private String serializeContext(Object context) {
-        try {
-            return context != null ? objectMapper.writeValueAsString(context) : "Trống";
-        } catch (Exception e) {
-            return "Trống";
-        }
-    }
-
     private void saveMessage(ChatSessionAI session, RoleAI role, String content, Map<String, Object> meta) {
-        ChatMessageAI message = ChatMessageAI.builder()
-                .session(session)
-                .role(role)
-                .content(content)
-                .metadata(meta)
-                .build();
-        messageRepository.save(message);
+        messageRepository.save(ChatMessageAI.builder()
+                .session(session).role(role).content(content).metadata(meta).build());
     }
 
-    // ==========================================
-    // GIAO TIẾP VỚI GOOGLE GEMINI API
-    // ==========================================
     private String callGeminiApi(String enrichedPrompt, List<ChatMessageAI> history) {
         try {
-            String geminiUrl = url + apiKey;
+            String geminiUrl = url + "?key=" + apiKey;
 
-            // 1. Chuẩn bị payload JSON theo format của Gemini
             Map<String, Object> requestBody = new HashMap<>();
             List<Map<String, Object>> contents = new ArrayList<>();
 
-            // Đưa lịch sử vào để AI nhớ ngữ cảnh
             for (ChatMessageAI msg : history) {
-                // Gemini dùng role "user" và "model"
                 String geminiRole = msg.getRole() == RoleAI.USER ? "user" : "model";
-                contents.add(Map.of(
-                        "role", geminiRole,
-                        "parts", List.of(Map.of("text", msg.getContent()))
-                ));
+                contents.add(Map.of("role", geminiRole, "parts", List.of(Map.of("text", msg.getContent()))));
             }
 
-            // Đưa câu hỏi mới nhất (đã kèm data DB) vào cuối cùng
-            contents.add(Map.of(
-                    "role", "user",
-                    "parts", List.of(Map.of("text", enrichedPrompt))
-            ));
-
+            contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", enrichedPrompt))));
             requestBody.put("contents", contents);
 
-            // 2. Set Headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            // 3. Gọi HTTP POST
             String responseJson = restTemplate.postForObject(geminiUrl, entity, String.class);
-
-            // 4. Parse kết quả trả về
-            JsonNode root = objectMapper.readTree(responseJson);
-            return root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+            return objectMapper.readTree(responseJson)
+                    .path("candidates").get(0)
+                    .path("content")
+                    .path("parts")
+                    .get(0).path("text")
+                    .asText();
 
         } catch (Exception e) {
             log.error("Lỗi khi gọi API Gemini: ", e);

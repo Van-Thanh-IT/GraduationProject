@@ -1,9 +1,9 @@
 package com.example.backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,8 +14,8 @@ public class WarrantyResponse {
     private String productName;
     private String thumbnail;
     private String imei;
-    private String warrantyText; // Hiển thị nguyên gốc text của DB
+    private String warrantyText;
     private LocalDateTime purchaseDate;
-    private LocalDateTime expireDate; // Ngày hết hạn (Java tự tính)
-    private String status;       // "HỢP LỆ" hoặc "ĐÃ HẾT HẠN"
+    private LocalDateTime expireDate;
+    private String status;
 }

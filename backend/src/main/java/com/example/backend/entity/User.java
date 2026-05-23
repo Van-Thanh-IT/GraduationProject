@@ -1,17 +1,20 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.AuthProvider;
-import com.example.backend.enums.Gender;
-import com.example.backend.enums.UserStatus;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import com.example.backend.enums.AuthProvider;
+import com.example.backend.enums.Gender;
+import com.example.backend.enums.UserStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "users")
@@ -21,7 +24,6 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -77,7 +79,6 @@ public class User {
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 }

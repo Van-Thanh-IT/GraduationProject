@@ -1,11 +1,14 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.PaymentMethod;
-import com.example.backend.enums.PaymentStatus;
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.PaymentMethod;
+import com.example.backend.enums.PaymentStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "payments")

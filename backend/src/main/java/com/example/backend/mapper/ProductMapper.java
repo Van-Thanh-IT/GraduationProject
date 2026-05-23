@@ -1,18 +1,22 @@
 package com.example.backend.mapper;
 
-import com.example.backend.dto.request.ProductRequest;
-import com.example.backend.dto.request.ProductVariantRequest;
-import com.example.backend.dto.response.*;
-import com.example.backend.entity.Product;
-import com.example.backend.entity.ProductAttributeValue;
-import com.example.backend.entity.ProductVariant;
-import com.example.backend.entity.ProductVariantImage;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+import com.example.backend.dto.response.admin.ProductResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-import java.util.List;
+import com.example.backend.dto.request.ProductRequest;
+import com.example.backend.dto.request.ProductVariantRequest;
+import com.example.backend.dto.response.*;
+import com.example.backend.dto.response.admin.ProductAttributeValueResponse;
+import com.example.backend.dto.response.client.ProductCardResponse;
+import com.example.backend.entity.*;
+import com.example.backend.repository.projection.ProductCardProjection;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface ProductMapper {
@@ -21,58 +25,60 @@ public interface ProductMapper {
     @Mapping(target = "brandName", source = "brand.name")
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
-    ProductResponse toResponse(Product product);
+    ProductResponse toProductResponse(Product product);
 
     @Mapping(target = "thumbnail", ignore = true)
     @Mapping(target = "brand", ignore = true)
     @Mapping(target = "category", ignore = true)
-    Product toEntity(ProductRequest request);
+    Product toProduct(ProductRequest request);
 
     @Mapping(target = "thumbnail", ignore = true)
     @Mapping(target = "brand", ignore = true)
     @Mapping(target = "category", ignore = true)
-    void updateEntity(@MappingTarget Product product, ProductRequest request);
+    void updateProduct(@MappingTarget Product product, ProductRequest request);
 
     @Mapping(target = "productId", source = "product.id")
-    ProductVariantResponse toResponse(ProductVariant variant);
+    ProductVariantResponse toVariantResponse(ProductVariant variant);
 
-    List<ProductVariantResponse> toResponse(List<ProductVariant> variants);
-
-    @Mapping(target = "product", ignore = true)
-    ProductVariant toEntity(ProductVariantRequest request);
+    List<ProductVariantResponse> toVariantResponse(List<ProductVariant> variants);
 
     @Mapping(target = "product", ignore = true)
-    void updateEntity(@MappingTarget ProductVariant variant, ProductVariantRequest request);
+    ProductVariant toVariant(ProductVariantRequest request);
 
-    ProductVariantImageResponse toResponse(ProductVariantImage image);
+    @Mapping(target = "product", ignore = true)
+    void updateVariant(@MappingTarget ProductVariant variant, ProductVariantRequest request);
+
+    ProductVariantImageResponse toVariantImageResponse(ProductVariantImage image);
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "attributeId", source = "attribute.id")
     @Mapping(target = "attributeName", source = "attribute.name")
-    ProductAttributeValueResponse toResponse(ProductAttributeValue entity);
-
+    ProductAttributeValueResponse toAttributeValueponse(ProductAttributeValue productAttributeValue);
 
     //
     @Mapping(target = "productName", source = "product.name")
-    @Mapping(target = "options", expression = "java(formatVariantOptions(entity))")
-    VariantSimpleResponse toSimpleResponse(ProductVariant entity);
+    @Mapping(target = "options", expression = "java(mapVariantOptions(productVariant))")
+    VariantSimpleResponse toSimpleResponse(ProductVariant productVariant);
 
-    // Hàm tự định nghĩa để nối các Option lại với nhau bằng dấu " - "
-    default String formatVariantOptions(ProductVariant variant) {
+    default String mapVariantOptions(ProductVariant variant) {
         if (variant == null) return "";
 
-        java.util.List<String> options = new java.util.ArrayList<>();
-        if (variant.getOption1Value() != null && !variant.getOption1Value().isBlank()) {
-            options.add(variant.getOption1Value());
-        }
-        if (variant.getOption2Value() != null && !variant.getOption2Value().isBlank()) {
-            options.add(variant.getOption2Value());
-        }
-        if (variant.getOption3Value() != null && !variant.getOption3Value().isBlank()) {
-            options.add(variant.getOption3Value());
-        }
-
-        return String.join(" - ", options);
+        return Stream.of(variant.getOption1Value(), variant.getOption2Value(), variant.getOption3Value())
+                .filter(opt -> opt != null && !opt.isBlank())
+                .collect(java.util.stream.Collectors.joining(" - "));
     }
 
+    @Mapping(target = "soldCount", expression = "java(p.getSoldCount() != null ? p.getSoldCount() : 0)")
+    @Mapping(target = "reviewCount", expression = "java(p.getReviewCount() != null ? p.getReviewCount() : 0)")
+    @Mapping(
+            target = "rating",
+            expression = "java(p.getRating() != null ? Math.round(p.getRating() * 10.0) / 10.0 : 0.0)")
+    @Mapping(target = "isNew", expression = "java(p.getIsNew() != null && p.getIsNew() == 1)")
+    @Mapping(target = "specs", expression = "java(parseSpecs(p.getSpecsStr()))")
+    @Mapping(target = "flashSale", ignore = true)
+    ProductCardResponse toProductCard(ProductCardProjection p);
+
+    default List<String> parseSpecs(String specsStr) {
+        return (specsStr != null && !specsStr.trim().isEmpty()) ? Arrays.asList(specsStr.split(",\\s*")) : null;
+    }
 }

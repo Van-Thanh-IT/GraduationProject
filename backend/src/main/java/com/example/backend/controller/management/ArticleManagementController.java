@@ -1,17 +1,20 @@
 package com.example.backend.controller.management;
 
-import com.example.backend.dto.request.ArticleRequest;
-import com.example.backend.dto.response.APIResponse;
-import com.example.backend.dto.response.ArticleResponse;
-import com.example.backend.service.ArticleService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import com.example.backend.dto.request.ArticleRequest;
+import com.example.backend.dto.response.APIResponse;
+import com.example.backend.dto.response.ArticleResponse;
+import com.example.backend.service.ArticleService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/management/articles")
@@ -21,10 +24,8 @@ public class ArticleManagementController {
 
     @GetMapping
     public APIResponse<Page<ArticleResponse>> getAllArticles(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
 
-        // Sắp xếp bài mới nhất lên đầu bảng
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return APIResponse.success(articleService.getAllArticlesForAdmin(pageable));
     }
@@ -35,7 +36,8 @@ public class ArticleManagementController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public APIResponse<ArticleResponse> update(@PathVariable Integer id, @ModelAttribute @Valid ArticleRequest request) {
+    public APIResponse<ArticleResponse> update(
+            @PathVariable Integer id, @ModelAttribute @Valid ArticleRequest request) {
         return APIResponse.success(articleService.updateArticle(id, request));
     }
 

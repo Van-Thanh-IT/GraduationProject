@@ -1,6 +1,7 @@
 package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.*;
+
 import lombok.Data;
 
 @Data
@@ -18,6 +19,7 @@ public class ProductRequest {
     private String name;
 
     @Size(max = 100, message = "Thời gian bảo hành tối đa 100 ký tự (VD: 12 tháng chính hãng)!")
+    @NotBlank(message = "Vui lòng nhập thời gian bảo hàng!")
     private String warrantyPeriod;
 
     @Size(max = 5000, message = "Mô tả sản phẩm không được vượt quá 5000 ký tự!")

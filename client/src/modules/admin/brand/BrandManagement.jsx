@@ -127,7 +127,7 @@ export default function BrandManagement() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
+      <div className="flex justify-between items-center mb-2 bg-white p-2 rounded-lg shadow-sm">
         <Input
           placeholder="Tìm tên thương hiệu..."
           prefix={<SearchOutlined className="text-slate-400" />}

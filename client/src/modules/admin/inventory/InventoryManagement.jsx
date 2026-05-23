@@ -45,10 +45,10 @@ const InventoryManagement = () => {
 
   // 4. Render
     return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className=" max-w-7xl mx-auto">
 
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
 
         <Title level={3} className="!mb-0 text-slate-800 font-black tracking-tight">
             📦 Quản lý Kho Hàng

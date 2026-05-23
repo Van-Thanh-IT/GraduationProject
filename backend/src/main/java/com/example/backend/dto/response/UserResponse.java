@@ -1,16 +1,16 @@
 package com.example.backend.dto.response;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Set;
+
 import com.example.backend.entity.Role;
 import com.example.backend.enums.AuthProvider;
 import com.example.backend.enums.Gender;
 import com.example.backend.enums.UserStatus;
+
 import lombok.Builder;
 import lombok.Data;
-
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Builder

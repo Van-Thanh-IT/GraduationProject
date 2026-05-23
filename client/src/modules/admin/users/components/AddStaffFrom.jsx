@@ -1,245 +1,171 @@
-import React, { useState } from 'react';
-import { message, Select, Divider, Upload, Spin } from 'antd';
+// File: src/modules/admin/users/components/AddStaffForm.jsx
+import React, { useState, useEffect } from 'react';
+import { Form, Select, Divider, Upload, Spin, message } from 'antd';
 import { UserOutlined, SafetyCertificateOutlined, PlusOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useCreateStaff } from '@/hooks/useUsers';
 
-export default function AddStaffForm({ onSuccess, onCancel }) {
-  // 1. Sử dụng Hook React Query
+export default function AddStaffForm({ onSuccess, onCancel, backendError }) {
+  const [form] = Form.useForm();
   const { mutate: createStaff, isPending } = useCreateStaff();
-  
-  // 2. State
-  const [formData, setFormData] = useState({
-    username: '', 
-    email: '', 
-    password: '', 
-    confirmPassword: '',
-    phone: '', 
-    gender: 'MALE', 
-    dateOfBirth: '',
-    avatar: null 
-  });
   const [fileList, setFileList] = useState([]);
 
-  // 3. Handlers
+  // LẮNG NGHE VÀ MAPPING LỖI TỪ BACKEND XUỐNG CHÂN INPUT VÀ TOAST
+  useEffect(() => {
+    if (backendError) {
+      if (backendError.messages && backendError.messages !== "Validation failed") {
+        message.error(backendError.messages);
+      } else if (!backendError.errors && backendError.messages === "Validation failed") {
+        message.error("Dữ liệu nhập vào không hợp lệ, vui lòng kiểm tra lại!");
+      }
+
+      if (backendError.errors) {
+        const formFieldsError = Object.keys(backendError.errors).map((key) => ({
+          name: key,
+          errors: [backendError.errors[key]],
+        }));
+        form.setFields(formFieldsError);
+      }
+    }
+  }, [backendError, form]);
+
   const handleAvatarChange = ({ fileList: newFileList }) => {
     setFileList(newFileList);
-    if (newFileList.length > 0 && newFileList[0].originFileObj) {
-      setFormData({ ...formData, avatar: newFileList[0].originFileObj });
-    } else {
-      setFormData({ ...formData, avatar: null });
-    }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // 4. Submit & Validation
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate Frontend
-    if (formData.password !== formData.confirmPassword) {
-      return message.error("Mật khẩu xác nhận không khớp!");
-    }
-    if (formData.phone && !/^(0[0-9]{9,10})$/.test(formData.phone)) {
-      return message.error("Số điện thoại không hợp lệ!");
+  const handleFinish = (values) => {
+    if (values.password !== values.confirmPassword) {
+      form.setFields([{ name: 'confirmPassword', errors: ['Mật khẩu xác nhận không khớp!'] }]);
+      return;
     }
 
-    // Submit Backend qua React Query
-    createStaff(formData, {
+    const payload = {
+      ...values,
+      avatar: fileList.length > 0 && fileList[0].originFileObj ? fileList[0].originFileObj : null,
+    };
+
+    createStaff(payload, {
       onSuccess: () => {
-        message.success("Tạo nhân viên thành công!");
-        onSuccess(); // Đóng Modal và refresh list được xử lý ở component cha
+        message.success("Tạo tài khoản nhân viên thành công!");
+        onSuccess();
       },
       onError: (error) => {
         const errData = error.response?.data;
-        
-        // Bắt lỗi Validation (mảng lỗi)
-        if (errData?.errors && Array.isArray(errData.errors)) {
-          errData.errors.forEach(err => message.error(`Lỗi: ${err.defaultMessage || err.message}`));
-          return;
+        if (errData?.messages && errData.messages !== "Validation failed") {
+          message.error(errData.messages);
         }
-        
-        // Lỗi message chung
-        const finalMsg = errData?.messages || errData?.message || errData?.error || "Tạo nhân viên thất bại!";
-        message.error(finalMsg);
+        if (errData?.errors) {
+          const formFieldsError = Object.keys(errData.errors).map((key) => ({
+            name: key,
+            errors: [errData.errors[key]],
+          }));
+          form.setFields(formFieldsError);
+        }
       }
     });
   };
 
   return (
-    <div className="relative mt-2">
-      {/* Lớp phủ Loading khi đang call API */}
-      {isPending && (
-        <div className="absolute inset-0 z-20 bg-white/50 backdrop-blur-[2px] flex items-center justify-center rounded-xl">
-          <Spin tip="Đang tạo tài khoản..." size="large" />
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          
-          {/* ================= CỘT TRÁI ================= */}
-          <div className="flex flex-col gap-5">
+    <div className="relative font-sans">
+      <Spin spinning={isPending} tip="Đang tạo tài khoản...">
+        <Form 
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          requiredMark={false}
+          initialValues={{ gender: 'MALE' }}
+          className="space-y-3"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-2 items-start">
             
-            {/* Block Upload Avatar */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center justify-center transition-all hover:border-blue-200">
-              <Upload
-                listType="picture-circle"
-                fileList={fileList}
-                onChange={handleAvatarChange}
-                beforeUpload={() => false} // Chặn auto upload của Antd
-                maxCount={1} 
-                accept="image/png, image/jpeg, image/jpg"
-                disabled={isPending}
-                className="avatar-uploader-premium"
-              >
-                {fileList.length >= 1 ? null : (
-                  <div className="flex flex-col items-center text-slate-400 hover:text-blue-500 transition-colors">
-                    <PlusOutlined className="text-2xl mb-2" />
-                    <div className="text-xs font-semibold uppercase tracking-wider">Tải ảnh lên</div>
-                  </div>
-                )}
-              </Upload>
-              <p className="text-[11px] text-slate-400 mt-3 font-medium">Định dạng JPG, PNG (Max: 5MB)</p>
-            </div>
+            {/* COLUMN BÊN TRÁI: AVATAR & BẢO MẬT */}
+            <div className="space-y-3">
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200 flex flex-col items-center justify-center">
+                <Upload
+                  listType="picture-circle"
+                  fileList={fileList}
+                  onChange={handleAvatarChange}
+                  beforeUpload={() => false}
+                  maxCount={1} 
+                  accept="image/png, image/jpeg, image/jpg"
+                  className="[&_.ant-upload]:!m-0"
+                >
+                  {fileList.length >= 1 ? null : (
+                    <div className="flex flex-col items-center text-gray-400 hover:text-blue-500 transition-colors">
+                      <PlusOutlined className="text-xl mb-1" />
+                      <div className="text-[11px] font-bold uppercase tracking-wider">Tải ảnh</div>
+                    </div>
+                  )}
+                </Upload>
+                <span className="text-[10px] text-gray-400 mt-2 font-medium">Định dạng JPG, PNG (Tối đa 5MB)</span>
+              </div>
 
-            {/* Block Tài Khoản */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm flex-1">
-              <h3 className="text-sm font-black text-blue-600 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <div className="p-1.5 bg-blue-100 rounded-lg"><SafetyCertificateOutlined className="text-lg" /></div>
-                Tài khoản bảo mật
-              </h3>
-              
-              <div className="space-y-4">
-                <Input 
-                  label="Địa chỉ Email" 
-                  type="email" 
-                  name="email"
-                  placeholder="VD: nguyenvan@gmail.com"
-                  required 
-                  disabled={isPending}
-                  value={formData.email} 
-                  onChange={handleInputChange} 
-                  className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-                />
+              <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200 space-y-3">
+                <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5 uppercase tracking-wide m-0">
+                  <SafetyCertificateOutlined className="text-blue-500" /> Tài khoản bảo mật
+                </h3>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <Input 
-                    label="Mật khẩu" 
-                    type="password" 
-                    name="password"
-                    placeholder="Từ 8 ký tự"
-                    required 
-                    disabled={isPending}
-                    value={formData.password} 
-                    onChange={handleInputChange} 
-                    className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-                  />
-                  <Input 
-                    label="Xác nhận MK" 
-                    type="password" 
-                    name="confirmPassword"
-                    placeholder="Nhập lại MK"
-                    required 
-                    disabled={isPending}
-                    value={formData.confirmPassword} 
-                    onChange={handleInputChange} 
-                    className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-                  />
+                <Form.Item name="email" rules={[{ required: true, message: 'Email không được để trống!' }, { type: 'email', message: 'Email không hợp lệ!' }]} className="m-0">
+                  <Input label="Địa chỉ Email *" type="email" placeholder="VD: nguyenvan@gmail.com" className="h-9 text-xs rounded-md" />
+                </Form.Item>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <Form.Item name="password" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]} className="m-0">
+                    <Input label="Mật khẩu *" type="password" placeholder="Từ 8 ký tự" className="h-9 text-xs rounded-md" />
+                  </Form.Item>
+                  <Form.Item name="confirmPassword" rules={[{ required: true, message: 'Nhập lại mật khẩu!' }]} className="m-0">
+                    <Input label="Xác nhận MK *" type="password" placeholder="Nhập lại MK" className="h-9 text-xs rounded-md" />
+                  </Form.Item>
                 </div>
               </div>
             </div>
 
-          </div>
-
-          {/* ================= CỘT PHẢI ================= */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm h-full">
-            <h3 className="text-sm font-black text-blue-600 mb-4 flex items-center gap-2 uppercase tracking-wider">
-              <div className="p-1.5 bg-blue-100 rounded-lg"><UserOutlined className="text-lg" /></div> 
-              Thông tin cá nhân
-            </h3>
-            
-            <div className="space-y-4">
-              <Input 
-                label="Họ và tên nhân viên" 
-                name="username"
-                placeholder="Từ 8 - 30 ký tự, chỉ chứa chữ cái"
-                required 
-                disabled={isPending}
-                value={formData.username} 
-                onChange={handleInputChange} 
-                className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-              />
+            {/* COLUMN BÊN PHẢI: THÔNG TIN CÁ NHÂN */}
+            <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200 space-y-3 h-full">
+              <h3 className="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1.5 uppercase tracking-wide m-0">
+                <UserOutlined className="text-blue-500" /> Thông tin cá nhân
+              </h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <Input 
-                  label="Số điện thoại" 
-                  name="phone"
-                  placeholder="VD: 0912345678"
-                  required 
-                  disabled={isPending}
-                  value={formData.phone} 
-                  onChange={handleInputChange} 
-                  className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-                />
-                <Input 
-                  label="Ngày sinh" 
-                  type="date" 
-                  name="dateOfBirth"
-                  required 
-                  disabled={isPending}
-                  value={formData.dateOfBirth} 
-                  onChange={handleInputChange} 
-                  className="h-11 rounded-xl focus:ring-2 focus:ring-blue-100"
-                />
+              <Form.Item name="username" rules={[{ required: true, message: 'Họ tên không được để trống!' }]} className="m-0">
+                <Input label="Họ và tên nhân viên *" placeholder="Từ 8 - 30 ký tự, chỉ chứa chữ" className="h-9 text-xs rounded-md" />
+              </Form.Item>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <Form.Item name="phone" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }, { pattern: /^(0[0-9]{9,10})$/, message: 'SĐT không hợp lệ!' }]} className="m-0">
+                  <Input label="Số điện thoại *" placeholder="VD: 0912345678" className="h-9 text-xs rounded-md" />
+                </Form.Item>
+                <Form.Item name="dateOfBirth" rules={[{ required: true, message: 'Chọn ngày sinh!' }]} className="m-0">
+                  <Input label="Ngày sinh *" type="date" className="h-9 text-xs rounded-md" />
+                </Form.Item>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-bold text-slate-700">Giới tính</label>
+              <Form.Item name="gender" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Giới tính</span>} className="m-0">
                 <Select
-                  value={formData.gender}
-                  disabled={isPending}
-                  onChange={(value) => setFormData({...formData, gender: value})}
-                  className="w-full h-11 custom-select-ui" 
+                  className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md" 
                   options={[
                     { value: 'MALE', label: 'Nam giới' },
                     { value: 'FEMALE', label: 'Nữ giới' },
                     { value: 'OTHER', label: 'Khác' },
                   ]}
                 />
-              </div>
+              </Form.Item>
             </div>
+
           </div>
 
-        </div>
+          <Divider className="my-2 border-gray-100" />
 
-        <Divider className="my-2 border-slate-200" />
-
-        <div className="flex justify-end gap-3 pb-1">
-          <Button 
-            type="button"
-            onClick={onCancel} 
-            disabled={isPending}
-            className="bg-slate-200 hover:bg-slate-300 rounded-xl text-slate-600 px-6 py-2.5 font-bold transition-all disabled:opacity-50"
-          >
-            Hủy bỏ
-          </Button>
-          <Button 
-            type="submit" 
-            loading={isPending}
-            disabled={isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl shadow-lg shadow-blue-200 font-bold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
-          >
-            Tạo nhân viên
-          </Button>
-        </div>
-
-      </form>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onCancel} disabled={isPending} type="button" className="h-9 px-5 text-xs font-bold uppercase tracking-wide">
+              Hủy bỏ
+            </Button>
+            <Button type="submit" variant="primary" loading={isPending} className="h-9 px-6 text-xs font-bold uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 rounded-md">
+              Tạo nhân viên
+            </Button>
+          </div>
+        </Form>
+      </Spin>
     </div>
   );
 }

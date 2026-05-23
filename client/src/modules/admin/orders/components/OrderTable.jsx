@@ -15,10 +15,11 @@ const STATUS_CONFIG = {
 };
 
 const PAYMENT_CONFIG = {
-  PENDING: { label: 'Chưa TT', color: 'text-gray-500' },
-  PAID: { label: 'Đã TT', color: 'text-emerald-600' },
+  PENDING: { label: 'Chưa thanh toán', color: 'text-gray-500' },
+  COMPLETED: { label: 'Đã thanh toán', color: 'text-emerald-600' },
+  FAILED: { label: 'Thanh toán thất bại', color: 'text-red-500' },
+  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-blue-500' },
 };
-
 const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 
 const DownloadVatButton = ({ orderId, onDownloadInvoice }) => {
@@ -125,7 +126,7 @@ export default function OrderTable({ data, loading, onView, onDownloadInvoice, r
                    <span>{row.paymentMethod}</span>
                  </div>
                  <span className={`${payConf.color} flex items-center gap-1`}>
-                   <span className={`w-1.5 h-1.5 rounded-full ${row.paymentStatus === 'PAID' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+                   <span className={`w-1.5 h-1.5 rounded-full ${row.paymentStatus === 'COMPLETED' ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
                    {payConf.label}
                  </span>
               </div>
@@ -172,7 +173,7 @@ export default function OrderTable({ data, loading, onView, onDownloadInvoice, r
         rowKey="id"
         bordered={false}
         className="custom-modern-table" 
-        rowSelection={rowSelection} // NHẬN CONFIG TỪ FILE CHA
+        rowSelection={rowSelection} 
        
       />
     </div>

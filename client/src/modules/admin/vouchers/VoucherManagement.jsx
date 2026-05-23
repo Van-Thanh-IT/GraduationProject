@@ -142,8 +142,8 @@ const VoucherManagement = () => {
     <div className="max-w-[1400px] mx-auto min-h-[calc(100vh-100px)]">
       
       {/* Header & Thanh công cụ (Toolbar) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-2 gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2">
            <div className="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
               <Tag size={24} fill="currentColor" className="text-white" />
            </div>
@@ -181,7 +181,6 @@ const VoucherManagement = () => {
           dataSource={filteredVouchers} 
           loading={isLoading}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
         />
       </div>
 

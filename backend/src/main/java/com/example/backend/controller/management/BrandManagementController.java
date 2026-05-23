@@ -1,15 +1,18 @@
 package com.example.backend.controller.management;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.example.backend.dto.request.BrandRequest;
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.BrandResponse;
 import com.example.backend.enums.BrandStatus;
 import com.example.backend.service.BrandService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/brands")
@@ -35,8 +38,7 @@ public class BrandManagementController {
 
     @PutMapping("/{id}")
     public APIResponse<BrandResponse> updateBrand(
-            @PathVariable Integer id,
-            @Valid @ModelAttribute BrandRequest request) {
+            @PathVariable Integer id, @Valid @ModelAttribute BrandRequest request) {
         BrandResponse response = brandService.updateBrand(id, request);
         return APIResponse.<BrandResponse>builder()
                 .code(200)
@@ -46,9 +48,7 @@ public class BrandManagementController {
     }
 
     @PatchMapping("/{id}/status")
-    public APIResponse<Void> updateStatus(
-            @PathVariable Integer id,
-            @RequestParam BrandStatus  status) {
+    public APIResponse<Void> updateStatus(@PathVariable Integer id, @RequestParam BrandStatus status) {
 
         brandService.updateBrandStatus(id, status);
 
@@ -56,9 +56,6 @@ public class BrandManagementController {
                 ? "Đã kích hoạt thương hiệu thành công!"
                 : "Đã ẩn thương hiệu thành công!";
 
-        return APIResponse.<Void>builder()
-                .code(200)
-                .messages(message)
-                .build();
+        return APIResponse.<Void>builder().code(200).messages(message).build();
     }
 }

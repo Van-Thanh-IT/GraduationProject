@@ -14,7 +14,7 @@ const STATUS_TABS = [
   { key: 'HIDDEN', label: 'Đã ẩn', color: 'text-slate-500' },
 ];
 
-const AdminReviewList = () => {
+const ReviewManagement = () => {
   // ==============================================================
   // 1. QUẢN LÝ STATE BỘ LỌC
   // ==============================================================
@@ -200,9 +200,9 @@ const AdminReviewList = () => {
   ];
 
   return (
-    <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)] p-4 flex flex-col gap-4">
+    <div className="bg-[#f8fafc] min-h-[calc(100vh-64px)]  flex flex-col gap-2">
       {/* HEADER TỐI GIẢN */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <div className="p-2.5 bg-white border border-gray-100 shadow-sm text-indigo-600 rounded-lg">
           <CheckCircle size={22} />
         </div>
@@ -271,7 +271,7 @@ const AdminReviewList = () => {
         <CustomTable
           columns={columns}
           dataSource={reviews}
-          loading={isLoading || isFetching} // Hiển thị loading cả khi đang chuyển trang
+          loading={isLoading || isFetching} 
           currentPage={filters.page}
           pageSize={filters.size}
           total={totalElements}
@@ -285,4 +285,4 @@ const AdminReviewList = () => {
   );
 };
 
-export default AdminReviewList;
+export default ReviewManagement;

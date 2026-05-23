@@ -1,15 +1,18 @@
 package com.example.backend.controller.management;
 
-import com.example.backend.dto.request.InventoryNoteRequest;
-import com.example.backend.dto.response.APIResponse; // Cấu trúc bọc Response chuẩn của bạn
-import com.example.backend.dto.response.InventoryHistoryResponse;
-import com.example.backend.dto.response.InventoryNoteResponse;
-import com.example.backend.service.InventoryService;
+import java.util.List;
+
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.example.backend.dto.request.InventoryNoteRequest;
+import com.example.backend.dto.response.APIResponse;
+import com.example.backend.dto.response.admin.InventoryNoteResponse;
+import com.example.backend.dto.response.admin.InventoryHistoryResponse;
+import com.example.backend.service.InventoryService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/management/inventory")
@@ -28,12 +31,10 @@ public class InventoryManagementController {
         return APIResponse.success(inventoryService.getNoteById(id));
     }
 
-
     @PostMapping("/notes")
     public APIResponse<InventoryNoteResponse> createNote(@Valid @RequestBody InventoryNoteRequest request) {
         return APIResponse.success(inventoryService.createAndCompleteNote(request));
     }
-
 
     @GetMapping("/history/{variantId}")
     public APIResponse<List<InventoryHistoryResponse>> getHistoryByVariantId(@PathVariable Integer variantId) {

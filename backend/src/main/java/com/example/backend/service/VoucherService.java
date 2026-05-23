@@ -1,21 +1,28 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.VoucherRequest;
-import com.example.backend.dto.response.VoucherResponse;
-import com.example.backend.utils.CodeGeneratorUtil;
-import com.example.backend.entity.Voucher;
-import com.example.backend.enums.DiscountType;
-import com.example.backend.mapper.VoucherMapper;
-import com.example.backend.repository.VoucherRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import com.example.backend.dto.request.VoucherRequest;
+import com.example.backend.dto.response.VoucherResponse;
+import com.example.backend.entity.Voucher;
+import com.example.backend.enums.DiscountType;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.VoucherMapper;
+import com.example.backend.repository.VoucherRepository;
+import com.example.backend.utils.CodeGeneratorUtil;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoucherService {
@@ -23,18 +30,19 @@ public class VoucherService {
     private final VoucherRepository voucherRepository;
     private final VoucherMapper voucherMapper;
 
+    private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    private static final int SCALE_DECIMAL = 2;
+
+    @Transactional(readOnly = true)
     public List<VoucherResponse> getAllVouchersForAdmin() {
-        return voucherRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc()
-                .stream().map(voucherMapper::toResponse).toList();
+        return voucherRepository.findAllByDeletedAtIsNullOrderByCreatedAtDesc().stream()
+                .map(voucherMapper::toResponse)
+                .toList();
     }
 
     @Transactional
     public VoucherResponse createVoucher(VoucherRequest request) {
-        validateVoucherBusinessLogic(request);
-
-        if (voucherRepository.existsByCode(request.getCode())) {
-            throw new IllegalArgumentException("Mã CODE '" + request.getCode() + "' đã tồn tại trong hệ thống!");
-        }
+        validateAndNormalizeVoucherRequest(request, null);
 
         Voucher voucher = voucherMapper.toEntity(request);
         return voucherMapper.toResponse(voucherRepository.save(voucher));
@@ -42,14 +50,9 @@ public class VoucherService {
 
     @Transactional
     public VoucherResponse updateVoucher(Integer id, VoucherRequest request) {
-        Voucher voucher = voucherRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Voucher hoặc Voucher đã bị xóa!"));
+        Voucher voucher = getVoucherOrThrow(id);
 
-        validateVoucherBusinessLogic(request);
-
-        if (voucherRepository.existsByCodeAndIdNot(request.getCode(), id)) {
-            throw new IllegalArgumentException("Mã CODE '" + request.getCode() + "' đang được sử dụng ở một chương trình khác!");
-        }
+        validateAndNormalizeVoucherRequest(request, id);
 
         voucherMapper.updateEntity(voucher, request);
         return voucherMapper.toResponse(voucherRepository.save(voucher));
@@ -57,117 +60,122 @@ public class VoucherService {
 
     @Transactional
     public void softDeleteVoucher(Integer id) {
-        Voucher voucher = voucherRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Voucher để xóa!"));
+        Voucher voucher = getVoucherOrThrow(id);
         voucher.setDeletedAt(LocalDateTime.now());
         voucherRepository.save(voucher);
+        log.info("Đã xóa mềm Voucher ID: {}", id);
     }
 
-
-    //DÀNH CHO USER & CHECKOUT
+    @Transactional(readOnly = true)
     public List<VoucherResponse> getValidVouchersForUser() {
-        return voucherRepository.findValidVouchersForUser(LocalDateTime.now())
-                .stream().map(voucherMapper::toResponse).toList();
+        return voucherRepository.findValidVouchersForUser(LocalDateTime.now()).stream()
+                .map(voucherMapper::toResponse)
+                .toList();
     }
 
-    // HÀM QUAN TRỌNG NHẤT: DÙNG ĐỂ ÁP MÃ TẠI GIỎ HÀNG HOẶC LÚC TẠO ĐƠN HÀNG
+    @Transactional(readOnly = true)
     public BigDecimal calculateDiscountAmount(String code, BigDecimal orderTotalAmount) {
-        if (code == null || code.trim().isEmpty()) {
+        if (!StringUtils.hasText(code)) {
             return BigDecimal.ZERO;
         }
-
         if (orderTotalAmount == null || orderTotalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Giá trị đơn hàng không hợp lệ để áp dụng mã giảm giá!");
+            throw new CustomException(ErrorCode.ORDER_INVALID_AMOUNT);
         }
 
-        Voucher voucher = voucherRepository.findByCodeAndDeletedAtIsNull(code.trim().toUpperCase())
-                .orElseThrow(() -> new IllegalArgumentException("Mã giảm giá không hợp lệ!"));
+        Voucher voucher = getValidVoucherByCode(code);
+        validateVoucherEligibility(voucher, orderTotalAmount);
 
-        LocalDateTime now = LocalDateTime.now();
+        BigDecimal discountAmount = computeDiscount(voucher, orderTotalAmount);
 
-        // 1. Kiểm tra trạng thái thời gian
-        if (now.isBefore(voucher.getStartDate())) {
-            throw new IllegalStateException("Mã giảm giá '" + voucher.getCode() + "' chưa tới thời gian áp dụng!");
-        }
-        if (now.isAfter(voucher.getEndDate())) {
-            throw new IllegalStateException("Mã giảm giá '" + voucher.getCode() + "' đã hết hạn sử dụng!");
-        }
-
-        // 2. Kiểm tra lượt dùng (Nếu usageLimit = 0 tức là không giới hạn)
-        if (voucher.getUsageLimit() > 0 && voucher.getUsedCount() >= voucher.getUsageLimit()) {
-            throw new IllegalStateException("Rất tiếc, mã giảm giá '" + voucher.getCode() + "' đã hết lượt sử dụng!");
-        }
-
-        // 3. Kiểm tra điều kiện đơn hàng tối thiểu
-        if (voucher.getMinOrderValue() != null && orderTotalAmount.compareTo(voucher.getMinOrderValue()) < 0) {
-            throw new IllegalStateException(String.format("Đơn hàng chưa đạt giá trị tối thiểu %,.0f đ để áp dụng mã này!", voucher.getMinOrderValue()));
-        }
-
-        // 4. Tính toán số tiền được giảm
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (voucher.getDiscountType() == DiscountType.FIXED) {
-            discountAmount = voucher.getDiscountValue();
-        } else if (voucher.getDiscountType() == DiscountType.PERCENT) {
-            // Tính %
-            discountAmount = orderTotalAmount.multiply(voucher.getDiscountValue())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP); // Làm tròn 2 chữ số thập phân
-
-            // Áp trần (Max discount) nếu có
-            if (voucher.getMaxDiscountValue() != null && voucher.getMaxDiscountValue().compareTo(BigDecimal.ZERO) > 0) {
-                if (discountAmount.compareTo(voucher.getMaxDiscountValue()) > 0) {
-                    discountAmount = voucher.getMaxDiscountValue();
-                }
-            }
-        }
-
-        // Đảm bảo tiền giảm không bao giờ lớn hơn tiền hàng (Chống đơn hàng âm tiền)
-        return discountAmount.compareTo(orderTotalAmount) >= 0 ? orderTotalAmount : discountAmount;
+        return discountAmount.min(orderTotalAmount);
     }
 
     @Transactional
     public void incrementUsedCount(String code) {
-        if (code == null || code.trim().isEmpty()) return;
+        if (!StringUtils.hasText(code)) return;
 
-        // Gọi hàm UPDATE trực tiếp từ DB. Trả về số nguyên int (số dòng bị ảnh hưởng)
         int updatedRows = voucherRepository.incrementUsedCountSafely(code.trim().toUpperCase());
-
-        // Nếu updatedRows == 0, nghĩa là mã này đã bị xóa, hoặc đã ĐẠT GIỚI HẠN
         if (updatedRows == 0) {
-            throw new IllegalStateException("Rất tiếc, mã giảm giá '" + code + "' vừa mới hết lượt sử dụng!");
+            throw new CustomException(ErrorCode.VOUCHER_OUT_OF_USAGE);
         }
     }
 
-    // ==========================================
-    // UTILS: HÀM VALIDATE NGHIỆP VỤ LÕI
-    // ==========================================
-    private void validateVoucherBusinessLogic(VoucherRequest request) {
-        if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+    private Voucher getVoucherOrThrow(Integer id) {
+        return voucherRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.VOUCHER_NOT_FOUND));
+    }
+
+    private Voucher getValidVoucherByCode(String code) {
+        return voucherRepository
+                .findByCodeAndDeletedAtIsNull(code.trim().toUpperCase())
+                .orElseThrow(() -> new CustomException(ErrorCode.VOUCHER_INVALID));
+    }
+
+    private void validateAndNormalizeVoucherRequest(VoucherRequest request, Integer voucherId) {
+        if (!StringUtils.hasText(request.getCode())) {
             request.setCode(CodeGeneratorUtil.generateVoucherCode());
         } else {
-            // Nếu có nhập thì chuẩn hóa: Xóa khoảng trắng, viết hoa toàn bộ
             request.setCode(request.getCode().trim().toUpperCase());
         }
 
-        // 1. Kiểm tra ngày tháng
-        if (!request.getStartDate().isBefore(request.getEndDate())) {
-            throw new IllegalArgumentException("Ngày bắt đầu phải diễn ra trước ngày kết thúc!");
+        boolean exists = (voucherId == null)
+                ? voucherRepository.existsByCode(request.getCode())
+                : voucherRepository.existsByCodeAndIdNot(request.getCode(), voucherId);
+
+        if (exists) {
+            throw new CustomException(ErrorCode.VOUCHER_CODE_EXISTS);
         }
 
-        // 2. Kiểm tra logic tiền tệ dựa theo Type
+        if (!request.getStartDate().isBefore(request.getEndDate())) {
+            throw new CustomException(ErrorCode.VOUCHER_INVALID_DATES);
+        }
+
         if (request.getDiscountType() == DiscountType.PERCENT) {
-            if (request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
-                throw new IllegalArgumentException("Đối với giảm giá phần trăm, giá trị không được vượt quá 100%!");
+            if (request.getDiscountValue().compareTo(ONE_HUNDRED) > 0) {
+                throw new CustomException(ErrorCode.VOUCHER_PERCENTAGE_EXCEED);
             }
-            if (request.getMaxDiscountValue() == null || request.getMaxDiscountValue().compareTo(BigDecimal.ZERO) == 0) {
-                throw new IllegalArgumentException("Vui lòng nhập 'Số tiền giảm tối đa' cho mã phần trăm để tránh rủi ro lỗ vốn!");
+            if (request.getMaxDiscountValue() == null
+                    || request.getMaxDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new CustomException(ErrorCode.VOUCHER_MISSING_MAX_DISCOUNT);
             }
-        } else if (request.getDiscountType() == DiscountType.FIXED) {
-            // Với mã giảm tiền mặt cố định, ta có thể tự động đồng bộ maxDiscountValue = discountValue để dữ liệu nhất quán
+        } else {
             request.setMaxDiscountValue(request.getDiscountValue());
         }
 
-        // 3. Chuẩn hóa giá trị NULL về 0 cho an toàn
         if (request.getMinOrderValue() == null) request.setMinOrderValue(BigDecimal.ZERO);
         if (request.getUsageLimit() == null) request.setUsageLimit(0);
+    }
+
+    private void validateVoucherEligibility(Voucher voucher, BigDecimal orderTotalAmount) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.isBefore(voucher.getStartDate())) throw new CustomException(ErrorCode.VOUCHER_NOT_STARTED);
+        if (now.isAfter(voucher.getEndDate())) throw new CustomException(ErrorCode.VOUCHER_EXPIRED);
+
+        if (voucher.getUsageLimit() > 0 && voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new CustomException(ErrorCode.VOUCHER_OUT_OF_USAGE);
+        }
+
+        if (voucher.getMinOrderValue() != null && orderTotalAmount.compareTo(voucher.getMinOrderValue()) < 0) {
+            throw new CustomException(ErrorCode.VOUCHER_MIN_ORDER_NOT_MET);
+        }
+    }
+
+    private BigDecimal computeDiscount(Voucher voucher, BigDecimal orderTotalAmount) {
+        if (voucher.getDiscountType() == DiscountType.FIXED) {
+            return voucher.getDiscountValue();
+        }
+
+        BigDecimal discountAmount = orderTotalAmount
+                .multiply(voucher.getDiscountValue())
+                .divide(ONE_HUNDRED, SCALE_DECIMAL, RoundingMode.HALF_UP);
+
+        if (voucher.getMaxDiscountValue() != null
+                && voucher.getMaxDiscountValue().compareTo(BigDecimal.ZERO) > 0) {
+            discountAmount = discountAmount.min(voucher.getMaxDiscountValue());
+        }
+
+        return discountAmount;
     }
 }

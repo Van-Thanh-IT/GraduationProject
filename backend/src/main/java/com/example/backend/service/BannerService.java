@@ -1,23 +1,28 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.request.BannerRequest;
-import com.example.backend.dto.response.BannerResponse;
-import com.example.backend.entity.Banner;
-import com.example.backend.enums.BannerPlacement;
-import com.example.backend.mapper.BannerMapper;
-import com.example.backend.repository.BannerRepository;
-import com.example.backend.utils.Cloudinaryutil;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import com.example.backend.dto.response.client.ClientBannerResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.example.backend.dto.request.BannerRequest;
+import com.example.backend.dto.response.admin.AdminBannerResponse;
+import com.example.backend.entity.Banner;
+import com.example.backend.enums.BannerPlacement;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.BannerMapper;
+import com.example.backend.repository.BannerRepository;
+import com.example.backend.utils.CloudinaryUtil;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -26,146 +31,114 @@ public class BannerService {
 
     private final BannerRepository bannerRepository;
     private final BannerMapper bannerMapper;
-    private final Cloudinaryutil cloudinaryutil;
+    private final CloudinaryUtil cloudinaryutil;
 
-    // ==========================================
-    // 1. CLIENT: LẤY DANH SÁCH BANNER ĐỂ HIỂN THỊ
-    // ==========================================
-    public List<BannerResponse> getActiveBanners(BannerPlacement placement) {
-        List<Banner> activeBanners = bannerRepository.findActiveBannersByPlacement(placement, LocalDateTime.now());
-        return activeBanners.stream().map(bannerMapper::toResponse).collect(Collectors.toList());
+    private static final int MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+    @Transactional(readOnly = true)
+    public List<ClientBannerResponse> getActiveBanners(BannerPlacement placement) {
+        return bannerRepository.findActiveBannersByPlacement(placement, LocalDateTime.now()).stream()
+                .map(bannerMapper::toClientBannerResponse)
+                .toList();
     }
 
-    // ==========================================
-    // 2. ADMIN: XEM TẤT CẢ BANNER
-    // ==========================================
-    public Page<BannerResponse> getAllBanners(Pageable pageable) {
-        return bannerRepository.findAll(pageable).map(bannerMapper::toResponse);
+    @Transactional(readOnly = true)
+    public Page<AdminBannerResponse> getAllBanners(Pageable pageable) {
+        return bannerRepository.findAll(pageable).map(bannerMapper::toAdminBannerResponse);
     }
 
-    // ==========================================
-    // 3. ADMIN: TẠO MỚI BANNER (UPLOAD CLOUD)
-    // ==========================================
     @Transactional
-    public BannerResponse createBanner(BannerRequest request) {
+    public AdminBannerResponse createBanner(BannerRequest request) {
         validateDates(request.getStartDate(), request.getEndDate());
 
-        // Tạo mới thì BẮT BUỘC phải có ảnh Desktop
         if (request.getDesktopImage() == null || request.getDesktopImage().isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng tải lên ảnh Banner cho giao diện máy tính (Desktop)!");
+            throw new CustomException(ErrorCode.BANNER_DESKTOP_IMAGE_REQUIRED);
         }
 
-        Banner banner = bannerMapper.toEntity(request);
-
-        // 3.1. Upload ảnh Desktop (Bắt buộc)
+        Banner banner = bannerMapper.toBanner(request);
         banner.setImageUrl(uploadImageSafely(request.getDesktopImage()));
 
-        // 3.2. Upload ảnh Mobile (Nếu Admin có tải lên)
         if (request.getMobileImage() != null && !request.getMobileImage().isEmpty()) {
             banner.setMobileImageUrl(uploadImageSafely(request.getMobileImage()));
         }
 
-        return bannerMapper.toResponse(bannerRepository.save(banner));
+        return bannerMapper.toAdminBannerResponse(bannerRepository.save(banner));
     }
 
-    // ==========================================
-    // 4. ADMIN: CẬP NHẬT BANNER (UPLOAD MỚI & XÓA CŨ)
-    // ==========================================
     @Transactional
-    public BannerResponse updateBanner(Integer id, BannerRequest request) {
-        Banner banner = bannerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Banner!"));
-
+    public AdminBannerResponse updateBanner(Integer id, BannerRequest request) {
+        Banner banner = getBannerOrThrow(id);
         validateDates(request.getStartDate(), request.getEndDate());
 
-        // 4.1 Cập nhật thông tin chữ
-        banner.setTitle(request.getTitle());
-        banner.setTargetUrl(request.getTargetUrl());
-        banner.setPlacement(request.getPlacement());
-        banner.setSortOrder(request.getSortOrder());
-        banner.setIsActive(request.getIsActive());
-        banner.setStartDate(request.getStartDate());
-        banner.setEndDate(request.getEndDate());
+        bannerMapper.updateBanner(request, banner);
 
-        // 4.2 Xử lý ảnh Desktop
         if (request.getDesktopImage() != null && !request.getDesktopImage().isEmpty()) {
-            String oldDesktopImage = banner.getImageUrl(); // Lưu nháp link cũ
-
-            // Tải ảnh mới lên Cloud và gán vào Entity
+            String oldDesktopImage = banner.getImageUrl();
             banner.setImageUrl(uploadImageSafely(request.getDesktopImage()));
-
-            // Xóa ảnh cũ trên Cloudinary để giải phóng dung lượng
-            if (oldDesktopImage != null) {
-                cloudinaryutil.deleteFile(oldDesktopImage);
-            }
+            deleteImageAsync(oldDesktopImage);
         }
 
-        // 4.3 Xử lý ảnh Mobile
         if (request.getMobileImage() != null && !request.getMobileImage().isEmpty()) {
-            String oldMobileImage = banner.getMobileImageUrl(); // Lưu nháp link cũ
-
+            String oldMobileImage = banner.getMobileImageUrl();
             banner.setMobileImageUrl(uploadImageSafely(request.getMobileImage()));
-
-            if (oldMobileImage != null) {
-                cloudinaryutil.deleteFile(oldMobileImage);
-            }
+            deleteImageAsync(oldMobileImage);
         }
 
-        return bannerMapper.toResponse(bannerRepository.save(banner));
+        return bannerMapper.toAdminBannerResponse(bannerRepository.save(banner));
     }
 
-    // ==========================================
-    // 5. ADMIN: XÓA BANNER (XÓA DB RỒI XÓA CLOUD)
-    // ==========================================
     @Transactional
     public void deleteBanner(Integer id) {
-        Banner banner = bannerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Banner không tồn tại!"));
+        Banner banner = getBannerOrThrow(id);
 
-        // Giữ lại link ảnh trước khi xóa bản ghi
         String desktopImg = banner.getImageUrl();
         String mobileImg = banner.getMobileImageUrl();
 
-        // Xóa bản ghi trong Database TRƯỚC
-        bannerRepository.deleteById(id);
+        bannerRepository.delete(banner);
+        log.info("Đã xóa hoàn toàn Banner ID: {} khỏi Database", id);
 
-        // Sau khi DB xóa thành công, tiến hành xóa ảnh trên Cloud SAU
-        if (desktopImg != null) {
-            cloudinaryutil.deleteFile(desktopImg);
-        }
-        if (mobileImg != null) {
-            cloudinaryutil.deleteFile(mobileImg);
-        }
-
-        log.info("Đã xóa hoàn toàn Banner ID: {} và dọn dẹp ảnh Cloudinary", id);
+        deleteImageAsync(desktopImg);
+        deleteImageAsync(mobileImg);
     }
 
-    // ==========================================
-    // HÀM HỖ TRỢ NỘI BỘ
-    // ==========================================
+    private Banner getBannerOrThrow(Integer id) {
+        return bannerRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.BANNER_NOT_FOUND));
+    }
+
     private void validateDates(LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("Thời gian kết thúc (EndDate) không được trước thời gian bắt đầu (StartDate)!");
+            throw new CustomException(ErrorCode.BANNER_INVALID_DATES);
         }
     }
 
     private String uploadImageSafely(MultipartFile file) {
-        // Kiểm tra định dạng (Chỉ cho phép ảnh)
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("File tải lên bắt buộc phải là hình ảnh (JPG, PNG...)!");
+            throw new CustomException(ErrorCode.INVALID_FILE_TYPE);
         }
 
-        // Kiểm tra dung lượng (Max 5MB để không tốn băng thông)
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("Dung lượng ảnh không được vượt quá 5MB");
+        if (file.getSize() > MAX_IMAGE_SIZE) {
+            throw new CustomException(ErrorCode.FILE_SIZE_EXCEEDED);
         }
 
         try {
             return cloudinaryutil.saveFile(file);
         } catch (Exception e) {
             log.error("Upload banner thất bại: ", e);
-            throw new RuntimeException("Tải ảnh lên máy chủ thất bại, vui lòng thử lại!");
+            throw new CustomException(ErrorCode.UPLOAD_FAILED);
+        }
+    }
+
+    private void deleteImageAsync(String imageUrl) {
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    cloudinaryutil.deleteFile(imageUrl);
+                    log.info("Đã dọn dẹp ảnh trên Cloudinary: {}", imageUrl);
+                } catch (Exception e) {
+                    log.error("Lỗi khi xóa ảnh trên Cloudinary: {}", imageUrl, e);
+                }
+            });
         }
     }
 }

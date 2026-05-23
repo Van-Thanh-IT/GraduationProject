@@ -1,8 +1,11 @@
 // File: src/modules/client/order/OrderDetailPage.jsx
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Spin, Button } from 'antd';
-import { Package, ArrowLeft, MapPin, Truck, Receipt, CreditCard, Box, Clock, ClipboardCheck, CheckCircle2, ShieldCheck, XCircle, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Spin } from 'antd';
+import { 
+  ArrowLeft, MapPin, Truck, CreditCard, Box, Clock, 
+  ClipboardCheck, CheckCircle2, ShieldCheck, XCircle, RotateCcw, AlertTriangle 
+} from 'lucide-react';
 
 import { useGetOrderDetail } from '@/hooks/useOrders';
 import CancelOrderModal from './components/CancelOrderModal';
@@ -28,14 +31,24 @@ export default function OrderDetailPage() {
   const { data: order, isLoading } = useGetOrderDetail(orderId);
 
   if (isLoading) {
-    return <div className="min-h-[70vh] flex items-center justify-center"><Spin size="large" /></div>;
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-gray-50">
+        <Spin />
+        <span className="mt-2 text-gray-400 text-xs font-medium">Đang tải chi tiết đơn hàng...</span>
+      </div>
+    );
   }
 
   if (!order) {
     return (
-      <div className="text-center py-20 flex flex-col items-center gap-4">
-        <h2 className="text-xl font-bold text-gray-600">Đơn hàng không tồn tại!</h2>
-        <Button onClick={() => navigate('/user/orders')} type="primary">Quay lại danh sách</Button>
+      <div className="text-center py-16 flex flex-col items-center justify-center gap-3 bg-gray-50 min-h-[50vh] font-sans">
+        <h2 className="text-base font-bold text-gray-600 m-0">Đơn hàng không tồn tại trên hệ thống!</h2>
+        <button 
+          onClick={() => navigate('/user/orders')} 
+          className="px-5 py-2 bg-blue-600 text-white text-xs font-bold rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Quay lại danh sách
+        </button>
       </div>
     );
   }
@@ -44,85 +57,90 @@ export default function OrderDetailPage() {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <div className="bg-[#f5f5f5] min-h-[calc(100vh-64px)] w-full font-sans pt-6 pb-12">
-      {/* THU GỌN LẠI VỚI max-w-[1050px] CHO ĐỒNG BỘ */}
-      <div className="w-full max-w-[1050px] mx-auto px-4 lg:px-0">
+    <div className="bg-gray-50 min-h-screen w-full font-sans py-4 md:py-6">
+      <div className="w-full max-w-[1000px] mx-auto px-4">
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        {/* THANH HEADER ĐIỀU HƯỚNG KHÍT KHAO */}
+        <div className="flex flex-row items-center justify-between mb-4 pb-2 border-b border-gray-200">
           <button 
+            type="button"
             onClick={() => navigate('/user/orders')} 
-            className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold transition-colors group w-fit"
+            className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-blue-600 transition-colors group bg-transparent border-none cursor-pointer"
           >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
             Trở lại danh sách
           </button>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Mã đơn: <span className="text-gray-800">{order.code}</span></span>
-            <span className="hidden sm:inline text-gray-300">|</span>
-            <span className={`flex items-center gap-1.5 px-3 py-1 rounded-md font-bold text-[12px] uppercase tracking-wider ${statusConfig.color} ${statusConfig.bg}`}>
-              <StatusIcon size={16} /> {statusConfig.text}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold text-gray-400 uppercase tracking-wide">Mã đơn: <span className="text-gray-800 font-mono">{order.code}</span></span>
+            <span className="text-gray-200">|</span>
+            <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide ${statusConfig.color} ${statusConfig.bg}`}>
+              <StatusIcon size={13} /> {statusConfig.text}
             </span>
           </div>
         </div>
 
+        {/* THÔNG BÁO LÝ DO HỦY ĐƠN PHẲNG */}
         {order.orderStatus === 'CANCELLED' && order.cancelReason && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3">
-             <AlertTriangle size={20} className="text-rose-500 mt-0.5" />
-             <div>
-                <h4 className="font-bold text-rose-700">Đơn hàng đã bị hủy</h4>
-                <p className="text-sm text-rose-600 mt-1">Lý do: {order.cancelReason}</p>
+          <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2.5">
+             <AlertTriangle size={16} className="text-red-500 shrink-0 mt-0.5" />
+             <div className="min-w-0">
+                <h4 className="font-bold text-red-800 text-xs m-0">Đơn hàng đã bị hủy bỏ</h4>
+                <p className="text-xs text-red-600 m-0 mt-0.5">Lý do từ hệ thống: {order.cancelReason}</p>
              </div>
           </div>
         )}
 
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4">
           
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gray-50/80 border-b border-gray-100 px-6 py-4 flex items-center gap-2">
-              <MapPin size={20} className="text-blue-600" />
-              <h3 className="font-black text-gray-800 text-[16px]">Địa Chỉ Nhận Hàng</h3>
+          {/* KHỐI 1: ĐỊA CHỈ & THÔNG TIN GIAO HÀNG (CHIA 2 CỘT PHẲNG) */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
+            <div className="p-4 border-b md:border-b-0 md:border-r border-gray-100">
+              <div className="flex items-center gap-1.5 text-blue-600 mb-2">
+                <MapPin size={16} />
+                <h3 className="font-bold text-gray-800 text-xs uppercase tracking-wide m-0">Địa chỉ nhận hàng</h3>
+              </div>
+              <p className="text-sm font-bold text-gray-800 m-0">{order.customerName}</p>
+              <p className="text-xs font-semibold text-gray-400 m-0 mt-0.5">{order.customerPhone}</p>
+              <p className="text-xs text-gray-500 m-0 mt-1.5 leading-relaxed">{order.fullShippingAddress}</p>
             </div>
-            <div className="p-6 flex flex-col md:flex-row md:items-start justify-between gap-6">
-              <div className="flex-1">
-                <p className="text-base font-bold text-gray-800">{order.customerName}</p>
-                <p className="text-[15px] text-gray-500 mt-1 font-medium">{order.customerPhone}</p>
-                <p className="text-[15px] text-gray-600 mt-2 leading-relaxed">{order.fullShippingAddress}</p>
+            
+            <div className="p-4">
+              <div className="flex items-center gap-1.5 text-blue-600 mb-2">
+                <Truck size={16} />
+                <h3 className="font-bold text-gray-800 text-xs uppercase tracking-wide m-0">Thông tin vận chuyển</h3>
               </div>
-              <div className="w-px bg-gray-100 hidden md:block"></div>
-              <div className="flex-1 md:pl-6">
-                <h4 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Truck size={16} /> Thông tin vận chuyển
-                </h4>
-                <p className="text-[15px] font-bold text-gray-700 mb-1">{order.shippingCarrier || 'Đang cập nhật'}</p>
-                <p className="text-[14px] text-gray-500">Mã vận đơn: <span className="font-bold text-blue-600 cursor-pointer">{order.trackingNumber || 'Chưa có'}</span></p>
-              </div>
+              <p className="text-xs font-bold text-gray-700 m-0">{order.shippingCarrier || 'Đang cập nhật'}</p>
+              <p className="text-xs text-gray-400 m-0 mt-1">
+                Mã vận đơn: <span className="font-bold text-blue-600 font-mono">{order.trackingNumber || 'Chưa phát hành'}</span>
+              </p>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gray-50/80 border-b border-gray-100 px-6 py-4 flex items-center gap-2">
-              <Package size={20} className="text-blue-600" />
-              <h3 className="font-black text-gray-800 text-[16px]">Sản Phẩm Đã Mua</h3>
+          {/* KHỐI 2: DANH SÁCH SẢN PHẨM ĐÃ MUA PHẲNG */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">Chi tiết sản phẩm đã mua</span>
+              <span className="text-xs font-bold text-gray-400 font-mono">({order.items?.length || 0}) SP</span>
             </div>
-            <div className="px-6 py-2">
+            <div className="px-4 divide-y divide-gray-100">
               {order.items?.map((item, index) => (
-                <div key={index} className="flex gap-4 items-center py-5 border-b border-gray-50 last:border-0">
-                  <div className="w-20 h-20 shrink-0 border border-gray-200 rounded-lg overflow-hidden p-1">
-                    <img src={item.thumbnail} alt={item.productName} className="w-full h-full object-contain" />
+                <div key={index} className="flex gap-3 items-center py-3">
+                  <div className="w-14 h-14 shrink-0 border border-gray-200 rounded-md bg-white p-1 flex items-center justify-center overflow-hidden">
+                    <img src={item.thumbnail} alt={item.productName} className="max-w-full max-h-full object-contain" />
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col md:flex-row justify-between gap-4">
-                    <div className="flex flex-col max-w-[500px]">
-                      <Link to={`/product/${item.productId}`} className="text-[15px] font-bold text-gray-800 line-clamp-2 hover:text-blue-600">
+                  <div className="flex-1 min-w-0 flex flex-row justify-between items-center gap-4">
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <Link to={`/product/${item.productId}`} className="text-[13px] font-semibold text-gray-800 line-clamp-1 hover:text-blue-600 no-underline transition-colors leading-snug">
                         {item.productName}
                       </Link>
-                      <span className="text-[13px] font-medium text-gray-500 mt-2 bg-gray-100 w-fit px-2 py-0.5 rounded">
+                      <span className="text-[11px] text-gray-400 bg-gray-50 w-fit px-1.5 py-0.5 rounded border border-gray-200/60 mt-1">
                         {item.variantInfo}
                       </span>
                     </div>
-                    <div className="shrink-0 flex flex-row md:flex-col items-center md:items-end justify-between">
-                      <span className="text-[15px] font-bold text-gray-700">{formatCurrency(item.price)}</span>
-                      <span className="text-[14px] font-semibold text-gray-500 mt-1">x {item.quantity}</span>
+                    <div className="shrink-0 flex flex-col items-end">
+                      <span className="text-[13px] font-bold text-gray-700">{formatCurrency(item.price)}</span>
+                      <span className="text-xs text-gray-400 font-semibold mt-0.5">x{item.quantity}</span>
                     </div>
                   </div>
                 </div>
@@ -130,36 +148,35 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="flex flex-col gap-4 border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-6">
-                  <div>
-                    <h4 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                      <CreditCard size={16} /> Phương thức thanh toán
-                    </h4>
-                    <p className="text-[15px] font-bold text-gray-700">
-                      {order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : `Thanh toán Online (${order.paymentMethod})`}
-                    </p>
-                  </div>
-                </div>
+          {/* KHỐI 3: PHƯƠNG THỨC THANH TOÁN & BẢNG BILL TÍNH TIỀN */}
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden grid grid-cols-1 md:grid-cols-2">
+            <div className="p-4 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col justify-start">
+              <div className="flex items-center gap-1.5 text-blue-600 mb-2">
+                <CreditCard size={16} />
+                <h3 className="font-bold text-gray-800 text-xs uppercase tracking-wide m-0">Hình thức thanh toán</h3>
+              </div>
+              <p className="text-xs font-bold text-gray-700 m-0 leading-normal">
+                {order.paymentMethod === 'COD' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : `Thanh toán qua cổng trực tuyến (${order.paymentMethod})`}
+              </p>
+            </div>
 
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center text-[15px] font-medium text-gray-600">
-                    <span>Tổng tiền hàng</span>
-                    <span>{formatCurrency(order.totalAmount)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[15px] font-medium text-gray-600">
-                    <span>Phí vận chuyển</span>
-                    <span>{formatCurrency(order.shippingFee)}</span>
-                  </div>
-                  <div className="w-full h-px bg-gray-100 my-2"></div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[16px] font-bold text-gray-800">Thành tiền</span>
-                    <span className="text-2xl font-black text-rose-600 tracking-tight">{formatCurrency(order.finalAmount)}</span>
-                  </div>
-                </div>
-             </div>
+            <div className="p-4 bg-gray-50/30 space-y-2">
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <span>Tổng tiền hàng</span>
+                <span className="font-medium text-gray-800">{formatCurrency(order.totalAmount)}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <span>Phí vận chuyển</span>
+                <span className="font-medium text-gray-800">{formatCurrency(order.shippingFee)}</span>
+              </div>
+              <div className="w-full h-px bg-gray-200/60 my-1.5"></div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-gray-800">Thành tiền thanh toán</span>
+                <span className="text-xl font-bold text-red-600 leading-none">{formatCurrency(order.finalAmount)}</span>
+              </div>
+            </div>
           </div>
+
         </div>
       </div>
 

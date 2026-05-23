@@ -1,17 +1,18 @@
 package com.example.backend.config;
 
-import com.example.backend.dto.response.APIResponse;
-import com.example.backend.exception.ErrorCode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.access.AccessDeniedHandler;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.JwtValidationException;
-import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
+import com.example.backend.dto.response.APIResponse;
+import com.example.backend.exception.ErrorCode;
+
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 public class CustomExceptionHandler {
@@ -19,7 +20,6 @@ public class CustomExceptionHandler {
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
-
             response.setContentType("application/json;charset=UTF-8");
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
 
@@ -39,15 +39,12 @@ public class CustomExceptionHandler {
                 message = "Bạn chưa đăng nhập";
             }
 
-            APIResponse<?> apiResponse = APIResponse.builder()
-                    .code(401)
-                    .messages(message)
-                    .build();
+            APIResponse<?> apiResponse =
+                    APIResponse.builder().code(401).messages(message).build();
 
             new ObjectMapper().writeValue(response.getOutputStream(), apiResponse);
         };
     }
-
 
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {

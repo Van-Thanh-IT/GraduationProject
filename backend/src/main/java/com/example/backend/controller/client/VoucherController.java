@@ -1,18 +1,17 @@
 package com.example.backend.controller.client;
 
-
-
-import com.example.backend.dto.response.APIResponse;
-import com.example.backend.dto.response.VoucherResponse;
-import com.example.backend.service.VoucherService;
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.web.bind.annotation.*;
+
+import com.example.backend.dto.response.APIResponse;
+import com.example.backend.dto.response.VoucherResponse;
+import com.example.backend.service.VoucherService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/public/vouchers")
@@ -22,7 +21,7 @@ public class VoucherController {
     private final VoucherService voucherService;
 
     @GetMapping("/available")
-    public APIResponse<List<VoucherResponse>> getValidVouchersForUser () {
+    public APIResponse<List<VoucherResponse>> getValidVouchersForUser() {
         return APIResponse.success(voucherService.getValidVouchersForUser());
     }
 
@@ -41,6 +40,4 @@ public class VoucherController {
             return APIResponse.error(400, e.getMessage());
         }
     }
-
-
 }

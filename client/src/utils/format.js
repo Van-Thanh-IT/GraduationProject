@@ -37,3 +37,4 @@ export const parseNumber = (formattedString) => {
   // Giữ lại số và dấu trừ (nếu có số âm)
   return formattedString.toString().replace(/[^\d-]/g, '');
 };
+

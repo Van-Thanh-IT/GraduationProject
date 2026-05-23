@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
       <div className="max-w-[1200px] mx-auto px-4 md:px-6">
         
         {/* Breadcrumb */}
-        <div className="mb-5">
+        <div className="mb-2">
           <Breadcrumb
             items={[
               { title: <span className="cursor-pointer hover:text-indigo-600" onClick={()=>navigate('/')}><HomeOutlined /> Trang chủ</span> },
@@ -94,7 +94,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* ================= KHỐI 1: ẢNH VÀ CHỌN CẤU HÌNH ================= */}
-        <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-6 md:p-8 lg:p-10 flex flex-col lg:flex-row gap-10 lg:gap-16 mb-8">
+        <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-2 md:p-2 lg:p-2 flex flex-col lg:flex-row gap-10 lg:gap-16 mb-4">
           <div className="w-full lg:w-[45%] shrink-0">
              <div className="sticky top-24">
                 <ProductGallery images={currentVariant?.images?.length > 0 ? currentVariant.images : [{ id: 0, imageUrl: product.thumbnail, isThumbnail: true }]} />
@@ -111,9 +111,9 @@ export default function ProductDetailPage() {
         </div>
 
         {/* ================= KHỐI 2: MÔ TẢ & THÔNG SỐ ================= */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-8">
-          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-6 md:p-8">
-             <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3 uppercase tracking-wide border-b border-slate-100 pb-4">
+        <div className="flex flex-col lg:flex-row gap-3 mb-3">
+          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-4 md:p-4">
+             <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-3 uppercase tracking-wide border-b border-slate-100 pb-4">
                 <FileTextOutlined className="text-indigo-500" /> Đặc điểm nổi bật
              </h2>
              <div className="prose prose-slate max-w-none leading-relaxed text-[15px]">
@@ -122,7 +122,7 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="w-full lg:w-[400px] shrink-0">
-             <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-6 md:p-8 sticky top-24">
+             <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-4 md:p-4 sticky top-24">
                <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3 uppercase tracking-wide border-b border-slate-100 pb-4">
                   <SettingOutlined className="text-indigo-500" /> Thông số kỹ thuật
                </h2>

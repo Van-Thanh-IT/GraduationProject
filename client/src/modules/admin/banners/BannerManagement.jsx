@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
-import BannerModal from './components/BannerModal';
+import BannerForm from './components/BannerForm';
 import { useAdminBanners } from '@/hooks/useAdminBanners';
 
 export default function BannerManagementPage() {
@@ -142,11 +142,11 @@ export default function BannerManagementPage() {
   ];
 
   return (
-    <div className="p-4 md:p-6 bg-[#f8fafc] min-h-screen font-sans">
-      <div className="max-w-[1300px] mx-auto space-y-6">
+    <div className="bg-[#f8fafc] min-h-screen font-sans">
+      <div className="max-w-[1300px] mx-auto space-y-2">
         
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-[20px] shadow-sm border border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-2 rounded-[20px] shadow-sm border border-slate-100">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight m-0">Quản lý Banner Quảng Cáo</h1>
             <p className="text-sm text-slate-500 font-medium mt-1 m-0">Cấu hình hình ảnh hiển thị trên toàn hệ thống</p>
@@ -155,7 +155,7 @@ export default function BannerManagementPage() {
           <Button 
             variant="primary" 
             onClick={() => { setEditingBanner(null); setIsModalOpen(true); }}
-            className="flex items-center gap-2 shadow-md shadow-indigo-200"
+             className="bg-indigo-600 hover:bg-indigo-700 text-white border-none h-[44px] px-6 rounded-xl font-bold shadow-md shadow-indigo-200 whitespace-nowrap transition-all active:scale-95"
           >
             <PlusOutlined /> Thêm Banner
           </Button>
@@ -178,7 +178,7 @@ export default function BannerManagementPage() {
         </div>
 
         {/* GỌI MODAL THÊM/SỬA */}
-        <BannerModal 
+        <BannerForm 
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           initialData={editingBanner}

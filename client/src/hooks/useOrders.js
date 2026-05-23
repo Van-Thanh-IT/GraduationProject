@@ -48,12 +48,8 @@ export const usePackOrder = () => {
   return useMutation({
     mutationFn: ({ id, payload }) => orderService.packOrder(id, payload),
     onSuccess: () => {
-      toast.success("Đóng gói thành công!");
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
     },
-    onError: () => {
-      toast.error("Đóng gói thất bại!");
-    }
   });
 };
 
@@ -81,16 +77,16 @@ export const usePlaceOrder = () => {
       if (res.data?.code === 200 || res.data?.code === "00") {
         const responseData = res.data.data;
 
-        if (responseData?.vnpayUrl) {
+        if (responseData?.paymentUrl) {
           toast.info("Đang chuyển hướng sang VNPAY...");
           setTimeout(() => {
-            window.location.href = responseData.vnpayUrl;
-          }, 1500);
+            window.location.href = responseData.paymentUrl;
+          }, 1000);
         } else {
-          toast.success("Đặt hàng thành công!");
           setTimeout(() => {
             window.location.href = '/';
-          }, 1500);
+          }, 1000);
+           toast.success("Đặt hàng thành công!");
         }
       } else {
         toast.error(res.data?.messages || "Có lỗi xảy ra khi đặt hàng.");
@@ -120,7 +116,7 @@ export const useGetOrderDetail = (orderId) => {
   return useQuery({
     queryKey: ['order-detail', orderId],
     queryFn: () => orderService.getOrderDetail(orderId).then(res => res.data.data),
-    enabled: !!orderId, // Chỉ gọi API khi có orderId
+    enabled: !!orderId,
   });
 };
 

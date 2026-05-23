@@ -1,12 +1,12 @@
-//package com.example.backend.dto.response;
+// package com.example.backend.dto.response;
 //
-//import lombok.Builder;
-//import lombok.Data;
-//import java.time.LocalDateTime;
+// import lombok.Builder;
+// import lombok.Data;
+// import java.time.LocalDateTime;
 //
-//@Data
-//@Builder
-//public class ReviewResponse {
+// @Data
+// @Builder
+// public class ReviewResponse {
 //    private Integer id;
 //    private Integer rating;
 //    private String comment;
@@ -20,16 +20,17 @@
 //    private Integer userId;
 //    private String userName;
 //    private String userAvatar;
-//}
+// }
 
 package com.example.backend.dto.response;
 
-import com.example.backend.enums.ReviewStatus;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.backend.enums.ReviewStatus;
+
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder

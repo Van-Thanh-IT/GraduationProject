@@ -1,10 +1,12 @@
 package com.example.backend.dto.response;
 
-import com.example.backend.enums.CategoryStatus;
-import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.example.backend.enums.CategoryStatus;
+
+import lombok.Data;
 
 @Data
 public class CategoryResponse {

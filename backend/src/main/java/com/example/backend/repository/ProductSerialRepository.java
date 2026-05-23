@@ -1,17 +1,21 @@
 package com.example.backend.repository;
 
-import com.example.backend.entity.ProductSerial;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.backend.entity.ProductSerial;
 
 public interface ProductSerialRepository extends JpaRepository<ProductSerial, Integer> {
-    boolean existsBySerialNumber(String serialNumber);
+
     Optional<ProductSerial> findBySerialNumber(String serialNumber);
 
-    @Query("SELECT p.serialNumber FROM ProductSerial p WHERE p.inventoryNoteId = :noteId AND p.productVariantId = :variantId")
+    List<ProductSerial> findBySerialNumberIn(List<String> serialNumbers);
+
+    @Query(
+            "SELECT ps.serialNumber FROM ProductSerial ps WHERE ps.inventoryNoteId = :noteId AND ps.productVariantId = :variantId")
     List<String> findSerialNumbers(@Param("noteId") Integer noteId, @Param("variantId") Integer variantId);
 }

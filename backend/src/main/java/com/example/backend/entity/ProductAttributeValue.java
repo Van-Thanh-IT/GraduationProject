@@ -1,6 +1,7 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
+
 import lombok.*;
 
 @Entity
@@ -11,7 +12,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ProductAttributeValue {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

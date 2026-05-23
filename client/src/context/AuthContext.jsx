@@ -108,13 +108,11 @@ export const AuthProvider = ({ children }) => {
     // 1. Nhét Access Token vào RAM
     setAccessToken(token); 
     
-    // 2. Ép React Query gọi lại API getMe ngay lập tức để lấy thông tin User
     await queryClient.invalidateQueries(['auth-user']); 
   };
 
   const logoutContext = () => {
-    handleLogout(); // Hàm bên axios sẽ clear RAM và redirect
-    queryClient.setQueryData(['auth-user'], null);
+    handleLogout(); 
   };
 
   return (

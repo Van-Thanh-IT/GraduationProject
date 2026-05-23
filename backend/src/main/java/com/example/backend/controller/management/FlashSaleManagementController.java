@@ -1,14 +1,17 @@
 package com.example.backend.controller.management;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.example.backend.dto.request.FlashSaleRequest;
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.FlashSaleResponse;
 import com.example.backend.service.FlashSaleService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/flash-sales")
@@ -32,16 +35,13 @@ public class FlashSaleManagementController {
     // 3. Cập nhật thông tin (Giá, số lượng, thời gian)
     @PutMapping("/{id}")
     public APIResponse<FlashSaleResponse> update(
-            @PathVariable Integer id,
-            @Valid @RequestBody FlashSaleRequest request) {
+            @PathVariable Integer id, @Valid @RequestBody FlashSaleRequest request) {
         return APIResponse.success(flashSaleService.updateFlashSale(id, request));
     }
 
     // 4. Bật/Tắt nhanh chương trình (status: 1 = Bật, 0 = Tắt)
     @PatchMapping("/{id}/status")
-    public APIResponse<Void> updateStatus(
-            @PathVariable Integer id,
-            @RequestParam Integer status) {
+    public APIResponse<Void> updateStatus(@PathVariable Integer id, @RequestParam Integer status) {
         flashSaleService.updateFlashSaleStatus(id, status);
         return APIResponse.success(null);
     }

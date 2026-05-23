@@ -1,17 +1,20 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.RoleAI;
-import jakarta.persistence.*; // Dùng đúng gói của JPA
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import jakarta.persistence.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import com.example.backend.enums.RoleAI;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "chat_messages_ai")
@@ -20,7 +23,6 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageAI {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,7 +37,6 @@ public class ChatMessageAI {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
-
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "metadata", columnDefinition = "jsonb")

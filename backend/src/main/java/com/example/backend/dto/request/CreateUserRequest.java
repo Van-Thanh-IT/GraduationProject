@@ -1,18 +1,20 @@
 package com.example.backend.dto.request;
-import com.example.backend.enums.Gender;
+
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import com.example.backend.enums.Gender;
 
-@Data
+import lombok.*;
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

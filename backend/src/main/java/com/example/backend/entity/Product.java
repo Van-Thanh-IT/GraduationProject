@@ -1,14 +1,17 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.ProductStatus;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import com.example.backend.enums.ProductStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "products")
@@ -18,7 +21,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Product {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

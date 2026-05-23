@@ -18,7 +18,7 @@ const AdminLayout = () => {
         - lg:ml-64 -> Trên Desktop: Nội dung thụt vào 64 để chừa chỗ cho Sidebar cố định
         - ml-0 -> Trên Mobile: Nội dung chiếm toàn màn hình
       */}
-      <div className="flex-1 flex flex-col w-full lg:ml-64 overflow-hidden transition-all duration-300">
+      <div className="flex-1 flex flex-col w-full lg:ml-50 overflow-hidden transition-all duration-300">
         
         {/* TRUYỀN HÀM MỞ CHO TOPBAR */}
         <Topbar onMenuClick={() => setIsSidebarOpen(true)} />

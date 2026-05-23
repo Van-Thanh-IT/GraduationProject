@@ -15,14 +15,44 @@ import CheckoutRightSummary from './components/CheckoutRightSummary';
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedItemIds = location.state?.selectedItems || [];
 
+  const selectedItemIds = location.state?.selectedItems || [];
+  const buyNowItem = location.state?.buyNowItem || null;
+ 
   const { data: cartData, isLoading: isLoadingCart } = useGetCart();
+
+      
   
-  const checkoutItems = useMemo(() => {
-    if (!cartData?.items) return [];
-    return cartData.items.filter(item => selectedItemIds.includes(item.itemId));
-  }, [cartData, selectedItemIds]);
+const checkoutItems = useMemo(() => {
+
+  if (buyNowItem) {
+    return [
+      {
+        variantId: buyNowItem.variantId,
+        quantity: buyNowItem.quantity,
+
+        productName: buyNowItem.productName,
+        imageUrl: buyNowItem.imageUrl,
+        options: buyNowItem.options,
+        price: buyNowItem.price,
+
+        subTotal: buyNowItem.price * buyNowItem.quantity,
+
+        flashSale: buyNowItem.flashSale
+      }
+    ];
+  }
+
+  if (!cartData?.items) return [];
+
+  return cartData.items
+    .filter(item => selectedItemIds.includes(item.itemId))
+    .map(item => ({
+      ...item,
+      subTotal: item.subTotal ?? item.price * item.quantity
+    }));
+
+}, [cartData, selectedItemIds, buyNowItem]);
 
   const subTotal = useMemo(() => {
     return checkoutItems.reduce((total, item) => total + item.subTotal, 0);
@@ -147,13 +177,9 @@ export default function CheckoutPage() {
   if (isLoadingCart) return <div className="min-h-screen flex justify-center items-center"><Spin size="large" /></div>;
 
   return (
-    <div className="bg-[#f5f5fa] min-h-screen py-8 font-sans">
-      <div className="max-w-[1200px] lg:max-w-[1250px] mx-auto px-4 md:px-6">
-        <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3 mb-8 uppercase tracking-wide">
-           <SafetyCertificateFilled className="text-indigo-600 text-3xl" /> Đặt hàng an toàn
-        </h1>
-
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+    <div className="bg-[#f5f5fa] min-h-screen py-2 font-sans">
+      <div className="max-w-[1200px] lg:max-w-[1270px] mx-auto px-4 md:px-6">
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-2">
           <div className="w-full lg:w-[65%]">
             <CheckoutLeftForm 
               address={address} setAddress={setAddress}

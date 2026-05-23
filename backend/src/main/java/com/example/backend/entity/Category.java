@@ -1,13 +1,16 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.CategoryStatus;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.example.backend.enums.CategoryStatus;
+
+import lombok.*;
 
 @Entity
 @Table(name = "categories")
@@ -17,12 +20,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Category {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String name;
 
     @Column(nullable = false, unique = true)
@@ -40,7 +42,7 @@ public class Category {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Builder.Default
-    private  List<Product> products = new ArrayList<>();
+    private List<Product> products = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String description;

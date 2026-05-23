@@ -8,8 +8,7 @@ import org.springframework.cache.annotation.EnableCaching;
 @SpringBootApplication
 public class TechStoreManagerApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(TechStoreManagerApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(TechStoreManagerApplication.class, args);
+    }
 }

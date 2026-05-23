@@ -1,5 +1,8 @@
 package com.example.backend.enums;
 
-public enum UserStatus{
-    ACTIVE, INACTIVE, BANNED, TERMINATED
+public enum UserStatus {
+    ACTIVE,
+    INACTIVE,
+    BANNED,
+    TERMINATED
 }

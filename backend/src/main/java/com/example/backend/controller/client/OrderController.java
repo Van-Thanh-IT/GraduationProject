@@ -1,13 +1,14 @@
 package com.example.backend.controller.client;
 
+import org.springframework.web.bind.annotation.*;
+
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.client.ClientOrderDetailResponse;
 import com.example.backend.dto.response.client.OrderPageResponse;
 import com.example.backend.service.OrderService;
 import com.example.backend.utils.SecurityUtils;
-import lombok.RequiredArgsConstructor;
 
-import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/user/orders")
@@ -27,11 +28,9 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Integer userId = SecurityUtils.getCurrentUserId();
         String filterStatus = (status != null && status.equalsIgnoreCase("ALL")) ? null : status;
 
-        // Hứng kết quả bằng kiểu mới
-        OrderPageResponse result = orderService.getMyOrders(userId, filterStatus, keyword, page, size);
+        OrderPageResponse result = orderService.getMyOrders(filterStatus, keyword, page, size);
 
         return APIResponse.<OrderPageResponse>builder()
                 .code(200)
@@ -43,10 +42,7 @@ public class OrderController {
     @GetMapping("/{orderId}")
     public APIResponse<ClientOrderDetailResponse> getOrderDetail(@PathVariable Integer orderId) {
 
-        // Lấy ID của user đang đăng nhập từ Token
-        Integer userId = SecurityUtils.getCurrentUserId();
-
-        ClientOrderDetailResponse response = orderService.getOrderDetailForClient(userId, orderId);
+        ClientOrderDetailResponse response = orderService.getOrderDetailForClient(orderId);
 
         return APIResponse.<ClientOrderDetailResponse>builder()
                 .code(200)
@@ -56,13 +52,8 @@ public class OrderController {
     }
 
     @PostMapping("/{code}/cancel")
-    public APIResponse<Void> cancelOrder(
-            @PathVariable String code,
-            @RequestParam String reason) {
+    public APIResponse<Void> cancelOrder(@PathVariable String code, @RequestParam String reason) {
         orderService.cancelOrderByUser(getCurrentUserId(), code, reason);
         return APIResponse.success(null);
     }
-
-
-
 }

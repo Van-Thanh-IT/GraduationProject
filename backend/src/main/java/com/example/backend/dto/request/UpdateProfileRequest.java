@@ -1,17 +1,21 @@
 package com.example.backend.dto.request;
 
-import com.example.backend.enums.Gender;
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.backend.enums.Gender;
+import com.example.backend.validation.constraint.VietnamPhone;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -29,7 +33,7 @@ public class UpdateProfileRequest {
     private String email;
 
     @NotBlank(message = "Số điện thoại không được để trống!")
-    @Pattern(regexp = "^(0[0-9]{9,10})$", message = "Số điện thoại không hợp lệ!")
+    @VietnamPhone
     private String phone;
 
     private Gender gender;
@@ -38,7 +42,6 @@ public class UpdateProfileRequest {
 
     private LocalDate dateOfBirth;
 
-    // Dùng Regex thay thế @Size: Chấp nhận chuỗi rỗng (^$) HOẶC (|) chuỗi từ 8 ký tự trở lên (.{8,})
     @Pattern(regexp = "^$|.{8,}", message = "Mật khẩu mới phải có ít nhất 8 ký tự!")
     private String password;
 

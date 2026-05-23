@@ -813,3 +813,64 @@ CREATE INDEX idx_products_active ON products(status)WHERE deleted_at IS NULL;
 CREATE INDEX idx_orders_status_id ON orders(order_status, id);
 CREATE INDEX idx_order_items_covering ON order_items(product_variant_id, order_id, quantity);
 
+
+
+TRUNCATE TABLE
+    users,
+roles,
+user_roles,
+products,
+product_variants,
+product_variant_images,
+product_attribute_values,
+product_serials,
+categories,
+brands,
+orders,
+order_items,
+carts,
+cart_items,
+payments,
+reviews,
+review_images,
+banners,
+articles,
+flash_sales,
+inventory_history,
+inventory_notes,
+inventory_note_details,
+addresses,
+vouchers,
+chat_messages,
+chat_messages_ai,
+chat_session_ai,
+conversations,
+password_reset_codes,
+token_blacklist
+RESTART IDENTITY CASCADE;
+
+
+DO $$
+DECLARE
+r RECORD;
+BEGIN
+    -- 1. Tắt ràng buộc tạm
+EXECUTE 'SET session_replication_role = replica';
+
+-- 2. TRUNCATE tất cả bảng
+FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' RESTART IDENTITY CASCADE';
+END LOOP;
+
+    -- 3. Reset toàn bộ sequence về 1
+FOR r IN (
+        SELECT sequence_name
+        FROM information_schema.sequences
+        WHERE sequence_schema = 'public'
+    ) LOOP
+        EXECUTE 'ALTER SEQUENCE ' || r.sequence_name || ' RESTART WITH 1';
+END LOOP;
+
+    -- 4. Bật lại ràng buộc
+EXECUTE 'SET session_replication_role = DEFAULT';
+END $$;

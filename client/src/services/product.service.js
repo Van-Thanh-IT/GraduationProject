@@ -30,7 +30,7 @@ export const ProductService = {
     API.delete(`/management/products/attributes/${attributeId}`),
 
 
-   searchSimpleVariant: (keyword = '', limit = 20) => {
+   searchSimpleVariants: (keyword = '', limit = 20) => {
     return API.get(`/management/products/variants/search-simple`, {
       params: { keyword, limit }
     });
@@ -54,7 +54,6 @@ export const ProductService = {
   
   uploadVariantImages: (variantId, files) => {
     const formData = new FormData();
-    // Vì Spring Boot nhận List<MultipartFile> có tên param là "files"
     files.forEach((file) => {
       formData.append("files", file); 
     });

@@ -1,12 +1,13 @@
 package com.example.backend.mapper;
 
-import com.example.backend.dto.request.CategoryRequest;
-import com.example.backend.dto.response.CategoryResponse;
-import com.example.backend.entity.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+
+import com.example.backend.dto.request.CategoryRequest;
+import com.example.backend.dto.response.CategoryResponse;
+import com.example.backend.entity.Category;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface CategoryMapper {

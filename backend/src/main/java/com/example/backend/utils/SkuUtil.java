@@ -8,6 +8,10 @@ public class SkuUtil {
 
     private static final Random RANDOM = new Random();
 
+    private SkuUtil() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     public static String generateSku(String productName, String option1, String option2, String option3) {
         String productCode = generateProductCode(productName);
         StringBuilder sku = new StringBuilder(productCode);
@@ -54,9 +58,7 @@ public class SkuUtil {
 
     private static String normalize(String input) {
         if (input == null || input.isBlank()) return "";
-        return removeAccent(input)
-                .replaceAll("[^a-zA-Z0-9]", "")
-                .toUpperCase();
+        return removeAccent(input).replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
     }
 
     private static String removeAccent(String s) {

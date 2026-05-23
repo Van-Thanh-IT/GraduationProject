@@ -1,9 +1,11 @@
 package com.example.backend.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.util.List;
+
+import jakarta.persistence.*;
+
+import lombok.*;
 
 @Entity
 @Table(name = "inventory_note_details")
@@ -29,7 +31,6 @@ public class InventoryNoteDetail {
     @Column(precision = 15, scale = 2)
     private BigDecimal price = BigDecimal.ZERO;
 
-    // Mảng ảo (Không lưu vào bảng này, dùng để truyền dữ liệu IMEI trong quá trình xử lý)
     @Transient
     private List<String> serialNumbers;
 }

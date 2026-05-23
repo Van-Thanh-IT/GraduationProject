@@ -2,10 +2,14 @@ package com.example.backend.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-@Data
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class CartRequest {
+
     @NotNull(message = "Thiếu ID sản phẩm biến thể")
     private Integer productVariantId;
 

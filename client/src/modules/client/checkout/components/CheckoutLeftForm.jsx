@@ -16,7 +16,7 @@ export default function CheckoutLeftForm({
 }) {
   
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-2">
       <CheckoutAddress 
         address={address} setAddress={setAddress}
         cities={cities} districts={districts} wards={wards}

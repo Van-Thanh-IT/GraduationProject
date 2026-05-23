@@ -10,7 +10,6 @@ import PasswordReset from '@/modules/client/auth/components/PasswordReset';
 
 import HomePage from '@/modules/client/home/HomePage';
 import AboutPage from '@/modules/client/home/AboutPage';
-import ContactPage from '@/modules/client/home/ContactPage';
 import WarrantyPage from '@/modules/client/home/WarrantyPage';
 import ProductPage from '@/modules/client/products/ProductPage';
 import ProductDetailPage from '@/modules/client/products/ProductDetailPage';
@@ -30,6 +29,7 @@ import BrandManagement from '../modules/admin/brand/BrandManagement';
 import CategoryManagement from '../modules/admin/category/CategoryManagement';
 import AttributeManagement from '../modules/admin/attribute/AttributeManagement';
 import ProductManagement from '@/modules/admin/products/ProductManagement';
+import ReviewManagement from '@/modules/admin/review/ReviewManagement';
 import OrderManagement from '@/modules/admin/orders/OrderManagement';
 import VoucherManagement from '../modules/admin/vouchers/VoucherManagement';
 import FlashSaleManagement from '@/modules/admin/flashSales/FashSaleManagement';
@@ -57,7 +57,6 @@ const AppRoute = () => {
                 {/* Ai cũng xem được */}
                 <Route index element={<HomePage/>}/>
                 <Route path='abouts' element={<AboutPage/>}/>
-                <Route path='contact' element={<ContactPage/>}/>
                 <Route path='warranty' element={<WarrantyPage/>}/>
                 <Route path="products" element={<ProductPage/>}/>
                 <Route path="cart" element={<CartPage/>}/>
@@ -82,6 +81,7 @@ const AppRoute = () => {
                 <Route path="/admin" element={<AdminLayout/>}>
                     <Route index element={<Dashboard/>}/>
                     <Route path="products" element={<ProductManagement/>}/>
+                     <Route path="reviews" element={<ReviewManagement/>}/>
                     <Route path="orders" element={<OrderManagement/>}/>
                     <Route path="inventory" element={<InventoryManagement/>}/>
                     <Route path='articles' element={<ArticleManagement/>}/>

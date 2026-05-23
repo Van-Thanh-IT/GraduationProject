@@ -1,12 +1,15 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.NoteStatus;
-import com.example.backend.enums.NoteType;
-import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import jakarta.persistence.*;
+
+import com.example.backend.enums.NoteStatus;
+import com.example.backend.enums.NoteType;
+
+import lombok.*;
 
 @Entity
 @Table(name = "inventory_notes")
@@ -29,8 +32,9 @@ public class InventoryNote {
     @Column(nullable = false)
     private String reason;
 
-    @Column(name = "user_id")
-    private Integer userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String supplierName;
 

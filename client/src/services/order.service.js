@@ -10,6 +10,7 @@ export const orderService = {
   },
 
   packOrder: (id, payload ) => {
+    console.log(payload);
     return API.put(`/management/orders/${id}/pack`, payload);
   },
  cancelOrder: (code, reason) => {

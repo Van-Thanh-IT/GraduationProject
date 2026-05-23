@@ -1,48 +1,92 @@
 // File: src/modules/client/products/detail/components/ProductGallery.jsx
 import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ProductGallery({ images = [] }) {
-  const [activeImage, setActiveImage] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Mỗi khi mảng images thay đổi (do khách chọn Màu khác), tự tìm ảnh Thumbnail làm ảnh chính
   useEffect(() => {
     if (images && images.length > 0) {
-      const thumb = images.find(img => img.isThumbnail) || images[0];
-      setActiveImage(thumb.imageUrl);
+      const thumbIndex = images.findIndex(img => img.isThumbnail);
+      setCurrentIndex(thumbIndex !== -1 ? thumbIndex : 0);
     }
   }, [images]);
 
-  if (!images.length) {
-    return <div className="bg-slate-100 rounded-3xl aspect-square flex items-center justify-center text-slate-400 font-medium">Đang cập nhật hình ảnh</div>;
+  if (!images || images.length === 0) {
+    return (
+      <div className="bg-gray-50 rounded-xl aspect-square flex items-center justify-center text-gray-400 text-sm font-medium border border-gray-200">
+        Đang cập nhật hình ảnh
+      </div>
+    );
   }
 
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* ẢNH CHÍNH (TO) */}
-      <div className="w-full aspect-square bg-white rounded-3xl border border-slate-100 p-6 flex items-center justify-center overflow-hidden shadow-sm relative group">
+    <div className="flex flex-col gap-3 font-sans w-full">
+      
+      {/* ẢNH CHÍNH (Thu nhỏ gọn, tích hợp nút điều hướng) */}
+      <div className="relative w-full aspect-square bg-white rounded-xl border border-gray-200 p-4 flex items-center justify-center overflow-hidden group">
         <img 
-          src={activeImage} 
-          alt="Product" 
-          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+          src={images[currentIndex]?.imageUrl} 
+          alt="Product Main" 
+          className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-102"
         />
+
+        {/* NÚT MŨI TÊN ĐIỀU HƯỚNG TRÁI/PHẢI (Chỉ hiện khi có nhiều hơn 1 ảnh) */}
+        {images.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/5 hover:bg-black/15 text-gray-600 flex items-center justify-center transition-colors z-10"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={18} strokeWidth={2.5} />
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleNext}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/5 hover:bg-black/15 text-gray-600 flex items-center justify-center transition-colors z-10"
+              aria-label="Next image"
+            >
+              <ChevronRight size={18} strokeWidth={2.5} />
+            </button>
+          </>
+        )}
       </div>
 
-      {/* DẢI ẢNH PHỤ Ở DƯỚI */}
+      {/* DANH SÁCH ẢNH THUMBNAIL PHÍA DƯỚI */}
       {images.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-          {images.map((img) => (
-            <button
-              key={img.id}
-              onClick={() => setActiveImage(img.imageUrl)}
-              className={`w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-2xl border-2 p-1.5 overflow-hidden transition-all bg-white ${
-                activeImage === img.imageUrl 
-                  ? 'border-indigo-600 shadow-md shadow-indigo-100' 
-                  : 'border-slate-100 hover:border-indigo-300'
-              }`}
-            >
-              <img src={img.imageUrl} alt="Thumbnail" className="w-full h-full object-contain rounded-lg" />
-            </button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar w-full">
+          {images.map((img, index) => {
+            const isActive = index === currentIndex;
+            return (
+              <button
+                key={img.id || index}
+                type="button"
+                onClick={() => setCurrentIndex(index)}
+                className={`w-14 h-14 md:w-16 md:h-16 shrink-0 rounded-lg border p-1 overflow-hidden transition-colors bg-white flex items-center justify-center ${
+                  isActive 
+                    ? 'border-blue-600' 
+                    : 'border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                <img 
+                  src={img.imageUrl} 
+                  alt={`Thumbnail ${index + 1}`} 
+                  className="max-w-full max-h-full object-contain rounded" 
+                />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

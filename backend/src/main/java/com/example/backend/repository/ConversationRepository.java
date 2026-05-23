@@ -1,19 +1,18 @@
 package com.example.backend.repository;
 
-import com.example.backend.entity.Conversation;
-import com.example.backend.enums.ChatStatus;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.backend.entity.Conversation;
+import com.example.backend.enums.ChatStatus;
+
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, Integer> {
-    // Tìm phòng chat của khách đã đăng nhập
     Optional<Conversation> findByUserId(Integer userId);
 
-    // Tìm phòng chat của khách vãng lai
     Optional<Conversation> findByGuestId(String guestId);
 
     // Lấy danh sách chat đang chờ (Tab 1)

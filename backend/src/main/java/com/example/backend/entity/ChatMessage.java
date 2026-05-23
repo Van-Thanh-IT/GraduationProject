@@ -1,14 +1,17 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.SenderRole;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import jakarta.persistence.*;
-import lombok.*;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.example.backend.enums.SenderRole;
+
+import lombok.*;
 
 @Entity
 @Table(name = "chat_messages")
@@ -18,7 +21,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ChatMessage {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

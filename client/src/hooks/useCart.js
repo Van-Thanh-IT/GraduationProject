@@ -12,6 +12,7 @@ export const useGetCart = () => {
     queryKey: cartKeys.all,
     queryFn: async () => {
       const res = await cartService.getCart();
+      console.log(res.data?.data);
       return res.data?.data; 
     }
   });

@@ -1,11 +1,12 @@
 package com.example.backend.dto.request;
 
+import java.math.BigDecimal;
+
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
 
-import java.math.BigDecimal;
+import lombok.Data;
 
 @Data
 public class ProductVariantRequest {
@@ -34,5 +35,4 @@ public class ProductVariantRequest {
 
     @NotNull(message = "Bắt buộc phải tích có serial hay không!")
     private Boolean isSerialRequired;
-
 }

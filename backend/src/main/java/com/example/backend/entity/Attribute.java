@@ -1,7 +1,9 @@
 package com.example.backend.entity;
 
-import com.example.backend.enums.AttributeStatus;
 import jakarta.persistence.*;
+
+import com.example.backend.enums.AttributeStatus;
+
 import lombok.*;
 
 @Entity
@@ -12,7 +14,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Attribute {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

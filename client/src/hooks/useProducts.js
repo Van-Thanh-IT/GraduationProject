@@ -14,7 +14,7 @@ export const productKeys = {
   
   // Biến thể
   variants: (productId) => [...productKeys.all, 'variants', productId],
-  searchVariant: (keyword) => [...productKeys.all, 'search', keyword],
+  searchVariants: (keyword) => [...productKeys.all, 'search', keyword],
 };
 
 // ==========================================
@@ -117,14 +117,14 @@ export const useGetProductVariants = (productId) => {
   });
 };
 
-export const useSearchSimpleVariant = (keyword, limit = 20) => {
+export const useSearchSimpleVariants = (keyword, limit = 20) => {
   return useQuery({
-    queryKey: productKeys.searchVariant(keyword),
+    queryKey: productKeys.searchVariants(keyword),
     queryFn: async () => {
-      const res = await ProductService.searchSimpleVariant(keyword, limit);
+      const res = await ProductService.searchSimpleVariants(keyword, limit);
       return res.data?.data || res.data || [];
     },
-    enabled: false, // Tắt tự động fetch, dùng refetch() để gọi thủ công (debounce)
+    enabled: false, 
   });
 };
 

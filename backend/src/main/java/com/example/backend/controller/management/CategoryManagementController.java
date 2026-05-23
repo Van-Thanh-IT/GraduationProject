@@ -1,15 +1,18 @@
 package com.example.backend.controller.management;
 
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.*;
+
 import com.example.backend.dto.request.CategoryRequest;
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.CategoryResponse;
 import com.example.backend.enums.CategoryStatus;
 import com.example.backend.service.CategoryService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/categories")
@@ -35,8 +38,7 @@ public class CategoryManagementController {
 
     @PutMapping("/{id}")
     public APIResponse<CategoryResponse> updateCategory(
-            @PathVariable Integer id,
-            @Valid @ModelAttribute CategoryRequest request) {
+            @PathVariable Integer id, @Valid @ModelAttribute CategoryRequest request) {
         CategoryResponse response = categoryService.updateCategory(id, request);
         return APIResponse.<CategoryResponse>builder()
                 .code(200)
@@ -48,14 +50,10 @@ public class CategoryManagementController {
     @DeleteMapping("/{id}")
     public APIResponse<Void> updateCategoryStatus(@PathVariable Integer id, @RequestParam CategoryStatus status) {
 
-        categoryService.UpdateCategoryStatus(id, status);
-        String message = (status == CategoryStatus.ACTIVE)
-                ? "Đã kích hoạt danh mục thành công!"
-                : "Đã ẩn danh mục thành công!";
+        categoryService.updateCategoryStatus(id, status);
+        String message =
+                (status == CategoryStatus.ACTIVE) ? "Đã kích hoạt danh mục thành công!" : "Đã ẩn danh mục thành công!";
 
-        return APIResponse.<Void>builder()
-                .code(200)
-                .messages(message)
-                .build();
+        return APIResponse.<Void>builder().code(200).messages(message).build();
     }
 }

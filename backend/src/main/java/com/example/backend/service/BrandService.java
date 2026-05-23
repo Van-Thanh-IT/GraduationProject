@@ -1,92 +1,104 @@
 package com.example.backend.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.backend.dto.request.BrandRequest;
 import com.example.backend.dto.response.BrandResponse;
 import com.example.backend.entity.Brand;
 import com.example.backend.enums.BrandStatus;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
 import com.example.backend.mapper.BrandMapper;
 import com.example.backend.repository.BrandRepository;
-import com.example.backend.utils.Cloudinaryutil;
+import com.example.backend.utils.CloudinaryUtil;
 import com.example.backend.utils.SlugUtil;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class BrandService {
 
     private final BrandRepository brandRepository;
     private final BrandMapper brandMapper;
-    private final Cloudinaryutil cloudinaryutil;
+    private final CloudinaryUtil cloudinaryutil;
 
+    @Transactional(readOnly = true)
     public List<BrandResponse> getAllBrands() {
-        return brandRepository.findAll()
-                .stream()
+        return brandRepository.findAll().stream()
                 .map(brandMapper::toBrandResponse)
                 .toList();
     }
 
-
+    @Transactional
     public BrandResponse createBrand(BrandRequest request) {
-        if (brandRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Tên thương hiệu đã tồn tại!");
-        }
+        validateBrandNameNotExists(request.getName());
 
-        String slug = SlugUtil.toSlug(request.getName());
-        if (brandRepository.existsBySlug(slug)) {
-            throw new RuntimeException("Đường dẫn (Slug) đã tồn tại!");
-        }
-
+        String slug = SlugUtil.generateUniqueSlug(request.getName(), brandRepository::existsBySlug);
         Brand brand = brandMapper.toBrand(request);
         brand.setSlug(slug);
-
-        if (request.getLogo() != null && !request.getLogo().isEmpty()) {
-            brand.setLogoUrl(cloudinaryutil.saveFile(request.getLogo()));
-        }
-
         brand.setStatus(BrandStatus.ACTIVE);
+
+        handleLogoUpload(brand, request.getLogo());
+
         return brandMapper.toBrandResponse(brandRepository.save(brand));
     }
 
+    @Transactional
     public BrandResponse updateBrand(Integer id, BrandRequest request) {
-        Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+        Brand brand = getBrandOrThrow(id);
 
-        if (request.getName() != null && !request.getName().equals(brand.getName())
-                && brandRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Tên thương hiệu đã tồn tại!");
+        if (request.getName() != null && !request.getName().equals(brand.getName())) {
+            validateBrandNameNotExists(request.getName());
+
+            String slug = SlugUtil.generateUniqueSlug(request.getName(), brandRepository::existsBySlug);
+            brand.setSlug(slug);
         }
 
-        if (request.getName() != null) {
-            String baseSlug = SlugUtil.toSlug(request.getName());
-            if (!baseSlug.equals(brand.getSlug())
-                    && brandRepository.existsBySlug(baseSlug)) {
-                throw new RuntimeException("Đường dẫn (Slug) đã tồn tại!");
-            }
+        brandMapper.updateBrand(brand, request);
 
-            brandMapper.updateBrand(brand, request);
-            brand.setSlug(baseSlug);
-
-        }
-
-        if (request.getLogo() != null && !request.getLogo().isEmpty()) {
-            if (brand.getLogoUrl() != null) {
-                cloudinaryutil.deleteFile(brand.getLogoUrl());
-            }
-            brand.setLogoUrl(cloudinaryutil.saveFile(request.getLogo()));
-        }
+        handleLogoUpload(brand, request.getLogo());
 
         return brandMapper.toBrandResponse(brandRepository.save(brand));
     }
 
+    @Transactional
     public void updateBrandStatus(Integer id, BrandStatus status) {
-
-        Brand brand = brandRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
-
+        Brand brand = getBrandOrThrow(id);
         brand.setStatus(status);
         brandRepository.save(brand);
+    }
+
+    private Brand getBrandOrThrow(Integer id) {
+        return brandRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.BRAND_NOT_FOUND));
+    }
+
+    private void validateBrandNameNotExists(String name) {
+        if (brandRepository.existsByName(name)) {
+            throw new CustomException(ErrorCode.BRAND_NAME_EXISTS);
+        }
+    }
+
+    private void handleLogoUpload(Brand brand, MultipartFile logo) {
+        if (logo != null && !logo.isEmpty()) {
+            if (brand.getLogoUrl() != null) {
+                try {
+                    cloudinaryutil.deleteFile(brand.getLogoUrl());
+                } catch (Exception e) {
+                    log.error("Failed to delete old logo on Cloudinary: {}", brand.getLogoUrl(), e);
+                }
+            }
+
+            String newLogoUrl = cloudinaryutil.saveFile(logo);
+            if (newLogoUrl != null) {
+                brand.setLogoUrl(newLogoUrl);
+            }
+        }
     }
 }

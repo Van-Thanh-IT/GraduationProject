@@ -87,7 +87,7 @@ export default function CategoryManagement() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
+      <div className="flex justify-between items-center mb-2 bg-white p-2 rounded-lg shadow-sm">
         <Input
           placeholder="Tìm tên danh mục..."
           prefix={<SearchOutlined className="text-slate-400" />}
@@ -102,7 +102,10 @@ export default function CategoryManagement() {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-sm">
-        <CustomTable dataSource={displayedData} columns={columns} loading={isLoading} rowKey="id" />
+        <CustomTable 
+        dataSource={displayedData}
+        columns={columns} 
+        loading={isLoading} rowKey="id" />
       </div>
 
       <Modal 

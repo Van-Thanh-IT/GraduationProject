@@ -1,133 +1,140 @@
+// File: src/components/Footer.jsx
 import React from 'react';
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube, CreditCard, ShieldCheck, Truck } from 'lucide-react';
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-900 text-gray-300 pt-16 pb-8 border-t border-gray-800 font-sans">
-            {/* 1. Phần Features nổi bật (Tùy chọn) */}
-            <div className="container mx-auto px-4 mb-12 border-b border-gray-800 pb-10">
+        <footer className="bg-gray-900 text-gray-300 p-3 border-t border-gray-800 font-sans">
+            
+            {/* CÁC CHÍNH SÁCH NỔI BẬT */}
+            <div className="container mx-auto px-4 mb-8 border-b border-gray-800 pb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                        <ShieldCheck className="w-10 h-10 text-blue-500" />
-                        <h4 className="text-white font-semibold text-lg">Bảo hành chính hãng</h4>
-                        <p className="text-sm text-gray-400">Cam kết 100% hàng chính hãng, bảo hành lên đến 24 tháng.</p>
+                    <div className="flex flex-col items-center justify-center space-y-1.5">
+                        <ShieldCheck className="w-8 h-8 text-blue-500" />
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide">Bảo hành chính hãng</h4>
+                        <p className="text-xs text-gray-400 max-w-xs m-0">Cam kết 100% hàng chính hãng, bảo hành lên đến 24 tháng.</p>
                     </div>
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                        <Truck className="w-10 h-10 text-blue-500" />
-                        <h4 className="text-white font-semibold text-lg">Giao hàng toàn quốc</h4>
-                        <p className="text-sm text-gray-400">Miễn phí vận chuyển cho đơn hàng từ 5.000.000đ.</p>
+                    <div className="flex flex-col items-center justify-center space-y-1.5">
+                        <Truck className="w-8 h-8 text-blue-500" />
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide">Giao hàng toàn quốc</h4>
+                        <p className="text-xs text-gray-400 max-w-xs m-0">Miễn phí vận chuyển cho đơn hàng từ 5.000.000đ.</p>
                     </div>
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                        <CreditCard className="w-10 h-10 text-blue-500" />
-                        <h4 className="text-white font-semibold text-lg">Thanh toán linh hoạt</h4>
-                        <p className="text-sm text-gray-400">Hỗ trợ trả góp 0% qua thẻ tín dụng và công ty tài chính.</p>
+                    <div className="flex flex-col items-center justify-center space-y-1.5">
+                        <CreditCard className="w-8 h-8 text-blue-500" />
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide">Thanh toán linh hoạt</h4>
+                        <p className="text-xs text-gray-400 max-w-xs m-0">Hỗ trợ trả góp 0% qua thẻ tín dụng và công ty tài chính.</p>
                     </div>
                 </div>
             </div>
 
-            {/* 2. Phần Nội dung chính */}
+            {/* NỘI DUNG CHÍNH CHIA 4 CỘT */}
             <div className="container mx-auto px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
                     
-                    {/* Cột 1: Thông tin liên hệ */}
-                    <div className="space-y-4">
-                        <h3 className="text-2xl font-bold text-white mb-6">
+                    {/* CỘT 1: THÔNG TIN LIÊN HỆ */}
+                    <div className="space-y-3">
+                        <h3 className="text-lg font-bold text-white m-0">
                             <span className="text-blue-500">Tech</span>Store
                         </h3>
-                        <p className="text-sm leading-relaxed mb-4">
+                        <p className="text-xs leading-relaxed text-gray-400 m-0">
                             Hệ thống bán lẻ các thiết bị điện tử, điện thoại, máy tính và phụ kiện công nghệ hàng đầu Việt Nam.
                         </p>
-                        <ul className="space-y-3">
-                            <li className="flex items-start space-x-3">
-                                <MapPin className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-sm">Tầng 3, Tòa nhà Tech, Cầu Giấy, Hà Nội</span>
+                        <ul className="space-y-2 pt-1 p-0 m-0 list-none">
+                            <li className="flex items-start gap-2">
+                                <MapPin className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                                <span className="text-xs text-gray-400">Tầng 3, Tòa nhà Tech, Cầu Giấy, Hà Nội</span>
                             </li>
-                            <li className="flex items-center space-x-3">
-                                <Phone className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                                <span className="text-sm">Hotline: <strong className="text-white">1900 8888</strong></span>
+                            <li className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-blue-500 shrink-0" />
+                                <span className="text-xs text-gray-400">Hotline: <strong className="text-white font-semibold">1900 8888</strong></span>
                             </li>
-                            <li className="flex items-center space-x-3">
-                                <Mail className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                                <span className="text-sm">cskh@techstore.vn</span>
+                            <li className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-blue-500 shrink-0" />
+                                <span className="text-xs text-gray-400">cskh@techstore.vn</span>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Cột 2: Sản phẩm */}
+                    {/* CỘT 2: SẢN PHẨM */}
                     <div>
-                        <h4 className="text-white font-semibold text-lg mb-6">Sản Phẩm</h4>
-                        <ul className="space-y-3">
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Điện thoại iPhone</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Laptop / Macbook</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Máy tính bảng (Tablet)</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Phụ kiện công nghệ</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Đồng hồ thông minh</a></li>
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide mb-3 m-0">Sản Phẩm</h4>
+                        <ul className="space-y-2 p-0 m-0 list-none">
+                            <li><a href="#" className="text-xs text-gray-400 hover:text-blue-400 transition-colors no-underline">Điện thoại iPhone</a></li>
+                            <li><a href="#" className="text-xs text-gray-400 hover:text-blue-400 transition-colors no-underline">Laptop / Macbook</a></li>
+                            <li><a href="#" className="text-xs text-gray-400 hover:text-blue-400 transition-colors no-underline">Máy tính bảng (Tablet)</a></li>
+                            <li><a href="#" className="text-xs text-gray-400 hover:text-blue-400 transition-colors no-underline">Phụ kiện công nghệ</a></li>
+                            <li><a href="#" className="text-xs text-gray-400 hover:text-blue-400 transition-colors no-underline">Đồng hồ thông minh</a></li>
                         </ul>
                     </div>
 
-                    {/* Cột 3: Hỗ trợ khách hàng */}
+                    {/* CỘT 3: GOOGLE MAP TỰ ĐỘNG KHÍT KHUNG */}
                     <div>
-                        <h4 className="text-white font-semibold text-lg mb-6">Hỗ Trợ Khách Hàng</h4>
-                        <ul className="space-y-3">
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Chính sách bảo hành</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Chính sách đổi trả 30 ngày</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Hướng dẫn mua trả góp</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Chính sách bảo mật thông tin</a></li>
-                            <li><a href="#" className="text-sm hover:text-blue-400 transition-colors">Tra cứu đơn hàng</a></li>
-                        </ul>
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide mb-3 m-0">Bản Đồ Cửa Hàng</h4>
+                        <div className="bg-gray-800 p-1 rounded-lg border border-gray-800 overflow-hidden h-[140px] w-full">
+                            <iframe 
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d930.9657409268152!2d105.77451720704842!3d21.03816848208359!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313454c9d9e80ad1%3A0xa8834169e964c217!2zVHLGsOG7nW5nIEPDoW4gQuG7mSBRdeG6o24gTMO9IFbEg24gSG_DoSBUaMOqIFRoYW8gRHUgTOG7i2No!5e0!3m2!1svi!2s!4v1775656854538!5m2!1svi!2s" 
+                                width="100%" 
+                                height="100%" 
+                                style={{ border: 0, borderRadius: '0.375rem' }} 
+                                allowFullScreen="" 
+                                loading="lazy" 
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Google Map"
+                            ></iframe>
+                        </div>
                     </div>
 
-                    {/* Cột 4: Đăng ký nhận tin & Mạng xã hội */}
+                    {/* CỘT 4: NHẬN TIN & MẠNG XÃ HỘI */}
                     <div>
-                        <h4 className="text-white font-semibold text-lg mb-6">Đăng Ký Nhận Tin</h4>
-                        <p className="text-sm mb-4">Nhận ngay mã giảm giá 10% cho đơn hàng đầu tiên khi đăng ký bản tin của chúng tôi.</p>
-                        <form className="flex mb-6">
+                        <h4 className="text-white font-bold text-sm uppercase tracking-wide mb-3 m-0">Đăng Ký Nhận Tin</h4>
+                        <p className="text-xs text-gray-400 mb-2.5 m-0">Nhận ngay mã giảm giá 10% cho đơn hàng đầu tiên khi đăng ký.</p>
+                        <form className="flex mb-4" onSubmit={(e) => e.preventDefault()}>
                             <input 
                                 type="email" 
-                                placeholder="Nhập email của bạn..." 
-                                className="w-full px-4 py-2 bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500 rounded-l-md"
+                                placeholder="Nhập email..." 
+                                className="w-full px-3 h-8.5 bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500 rounded-l-md text-xs"
                             />
-                            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors rounded-r-md">
+                            <button type="submit" className="px-4 h-8.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors rounded-r-md text-xs shrink-0">
                                 Gửi
                             </button>
                         </form>
                         
-                        <h4 className="text-white font-semibold mb-4">Kết Nối Với Chúng Tôi</h4>
-                        <div className="flex space-x-4">
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 transition-colors">
-                                <Facebook className="w-5 h-5" />
+                        <div className="flex gap-2.5 mt-1">
+                            <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 transition-colors text-white">
+                                <Facebook className="w-4 h-4" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-pink-600 transition-colors">
-                                <Instagram className="w-5 h-5" />
+                            <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-pink-600 transition-colors text-white">
+                                <Instagram className="w-4 h-4" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 transition-colors">
-                                <Youtube className="w-5 h-5" />
+                            <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-red-600 transition-colors text-white">
+                                <Youtube className="w-4 h-4" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-400 transition-colors">
-                                <Twitter className="w-5 h-5" />
+                            <a href="#" className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-400 transition-colors text-white">
+                                <Twitter className="w-4 h-4" />
                             </a>
                         </div>
                     </div>
+
                 </div>
             </div>
 
-            {/* 3. Phần Copyright */}
-            <div className="container mx-auto px-4 mt-12 pt-8 border-t border-gray-800">
-                <div className="flex flex-col md:flex-row justify-between items-center">
-                    <p className="text-sm text-gray-500 mb-4 md:mb-0">
-                        &copy; {new Date().getFullYear()} TechStore. Tất cả các quyền được bảo lưu.
+            {/* COPYRIGHT & PAYMENT */}
+            <div className="container mx-auto px-4 mt-8 pt-4 border-t border-gray-800">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <p className="text-[11px] text-gray-500 text-center sm:text-left m-0">
+                        © {new Date().getFullYear()} TechStore. Tất cả các quyền được bảo lưu.
                     </p>
-                    <div className="flex space-x-4">
-                        {/* Chỗ này thường để logo Visa, Mastercard, Momo, VNPAY (Bạn có thể thay bằng thẻ img) */}
-                        <div className="px-3 py-1 bg-gray-800 rounded text-xs font-bold text-gray-400">VISA</div>
-                        <div className="px-3 py-1 bg-gray-800 rounded text-xs font-bold text-gray-400">MasterCard</div>
-                        <div className="px-3 py-1 bg-gray-800 rounded text-xs font-bold text-gray-400">MoMo</div>
-                        <div className="px-3 py-1 bg-gray-800 rounded text-xs font-bold text-gray-400">VNPAY</div>
+                    <div className="flex gap-1.5">
+                        <div className="px-2 py-0.5 bg-gray-800 rounded text-[9px] font-bold text-gray-400 border border-gray-700">VISA</div>
+                        <div className="px-2 py-0.5 bg-gray-800 rounded text-[9px] font-bold text-gray-400 border border-gray-700">MASTER</div>
+                        <div className="px-2 py-0.5 bg-gray-800 rounded text-[9px] font-bold text-gray-400 border border-gray-700">MOMO</div>
+                        <div className="px-2 py-0.5 bg-gray-800 rounded text-[9px] font-bold text-gray-400 border border-gray-700">VNPAY</div>
                     </div>
                 </div>
             </div>
+            
         </footer>
     );
-}
+};
 
 export default Footer;

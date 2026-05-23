@@ -1,13 +1,21 @@
 package com.example.backend.mapper;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.util.StringUtils;
+
 import com.example.backend.dto.request.OrderRequest;
-import com.example.backend.dto.response.OrderItemResponse;
-import com.example.backend.dto.response.OrderResponse;
+import com.example.backend.dto.response.admin.AdminOrderResponse;
+import com.example.backend.dto.response.client.ClientOrderDetailResponse;
+import com.example.backend.dto.response.client.OrderCheckoutResponse;
 import com.example.backend.entity.Order;
 import com.example.backend.entity.OrderItem;
 import com.example.backend.entity.Payment;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
@@ -17,48 +25,62 @@ public interface OrderMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "orderItems", ignore = true)
     @Mapping(target = "payments", ignore = true)
-    Order toEntity(OrderRequest request);
+    Order toOrder(OrderRequest request);
 
-    // 1. Ánh xạ Order -> OrderResponse
-    @Mapping(target = "fullShippingAddress", expression = "java(formatAddress(order))")
+    @Mapping(target = "fullShippingAddress", expression = "java(mapShippingAddress(order))")
     @Mapping(target = "paymentMethod", expression = "java(getLatestPaymentMethod(order))")
     @Mapping(target = "paymentStatus", expression = "java(getLatestPaymentStatus(order))")
     @Mapping(target = "items", source = "orderItems")
-    OrderResponse toResponse(Order order);
+    AdminOrderResponse toAdminOrderResponse(Order order);
 
-    // 2. Ánh xạ OrderItem -> OrderItemResponse
     @Mapping(target = "variantId", source = "productVariant.id")
-    @Mapping(target = "variantInfo", expression = "java(formatVariantInfo(item))")
-    OrderItemResponse toItemResponse(OrderItem item);
+    @Mapping(target = "variantInfo", expression = "java(mapVariantInfo(item))")
+    AdminOrderResponse.OrderItem toItemResponse(OrderItem item);
 
-    // =========================================================
-    // CÁC HÀM PHỤ TRỢ (DEFAULT METHODS) XỬ LÝ LOGIC NỐI CHUỖI
-    // =========================================================
+    OrderCheckoutResponse toOrderCheckoutResponse(Order order);
 
-    default String formatAddress(Order order) {
-        if (order == null || order.getShippingAddress() == null) return null;
-        return String.format("%s, %s, %s, %s",
-                order.getShippingAddress(), order.getShippingWard(),
-                order.getShippingDistrict(), order.getShippingCity());
+    @Mapping(target = "fullShippingAddress", expression = "java(mapShippingAddress(order))")
+    @Mapping(target = "paymentMethod", expression = "java(getLatestPaymentMethod(order))")
+    @Mapping(target = "paymentStatus", expression = "java(getLatestPaymentStatus(order))")
+    @Mapping(target = "items", source = "orderItems")
+    ClientOrderDetailResponse toClientOrderDetailResponse(Order order);
+
+    @Mapping(target = "variantId", source = "productVariant.id")
+    @Mapping(target = "variantInfo", expression = "java(mapVariantInfo(item))")
+    ClientOrderDetailResponse.OrderItem toClientItemResponse(OrderItem item);
+
+    default String mapShippingAddress(Order order) {
+        return Stream.of(
+                        order.getShippingAddress(),
+                        order.getShippingWard(),
+                        order.getShippingDistrict(),
+                        order.getShippingCity())
+                .filter(Objects::nonNull)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.joining(", "));
+    }
+
+    default Payment getLatestPayment(Order order) {
+        if (order == null || order.getPayments() == null || order.getPayments().isEmpty()) {
+            return null;
+        }
+        List<Payment> payments = order.getPayments();
+        return payments.get(payments.size() - 1);
     }
 
     default String getLatestPaymentMethod(Order order) {
-        if (order == null || order.getPayments() == null || order.getPayments().isEmpty()) return null;
-        Payment latestPayment = order.getPayments().get(order.getPayments().size() - 1);
-        return latestPayment.getMethod() != null ? latestPayment.getMethod().name() : null;
+        Payment p = getLatestPayment(order);
+        return (p != null && p.getMethod() != null) ? p.getMethod().name() : null;
     }
 
     default String getLatestPaymentStatus(Order order) {
-        if (order == null || order.getPayments() == null || order.getPayments().isEmpty()) return null;
-        Payment latestPayment = order.getPayments().get(order.getPayments().size() - 1);
-        return latestPayment.getStatus() != null ? latestPayment.getStatus().name() : null;
+        Payment p = getLatestPayment(order);
+        return (p != null && p.getStatus() != null) ? p.getStatus().name() : null;
     }
 
-    default String formatVariantInfo(OrderItem item) {
-        if (item == null) return null;
-        return String.format("%s %s %s",
-                item.getOption1Value() != null ? item.getOption1Value() : "",
-                item.getOption2Value() != null ? item.getOption2Value() : "",
-                item.getOption3Value() != null ? item.getOption3Value() : "").trim();
+    default String mapVariantInfo(OrderItem item) {
+        return Stream.of(item.getOption1Value(), item.getOption2Value(), item.getOption3Value())
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(" "));
     }
 }

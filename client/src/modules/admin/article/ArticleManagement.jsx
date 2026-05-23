@@ -122,22 +122,21 @@ export default function ArticleManagement() {
   ];
 
   return (
-    <div className="p-4 md:p-6 bg-[#f8fafc] min-h-screen font-sans">
-      <div className="max-w-[1300px] mx-auto space-y-6">
+    <div className="bg-[#f8fafc] min-h-screen font-sans">
+      <div className="max-w-[1300px] mx-auto space-y-3">
         
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-[20px] shadow-sm border border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between  gap-4 bg-white p-2 rounded-[20px] shadow-sm border border-slate-100">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight m-0">Quản lý Tin Tức & Bài Viết</h1>
             <p className="text-sm text-slate-500 font-medium mt-1 m-0">Đăng tải thông tin, khuyến mãi và đánh giá công nghệ</p>
           </div>
           
-          <Button 
-            variant="primary" 
+         <Button 
             onClick={() => { setEditingArticle(null); setIsModalOpen(true); }}
-            className="flex items-center gap-2 shadow-md shadow-indigo-200"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white border-none h-[44px] px-6 rounded-xl font-bold shadow-md shadow-indigo-200 whitespace-nowrap transition-all active:scale-95"
           >
-            <PlusOutlined /> Viết bài mới
+            <PlusOutlined /> Thêm bài viết
           </Button>
         </div>
 
