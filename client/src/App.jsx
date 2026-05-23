@@ -1,7 +1,11 @@
 
 import { ToastContainer } from "react-toastify"
 import AppRoute from "./routes/AppRoute"
+import { useNavigate } from "react-router-dom";
+import { setNavigator } from "@/utils/navigate";
 function App() {
+    const nav = useNavigate();
+    setNavigator(nav);
   return (<>
     <ToastContainer
     position="top-center"
