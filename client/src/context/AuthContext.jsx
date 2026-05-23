@@ -2,16 +2,12 @@ import React, { createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthService } from "@/services/auth.service";
 import { setAccessToken, getAccessToken, handleLogout } from "@/api/API";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
-  // Gọi API getMe mỗi khi app load. 
-  // F5 mất token trong RAM? Không sao, Axios Interceptor sẽ dùng Cookie để tự cứu lấy nó!
   const { data: user, isLoading } = useQuery({
     queryKey: ['auth-user'],
     queryFn: async () => {

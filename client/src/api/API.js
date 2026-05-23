@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -154,6 +155,8 @@ export const handleLogout = () => {
     delete API.defaults.headers.common.Authorization;
 
     axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`, {}, { withCredentials: true });
+    
+    window.location.href = "/login";
 
 };
 
