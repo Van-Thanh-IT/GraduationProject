@@ -1,4 +1,3 @@
-import { navigateTo } from "@/utils/navigate";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -156,7 +155,6 @@ export const handleLogout = () => {
 
     axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`, {}, { withCredentials: true });
 
-   navigateTo('/login');
 };
 
 export default API;
