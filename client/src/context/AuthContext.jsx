@@ -14,15 +14,12 @@ export const AuthProvider = ({ children }) => {
       const res = await AuthService.getMe();
       return res.data;
     },
-    // Bỏ thuộc tính "enabled" đi để app luôn thử kiểm tra trạng thái đăng nhập
     retry: false, 
-    // Nếu cả getMe và Refresh đều lỗi -> User thực sự chưa login -> Clear state
     onError: () => {
       queryClient.setQueryData(['auth-user'], null);
     }
   });
 
-  // ===== Actions =====
   const loginContext = async (token) => {
     // 1. Nhét Access Token vào RAM
     setAccessToken(token); 
@@ -32,7 +29,6 @@ export const AuthProvider = ({ children }) => {
 
   const logoutContext = () => {
     handleLogout();
-    navigate("/login"); 
   };
 
   return (

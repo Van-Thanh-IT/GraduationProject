@@ -1,36 +1,30 @@
+// File: src/modules/admin/products/components/tab/attribute/AttributeForm.jsx
 import React, { useState, useEffect } from 'react';
-import { message, Select, Spin } from 'antd';
+import { message, Select, Spin, Form } from 'antd';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
 import { AttributeService } from '@/services/attribute.service';
-export default function AttributeForm({ productId, initialData, onSuccess, onCancel }) {
+
+export default function AttributeForm({ productId, initialData, onSuccess, onCancel, backendError }) {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  
-  // State lưu danh sách thuộc tính lấy từ DB
   const [attributeOptions, setAttributeOptions] = useState([]);
   const [loadingAttributes, setLoadingAttributes] = useState(false);
 
-  const [formData, setFormData] = useState({
-    attributeId: null,
-    value: ''
-  });
-
-  // 1. GỌI API LẤY TẤT CẢ THUỘC TÍNH ĐỂ ĐỔ VÀO DROPDOWN
   const fetchAllAttributes = async () => {
     setLoadingAttributes(true);
     try {
       const res = await AttributeService.getAllAttributes();
       const data = res.data?.data || res.data || [];
-      
-      // Chuyển đổi dữ liệu thành dạng { value, label } cho thẻ Select của Ant Design
       const options = data.map(attr => ({
         value: attr.id,
-        label: `${attr.name} (${attr.code})` // Hiển thị "RAM (RAM)" cho dễ nhìn
+        label: `${attr.name} (${attr.code})`
       }));
       setAttributeOptions(options);
     } catch (error) {
-      message.error("Lỗi lấy danh sách thuộc tính từ hệ thống!");
+      console.error(error);
+      message.error("Lỗi lấy danh sách thông số từ hệ thống!");
     } finally {
       setLoadingAttributes(false);
     }
@@ -40,78 +34,121 @@ export default function AttributeForm({ productId, initialData, onSuccess, onCan
     fetchAllAttributes();
   }, []);
 
-  // 2. NẠP DỮ LIỆU NẾU ĐANG Ở CHẾ ĐỘ SỬA
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        // Tương thích với cấu trúc Spring Boot trả về
+      form.setFieldsValue({
         attributeId: initialData.attribute?.id || initialData.attributeId || null,
         value: initialData.value || ''
       });
+    } else {
+      form.resetFields();
     }
-  }, [initialData]);
+  }, [initialData, form]);
 
-  // 3. XỬ LÝ LƯU THÔNG SỐ CỦA SẢN PHẨM
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.attributeId || !formData.value) {
-      return message.error("Vui lòng chọn thông số và nhập giá trị!");
+  useEffect(() => {
+    if (backendError) {
+      if (backendError.messages && backendError.messages !== "Validation failed") {
+        message.error(backendError.messages);
+      }
+      if (backendError.errors) {
+        const formFieldsError = Object.keys(backendError.errors).map((key) => ({
+          name: key,
+          errors: [backendError.errors[key]],
+        }));
+        form.setFields(formFieldsError);
+      }
     }
+  }, [backendError, form]);
 
+  const handleFinish = async (values) => {
     setLoading(true);
     try {
       if (initialData) {
-        await ProductService.updateProductAttribute(initialData.id, formData);
+        await ProductService.updateProductAttribute(initialData.id, values);
         message.success("Sửa thông số thành công!");
       } else {
-        await ProductService.addAttributeToProduct(productId, formData);
+        await ProductService.addAttributeToProduct(productId, values);
         message.success("Thêm thông số thành công!");
       }
       onSuccess();
     } catch (error) {
-       console.log("Lỗi:", error.response?.data);
-       const errorMessage = error.response?.data?.messages || error.response?.data?.message || "Thao tác thất bại!";
-       message.error(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
+      const errData = error.response?.data;
+      if (errData?.messages && errData.messages !== "Validation failed") {
+        message.error(errData.messages);
+      }
+      if (errData?.errors) {
+        const formFieldsError = Object.keys(errData.errors).map((key) => ({
+          name: key,
+          errors: [errData.errors[key]],
+        }));
+        form.setFields(formFieldsError);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-4">
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-slate-700">Tên thông số</label>
-        
-        {/* ĐỔ DỮ LIỆU OPTIONS VÀO ĐÂY */}
-        <Spin spinning={loadingAttributes} size="small">
-          <Select
-            showSearch // Cho phép gõ để tìm kiếm thuộc tính cho nhanh
-            optionFilterProp="label" // Tìm kiếm dựa trên chữ hiển thị
-            value={formData.attributeId}
-            onChange={(val) => setFormData({...formData, attributeId: val})}
-            placeholder="Chọn thông số (VD: Màn hình, Pin...)"
-            options={attributeOptions}
-            className="w-full h-[40px]"
-            disabled={!!initialData} // Sửa thì không cho đổi tên thông số, chỉ cho đổi giá trị
-            notFoundContent={loadingAttributes ? "Đang tải..." : "Không tìm thấy thuộc tính nào"}
-          />
-        </Spin>
-      </div>
+    <div className="relative font-sans">
+      <Spin spinning={loading} tip="Đang lưu thông số...">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          requiredMark={false}
+          className="space-y-3.5 mt-2"
+        >
+          <Form.Item 
+            name="attributeId" 
+            label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Tên thông số *</span>}
+            rules={[{ required: true, message: 'Vui lòng chọn thông số!' }]}
+            className="m-0"
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              placeholder="Chọn thông số (VD: Màn hình, Pin...)"
+              options={attributeOptions}
+              disabled={!!initialData}
+              loading={loadingAttributes}
+              className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md"
+              notFoundContent={loadingAttributes ? <Spin size="small" className="p-2 w-full flex justify-center" /> : "Không tìm thấy thông số nào"}
+            />
+          </Form.Item>
 
-      <Input 
-        label="Giá trị (Value)" 
-        placeholder="VD: 6.7 inch, 5000 mAh..."
-        required 
-        value={formData.value} 
-        onChange={e => setFormData({...formData, value: e.target.value})} 
-      />
+          <Form.Item 
+            name="value" 
+            rules={[{ required: true, message: 'Vui lòng nhập giá trị!' }]}
+            className="m-0"
+          >
+            <Input 
+              label="Giá trị thực tế *" 
+              placeholder="VD: 6.7 inch, 5000 mAh..." 
+              className="h-9 text-xs rounded-md"
+            />
+          </Form.Item>
 
-      <div className="flex justify-end gap-3 mt-4">
-        <Button type="button" onClick={onCancel} className="bg-gray-200 text-gray-700 px-6">Hủy</Button>
-        <Button type="submit" loading={loading} className="bg-blue-600 text-white px-6">
-          {initialData ? 'Lưu thay đổi' : 'Thêm thông số'}
-        </Button>
-      </div>
-    </form>
+          <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 mt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel} 
+              disabled={loading}
+              className="h-9 px-5 text-xs font-bold uppercase tracking-wide"
+            >
+              Hủy
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary"
+              loading={loading} 
+              className="h-9 px-6 text-xs font-bold uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 rounded-md"
+            >
+              {initialData ? 'Lưu thay đổi' : 'Thêm thông số'}
+            </Button>
+          </div>
+        </Form>
+      </Spin>
+    </div>
   );
 }

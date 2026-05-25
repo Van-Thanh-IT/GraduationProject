@@ -112,13 +112,16 @@ export default function ProductDetailPage() {
 
         {/* ================= KHỐI 2: MÔ TẢ & THÔNG SỐ ================= */}
         <div className="flex flex-col lg:flex-row gap-3 mb-3">
-          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-4 md:p-4">
-             <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-3 uppercase tracking-wide border-b border-slate-100 pb-4">
-                <FileTextOutlined className="text-indigo-500" /> Đặc điểm nổi bật
-             </h2>
-             <div className="prose prose-slate max-w-none leading-relaxed text-[15px]">
-               <p>{product.description}</p>
-             </div>
+          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-slate-100 p-4">
+            <h2 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-3 uppercase tracking-wide border-b border-slate-100 pb-4">
+              <FileTextOutlined className="text-indigo-500" /> Đặc điểm nổi bật
+            </h2>
+
+            <div 
+              className="prose prose-slate max-w-none leading-relaxed text-[15px] mt-4 
+                        [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-xl [&_img]:mx-auto [&_img]:my-4"
+              dangerouslySetInnerHTML={{ __html: product.description || '' }}
+            />
           </div>
 
           <div className="w-full lg:w-[400px] shrink-0">

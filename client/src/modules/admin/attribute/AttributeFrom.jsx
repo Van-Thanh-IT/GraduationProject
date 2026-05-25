@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { message, Select, Spin, Tooltip } from 'antd';
+import { Select, Spin, Tooltip } from 'antd';
 import { LoadingOutlined, InfoCircleOutlined, TagOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useSaveAttribute } from '@/hooks/useAttributes';
+import { toast } from 'react-toastify';
 
 const FILTER_GROUPS = [
   { value: 'DISPLAY', label: 'Màn hình & Hiển thị' },
@@ -45,7 +46,7 @@ export default function AttributeForm({ initialData, onSuccess, onCancel }) {
 
     saveAttribute({ id: initialData?.id, formData }, {
       onSuccess: () => {
-        message.success(`${isEdit ? 'Cập nhật' : 'Thêm'} thành công!`);
+        toast.success(`${isEdit ? 'Cập nhật' : 'Thêm'} thành công!`);
         onSuccess();
       },
       onError: (err) => {
@@ -53,7 +54,7 @@ export default function AttributeForm({ initialData, onSuccess, onCancel }) {
         if (resData?.errors) {
           setErrors(resData.errors);
         } else {
-          message.error(resData?.messages || resData?.message || "Thao tác thất bại!");
+          toast.error(resData?.messages || resData?.message || "Thao tác thất bại!");
         }
       }
     });

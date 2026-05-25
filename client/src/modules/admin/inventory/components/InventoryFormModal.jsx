@@ -188,7 +188,7 @@ const InventoryFormModal = ({ visible, onClose, onSuccess, type }) => {
 
                                                 <Col span={8}>
                                                     <Form.Item {...restField} name={[name, 'price']} label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Đơn giá (VNĐ) *</span>} rules={[{ required: true, message: 'Nhập đơn giá!' }]} className="mb-0">
-                                                        <InputNumber min={0} className="w-full h-9 text-xs rounded-md flex items-center" placeholder="0" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+                                                        <InputNumber min={0} className="!w-[150px] h-9 text-xs rounded-md flex items-center" placeholder="0" formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
                                                     </Form.Item>
                                                 </Col>
                                             </Row>

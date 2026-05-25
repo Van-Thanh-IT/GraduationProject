@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { message, Spin, Popconfirm, Switch, Radio } from 'antd'; // Nhớ import thêm Radio
+import { message, Spin, Popconfirm, Switch, Radio } from 'antd';
 import { DeleteOutlined, StarFilled, UploadOutlined, InfoCircleOutlined, BarcodeOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
+import { formatNumber, parseNumber } from '@/utils/format';
 
 export default function EditVariantAndImageForm({ variant, product, onRefresh }) {
   const hasOpt1 = !!product?.option1Name;
@@ -19,7 +20,6 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
     option2Value: variant.option2Value || '',
     option3Value: variant.option3Value || '',
     isDefault: variant.isDefault || false,
-    // Lấy giá trị từ DB lên. Nếu DB chưa có (null) thì để null để ép người dùng chọn
     isSerialRequired: variant.isSerialRequired !== undefined ? variant.isSerialRequired : null 
   });
 
@@ -141,10 +141,31 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Giá bán (VNĐ)" type="number" required value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-            <Input label="Giá gốc (VNĐ)" type="number" value={formData.originalPrice} onChange={e => setFormData({...formData, originalPrice: e.target.value})} />
-          </div>
+            <Input
+              label="Giá bán (VNĐ)"
+              type="text"
+              required
+              value={formatNumber(formData.price)}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  price: parseNumber(e.target.value),
+                })
+              }
+            />
 
+            <Input
+              label="Giá gốc (VNĐ)"
+              type="text"
+              value={formatNumber(formData.originalPrice)}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  originalPrice: parseNumber(e.target.value),
+                })
+              }
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Trọng lượng (kg)" type="number" step="0.01" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} />
             

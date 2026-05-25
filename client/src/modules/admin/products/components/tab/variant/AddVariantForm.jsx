@@ -4,6 +4,7 @@ import { DeleteOutlined, PlusOutlined, BarcodeOutlined } from '@ant-design/icons
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
+import { formatNumber, parseNumber } from '@/utils/format';
 
 export default function AddVariantForm({ product, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
@@ -12,7 +13,6 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
   const hasOpt2 = !!product?.option2Name;
   const hasOpt3 = !!product?.option3Name;
 
-  // Cập nhật tên biến thành isSerial và đặt mặc định là null (Bắt buộc phải chọn)
   const emptyVariant = {
     option1Value: '',
     option2Value: '',
@@ -21,7 +21,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
     originalPrice: '',
     weight: '', 
     isDefault: false,
-    isSerialRequired: null // null nghĩa là người dùng chưa chọn Có/Không
+    isSerialRequired: null 
   };
 
   const [variants, setVariants] = useState([{ ...emptyVariant }]);
@@ -47,7 +47,6 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
       return message.warning("Vui lòng thêm ít nhất 1 biến thể!");
     }
 
-    // VALIDATE: Bắt lỗi nếu người dùng bỏ quên chưa tick chọn ô isSerial
     const hasUnselectedSerial = variants.some(v => v.isSerialRequired === null);
     if (hasUnselectedSerial) {
        return message.error("Vui lòng tích chọn CÓ hoặc KHÔNG cho phần Quản lý Serial ở tất cả các dòng!");
@@ -98,8 +97,26 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
                 <Input label={product.option3Name} required value={variant.option3Value} onChange={e => handleChange(index, 'option3Value', e.target.value)} />
               )}
               
-              <Input label="Giá bán (VNĐ)" type="number" required placeholder="VD: 22990000" value={variant.price} onChange={e => handleChange(index, 'price', e.target.value)} />
-              <Input label="Giá gốc" type="number" placeholder="VD: 25990000" value={variant.originalPrice} onChange={e => handleChange(index, 'originalPrice', e.target.value)} />
+             <Input
+                label="Giá bán (VNĐ)"
+                type="text"
+                required
+                placeholder="VD: 22,990,000"
+                value={formatNumber(variant.price)}
+                onChange={e =>
+                  handleChange(index, 'price', parseNumber(e.target.value))
+                }
+              />
+
+              <Input
+                label="Giá gốc"
+                type="text"
+                placeholder="VD: 25,990,000"
+                value={formatNumber(variant.originalPrice)}
+                onChange={e =>
+                  handleChange(index, 'originalPrice', parseNumber(e.target.value))
+                }
+              />
               <Input label="Trọng lượng (kg)" type="number" step="0.01" placeholder="VD: 0.22" value={variant.weight} onChange={e => handleChange(index, 'weight', e.target.value)} />
               
               {/* === KHU VỰC CHỌN SERIAL (DÙNG RADIO BUTTONS) === */}

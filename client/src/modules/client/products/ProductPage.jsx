@@ -89,6 +89,8 @@ export default function ProductPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-8 pt-3 font-sans">
       <div className="max-w-[1200px] lg:max-w-[1400px] mx-auto px-4 md:px-6">
+
+      
         
         <div className="mb-2">
           <Breadcrumb

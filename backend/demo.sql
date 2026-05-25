@@ -1,7 +1,9 @@
 --- Hàm tìm kiếm sản phẩm ->  searchAndFilterProducts
 -- 1. Tạo GIN Index cho tìm kiếm tên sản phẩm (Full-Text Search)
 -- 'simple' dùng cho tìm kiếm không phân biệt dấu/ngôn ngữ cơ bản, hoặc dùng 'vietnamese' nếu có extension
-CREATE INDEX idx_products_name_fts ON products USING GIN (to_tsvector('simple', name));
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- 2. Đánh GIN Index cho cột name của bảng products sử dụng thuật toán Trigram
+CREATE INDEX idx_products_name_trgm ON products USING GIN (name gin_trgm_ops);
 
 -- 2. Index cho các bộ lọc chính
 CREATE INDEX idx_products_status_deleted ON products (status, deleted_at);

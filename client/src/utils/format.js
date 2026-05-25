@@ -19,14 +19,12 @@ export const formatCurrency = (amount) => {
  */
 export const formatNumber = (number) => {
   if (number === undefined || number === null || number === '') return '';
-  
-  // Ép kiểu về số, nếu không phải số thì trả về rỗng
+
   const numericValue = Number(number);
   if (isNaN(numericValue)) return '';
 
-  return new Intl.NumberFormat('vi-VN').format(numericValue);
+  return new Intl.NumberFormat('en-US').format(numericValue);
 };
-
 /**
  * Xóa bỏ mọi định dạng (dấu chấm, phẩy, chữ) để lấy số gốc
  * Phù hợp để LƯU VÀO STATE và GỬI LÊN BACKEND

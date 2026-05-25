@@ -265,7 +265,7 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
       {/* KHỐI KHO VÀ ĐIỀU KHOẢN */}
       <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center gap-4 text-[13px] text-gray-500">
         <span className="flex items-center gap-1"><ShieldCheck className="text-green-600 w-4 h-4" /> Bảo hành {product.warrantyPeriod}</span>
-        <span>Tình trạng: <strong className={currentVariant?.stockQuantity > 0 ? "text-green-600" : "text-red-500"}>{currentVariant?.stockQuantity > 0 ? `Còn ${currentVariant.stockQuantity} sản phẩm` : "Tạm hết hàng"}</strong></span>
+        <span>Tình trạng: <strong className={currentVariant?.stockQuantity > 0 ? "text-green-600" : "text-red-500"}>{currentVariant?.stockQuantity > 0 ? `Còn ${currentVariant.stockQuantity} sản phẩm` : "Hết hàng"}</strong></span>
       </div>
 
       {/* HÀNG NÚT THAO TÁC CỐ ĐỊNH CHUẨN KÍCH THƯỚC */}

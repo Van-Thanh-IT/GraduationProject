@@ -24,13 +24,12 @@ export default function VariantList({ product }) {
     }
   };
 
-  // 1. ĐÃ SỬA: Đổi productId thành product?.id
   useEffect(() => {
     if (product?.id) fetchVariants();
   }, [product?.id]);
 
   const handleDeleteVariant = async (e, variantId) => {
-    e.stopPropagation(); // Ngăn sự kiện mở Collapse khi bấm xóa
+    e.stopPropagation(); 
     try {
       await ProductService.softDeleteVariant(variantId);
       message.success("Xóa biến thể thành công!");
@@ -42,7 +41,6 @@ export default function VariantList({ product }) {
 
   return (
     <div className="mt-2 flex flex-col gap-4">
-      {/* KHU VỰC NÚT THÊM */}
       <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
         <span className="font-semibold text-slate-700">Tổng số: {variants.length} biến thể</span>
         <Button onClick={() => setIsAddMode(true)} disabled={isAddMode} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 flex items-center gap-2">
@@ -50,11 +48,9 @@ export default function VariantList({ product }) {
         </Button>
       </div>
 
-      {/* FORM THÊM MỚI (Hiện khi bấm nút) */}
       {isAddMode && (
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 shadow-inner">
           <h4 className="font-bold text-blue-700 mb-3">Tạo biến thể mới</h4>
-          {/* 2. ĐÃ SỬA: Truyền nguyên object product vào cho AddVariantForm */}
           <AddVariantForm 
              product={product}
              onSuccess={() => { setIsAddMode(false); fetchVariants(); }}
@@ -63,7 +59,6 @@ export default function VariantList({ product }) {
         </div>
       )}
 
-      {/* DANH SÁCH BIẾN THỂ */}
       <Spin spinning={loading}>
         {variants.length === 0 && !isAddMode && (
           <div className="text-center text-slate-400 py-8">Chưa có biến thể nào. Hãy thêm biến thể đầu tiên!</div>
@@ -83,7 +78,6 @@ export default function VariantList({ product }) {
                   </Popconfirm>
                 }
               >
-                {/* TRUYỀN DỮ LIỆU VÀO FORM SỬA VÀ QUẢN LÝ ẢNH */}
                 <EditVariantAndImageForm variant={variant} product={product} onRefresh={fetchVariants} />
               </Collapse.Panel>
             );

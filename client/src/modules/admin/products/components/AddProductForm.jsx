@@ -1,304 +1,232 @@
-import React, { useState, useRef } from "react";
-import { message, Select, Spin } from "antd";
-import {
-  TagOutlined,
-  FileTextOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+// File: src/modules/admin/products/components/AddProductForm.jsx
+import React, { useEffect, useRef } from "react";
+import { message, Select, Spin, Form } from "antd";
+import { TagOutlined, FileTextOutlined, SettingOutlined } from "@ant-design/icons";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ReactQuill from "react-quill";
 
-// 1. IMPORT CÁC HOOKS REACT QUERY
 import { useSaveProduct } from "@/hooks/useProducts";
 import { useGetBrands } from "@/hooks/useBrands";        
 import { useGetCategories } from "@/hooks/useCategories";   
 
+import 'react-quill/dist/quill.snow.css';
+
 const OPTION_SUGGESTIONS = [
-
+  { value: "Mặc Định", label: "Mặc Định" },
   { value: "Màu sắc", label: "Màu sắc" },
-
+  { value: "Lựa chọn phiên bản", label: "Phiên bản" },
   { value: "Dung lượng", label: "Dung lượng lưu trữ (ROM)" },
-  { value: "Phiên bản", label: "Xuất xứ / Phiên bản (Quốc tế, VN/A, LL/A)" },
-  { value: "Kết nối mạng", label: "Kết nối (Chỉ Wifi / Wifi + 5G/Cellular)" }, // Bắt buộc phải có cho iPad
-
+  { value: "Kết nối mạng", label: "Kết nối (Chỉ Wifi / Wifi + 5G)" },
   { value: "RAM", label: "Dung lượng RAM" }, 
   { value: "CPU", label: "Vi xử lý (CPU)" },
-  { value: "Card đồ họa", label: "Card đồ họa (VGA)" }, // Dành cho Laptop Gaming / PC build
-
-  { value: "Kích thước mặt", label: "Kích thước mặt (VD: 40mm, 44mm, 49mm)" }, // Apple Watch
+  { value: "Card đồ họa", label: "Card đồ họa (VGA)" }, 
+  { value: "Kích thước mặt", label: "Kích thước mặt (40mm, 44mm, 49mm)" }, 
   { value: "Loại dây", label: "Chất liệu dây (Silicon, Thép, Da)" },
-
-  { value: "Kiểu sạc", label: "Hộp sạc (Sạc dây / Sạc không dây MagSafe)" }, // Dành cho AirPods
-  { value: "Chiều dài", label: "Chiều dài cáp (1m, 2m, 3m)" },
-  { value: "Cổng kết nối", label: "Cổng kết nối (Type-C, Lightning, Micro USB)" },
-  { value: "Loại Switch", label: "Loại Switch (Blue, Red, Brown...)" }, // Dành cho Bàn phím cơ
 ];
 
+const QUILL_MODULES = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ align: [] }],
+    ['link', 'image', 'clean'],
+  ],
+};
+
+const QUILL_FORMATS = [
+  'header', 'bold', 'italic', 'underline', 'strike',
+  'color', 'background', 'list', 'bullet', 'align', 'link', 'image'
+];
 
 const formatCategoryOptions = (categoriesArray, level = 0) => {
   let options = [];
-  
   categoriesArray.forEach((cat) => {
-    // Tạo khoảng lùi đầu dòng cho danh mục con (VD: "— " hoặc "— — ")
     const prefix = level > 0 ? '— '.repeat(level) : '';
-    
     options.push({
       value: cat.id,
       label: `${prefix}${cat.name}`, 
-      // Lưu thêm một trường searchText không có dấu gạch để tìm kiếm cho dễ
       searchText: cat.name 
     });
-
-    // Nếu có danh mục con (children), gọi đệ quy để lặp tiếp
     if (cat.children && cat.children.length > 0) {
       options = options.concat(formatCategoryOptions(cat.children, level + 1));
     }
   });
-  
   return options;
 };
 
-export default function AddProductForm({ onSuccess, onCancel }) {
-  // 2. GỌI HOOKS
+export default function AddProductForm({ onSuccess, onCancel, backendError }) {
+  const [form] = Form.useForm();
   const { mutate: createProduct, isPending } = useSaveProduct();
   const { data: brands = [], isLoading: isBrandsLoading } = useGetBrands();
   const { data: categories = [], isLoading: isCategoriesLoading } = useGetCategories();
 
-  // Khai báo các Ref để điều khiển thẻ Select
   const select1Ref = useRef(null);
   const select2Ref = useRef(null);
   const select3Ref = useRef(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    brandId: null,
-    categoryId: null,
-    warrantyPeriod: "",
-    description: "",
-    option1Name: "",
-    option2Name: "",
-    option3Name: "",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!formData.brandId || !formData.categoryId) {
-      return message.error("Vui lòng chọn Thương hiệu và Danh mục!");
-    }
-
-    // 3. SỬ DỤNG MUTATE THAY CHO ONSUBMITAPI
-    createProduct({ data: formData }, {
-      onSuccess: () => {
-        message.success("Thêm sản phẩm thành công!");
-        onSuccess();
-      },
-      onError: (error) => {
-        const errData = error.response?.data;
-        message.error(errData?.messages || errData?.message || "Thêm sản phẩm thất bại!");
+  useEffect(() => {
+    if (backendError) {
+      if (backendError.messages && backendError.messages !== "Validation failed") {
+        message.error(backendError.messages);
+      } else if (!backendError.errors && backendError.messages === "Validation failed") {
+        message.error("Biểu mẫu không hợp lệ, vui lòng kiểm tra các trường báo đỏ!");
       }
-    });
-  };
 
-  const handleOptionChange = (value, key, ref) => {
-    setFormData({
-      ...formData,
-      [key]: value[0] || "",
-    });
+      if (backendError.errors) {
+        const formFieldsError = Object.keys(backendError.errors).map((key) => ({
+          name: key,
+          errors: [backendError.errors[key]],
+        }));
+        form.setFields(formFieldsError);
+      }
+    }
+  }, [backendError, form]);
 
-    if (value && value.length > 0 && ref && ref.current) {
+  const handleOptionChange = (value, ref) => {
+    if (value && value.length > 0 && ref?.current) {
       ref.current.blur();
     }
   };
 
+  const handleFinish = (values) => {
+    if (!values.brandId || !values.categoryId) {
+      return message.error("Vui lòng chọn Thương hiệu và Danh mục sản phẩm!");
+    }
+
+    const payload = {
+      ...values,
+      option1Name: values.option1Name?.[0] || "",
+      option2Name: values.option2Name?.[0] || "",
+      option3Name: values.option3Name?.[0] || "",
+    };
+
+    createProduct({ data: payload }, {
+      onSuccess: () => {
+        message.success("Thêm sản phẩm mới thành công!");
+        onSuccess();
+      },
+      onError: (error) => {
+        const errData = error.response?.data;
+        if (errData?.messages && errData.messages !== "Validation failed") {
+          message.error(errData.messages);
+        }
+        if (errData?.errors) {
+          const formFieldsError = Object.keys(errData.errors).map((key) => ({
+            name: key,
+            errors: [errData.errors[key]],
+          }));
+          form.setFields(formFieldsError);
+        }
+      }
+    });
+  };
+
   return (
-    <div className="relative mt-2">
-      {/* 4. OVERLAY LOADING KHI ĐANG LƯU */}
-      {isPending && (
-        <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
-          <Spin tip="Đang khởi tạo sản phẩm..." size="large" />
-        </div>
-      )}
+    <div className="relative font-sans max-w-3xl mx-auto">
+      <Spin spinning={isPending} tip="Đang khởi tạo sản phẩm...">
+        <Form 
+          form={form} 
+          layout="vertical" 
+          onFinish={handleFinish}
+          requiredMark={false}
+          className="space-y-4"
+        >
+          {/* TIÊM STYLES PHẲNG CHO KHUNG SOẠN THẢO TRÙNG KHỚP HỆ THỐNG */}
+          <style dangerouslySetInnerHTML={{__html: `
+            .ql-container.ql-snow { border-bottom-left-radius: 6px !important; border-bottom-right-radius: 6px !important; border-color: #e5e7eb !important; font-family: inherit !important; font-size: 13px !important; min-height: 200px !important; }
+            .ql-toolbar.ql-snow { border-top-left-radius: 6px !important; border-top-right-radius: 6px !important; border-color: #e5e7eb !important; background-color: #f9fafb !important; }
+            .ant-form-item-has-error .ql-toolbar.ql-snow, .ant-form-item-has-error .ql-container.ql-snow { border-color: #ff4d4f !important; }
+          `}} />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          
-          {/* ================= LEFT ================= */}
-          <div className="flex flex-col gap-5">
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm flex-1">
-              <h3 className="text-sm font-black text-indigo-600 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600"><TagOutlined className="text-lg" /></div>
-                Thông tin cơ bản
-              </h3>
+          {/* BLOCK 1: THÔNG TIN CƠ BẢN (DÀN 1 CỘT DỌC) */}
+          <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200/80 space-y-3.5">
+            <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide m-0 pb-1.5 border-b border-gray-200/60">
+              <TagOutlined className="text-blue-500" /> Thông tin cơ bản
+            </h3>
 
-              <div className="space-y-4">
-                <Input
-                  label="Tên sản phẩm gốc"
-                  placeholder="VD: iPhone 15 Pro Max"
-                  required
-                  disabled={isPending}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="h-11 rounded-xl focus:ring-2 focus:ring-indigo-100"
+            <Form.Item name="name" className="m-0">
+              <Input label="Tên sản phẩm gốc *" placeholder="VD: iPhone 15 Pro Max" className="h-9 text-xs rounded-md" />
+            </Form.Item>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Form.Item name="brandId" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Thương hiệu *</span>} className="m-0">
+                <Select
+                  loading={isBrandsLoading}
+                  placeholder="Chọn hãng sản xuất"
+                  showSearch
+                  optionFilterProp="label"
+                  className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md"
+                  options={brands.map(b => ({ value: b.id, label: b.name }))}
                 />
+              </Form.Item>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* SELECT THƯƠNG HIỆU (DYNAMIC) */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-slate-700">Thương hiệu</label>
-                    <Select
-                      value={formData.brandId}
-                      onChange={(value) => setFormData({ ...formData, brandId: value })}
-                      disabled={isPending}
-                      loading={isBrandsLoading}
-                      className="w-full h-11 custom-select-ui"
-                      placeholder="Chọn thương hiệu"
-                      options={brands.map(b => ({ value: b.id, label: b.name }))}
-                      showSearch
-                      optionFilterProp="label"
-                    />
-                  </div>
-
-                  {/* SELECT DANH MỤC (DYNAMIC) */}
-                 <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-bold text-slate-700">Danh mục</label>
-                    <Select
-                      value={formData.categoryId}
-                      onChange={(value) => setFormData({ ...formData, categoryId: value })}
-                      disabled={isPending}
-                      loading={isCategoriesLoading}
-                      className="w-full h-11 custom-select-ui"
-                      placeholder="Chọn danh mục"
-                      
-                      // 2. GỌI HÀM VỪA TẠO VÀO ĐÂY
-                      options={formatCategoryOptions(categories)} 
-                      
-                      showSearch
-                      // 3. Sửa lại bộ lọc để tìm kiếm theo tên gốc không dính dấu gạch
-                      filterOption={(input, option) =>
-                        (option?.searchText ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Input
-                  label="Thời gian bảo hành"
-                  placeholder="VD: 12 tháng chính hãng"
-                  required
-                  disabled={isPending}
-                  value={formData.warrantyPeriod}
-                  onChange={(e) => setFormData({ ...formData, warrantyPeriod: e.target.value })}
-                  className="h-11 rounded-xl focus:ring-2 focus:ring-indigo-100"
+              <Form.Item name="categoryId" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Danh mục mặt hàng *</span>} className="m-0">
+                <Select
+                  loading={isCategoriesLoading}
+                  placeholder="Chọn danh mục phân cấp"
+                  showSearch
+                  className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md"
+                  options={formatCategoryOptions(categories)} 
+                  filterOption={(input, option) => (option?.searchText ?? '').toLowerCase().includes(input.toLowerCase())}
                 />
-              </div>
+              </Form.Item>
+            </div>
+
+            <Form.Item name="warrantyPeriod" className="m-0">
+              <Input label="Thời gian bảo hành *" placeholder="VD: 12 tháng chính hãng" className="h-9 text-xs rounded-md" />
+            </Form.Item>
+          </div>
+
+          {/* BLOCK 2: THUỘC TÍNH PHÂN LOẠI */}
+          <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200/80 space-y-3">
+            <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide m-0 pb-1.5 border-b border-gray-200/60">
+              <SettingOutlined className="text-blue-500" /> Cấu hình thuộc tính nhóm biến thể
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Form.Item name="option1Name" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Phân loại 1</span>} className="m-0">
+                <Select ref={select1Ref} mode="tags" maxCount={1} allowClear placeholder="Màu sắc" options={OPTION_SUGGESTIONS} onChange={(val) => handleOptionChange(val, select1Ref)} className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md" />
+              </Form.Item>
+
+              <Form.Item name="option2Name" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Phân loại 2</span>} className="m-0">
+                <Select ref={select2Ref} mode="tags" maxCount={1} allowClear placeholder="Dung lượng" options={OPTION_SUGGESTIONS} onChange={(val) => handleOptionChange(val, select2Ref)} className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md" />
+              </Form.Item>
+
+              <Form.Item name="option3Name" label={<span className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">Phân loại 3</span>} className="m-0">
+                <Select ref={select3Ref} mode="tags" maxCount={1} allowClear placeholder="Phiên bản" options={OPTION_SUGGESTIONS} onChange={(val) => handleOptionChange(val, select3Ref)} className="w-full h-9 text-xs [&_.ant-select-selector]:!rounded-md" />
+              </Form.Item>
             </div>
           </div>
 
-          {/* ================= RIGHT ================= */}
-          <div className="flex flex-col gap-5">
-            {/* PRODUCT OPTIONS */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-black text-indigo-600 flex items-center gap-2 uppercase tracking-wider m-0">
-                  <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600"><SettingOutlined className="text-lg" /></div>
-                  Phân loại sản phẩm
-                </h3>
-                <span className="text-[11px] text-slate-500 font-medium italic bg-slate-200/50 px-2 py-1 rounded-md">
-                  Có thể chọn hoặc tự nhập
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-700">Phân loại 1</label>
-                  <Select
-                    ref={select1Ref}
-                    mode="tags"
-                    maxCount={1}
-                    allowClear
-                    disabled={isPending}
-                    placeholder="VD: Màu sắc"
-                    value={formData.option1Name ? [formData.option1Name] : []}
-                    onChange={(value) => handleOptionChange(value, "option1Name", select1Ref)}
-                    options={OPTION_SUGGESTIONS}
-                    className="w-full h-11 custom-select-ui"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-700">Phân loại 2</label>
-                  <Select
-                    ref={select2Ref}
-                    mode="tags"
-                    maxCount={1}
-                    allowClear
-                    disabled={isPending}
-                    placeholder="VD: Dung lượng"
-                    value={formData.option2Name ? [formData.option2Name] : []}
-                    onChange={(value) => handleOptionChange(value, "option2Name", select2Ref)}
-                    options={OPTION_SUGGESTIONS}
-                    className="w-full h-11 custom-select-ui"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-bold text-slate-700">Phân loại 3</label>
-                  <Select
-                    ref={select3Ref}
-                    mode="tags"
-                    maxCount={1}
-                    allowClear
-                    disabled={isPending}
-                    placeholder="VD: Phiên bản"
-                    value={formData.option3Name ? [formData.option3Name] : []}
-                    onChange={(value) => handleOptionChange(value, "option3Name", select3Ref)}
-                    options={OPTION_SUGGESTIONS}
-                    className="w-full h-11 custom-select-ui"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* DESCRIPTION */}
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm flex-1 flex flex-col">
-              <h3 className="text-sm font-black text-indigo-600 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600"><FileTextOutlined className="text-lg" /></div>
-                Mô tả sản phẩm
-              </h3>
-
-              <textarea
-                className="w-full flex-1 min-h-[100px] p-4 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none resize-none transition-all"
-                placeholder="Nhập mô tả chi tiết sản phẩm..."
-                disabled={isPending}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          {/* BLOCK 3: MÔ TẢ CHI TIẾT BẰNG RICH TEXT EDITOR */}
+          <div className="bg-gray-50/60 p-4 rounded-xl border border-gray-200/80 space-y-2.5">
+            <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide m-0 pb-1 border-b border-gray-200/60">
+              <FileTextOutlined className="text-blue-500" /> Mô tả thông tin sản phẩm
+            </h3>
+            <Form.Item name="description" trigger="onChange" validateTrigger="onBlur" className="m-0">
+              <ReactQuill
+                theme="snow"
+                modules={QUILL_MODULES}
+                formats={QUILL_FORMATS}
+                placeholder="Nhập bài viết mô tả chi tiết tính năng sản phẩm tại đây..."
               />
-            </div>
+            </Form.Item>
           </div>
-        </div>
 
-        {/* BUTTONS */}
-        <div className="flex justify-end gap-3 pt-2 mt-2 border-t border-slate-100">
-          <Button
-            type="button"
-            onClick={onCancel}
-            disabled={isPending}
-            className="bg-slate-200 hover:bg-slate-300 rounded-xl text-slate-600 px-6 py-2.5 font-bold transition-all disabled:opacity-50"
-          >
-            Hủy bỏ
-          </Button>
-
-          <Button
-            type="submit"
-            loading={isPending}
-            disabled={isPending}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-xl shadow-lg shadow-indigo-200 font-bold transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100"
-          >
-            Lưu Sản Phẩm
-          </Button>
-        </div>
-      </form>
+          {/* HÀNG NÚT SUBMIT */}
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
+            <Button variant="outline" onClick={onCancel} disabled={isPending} type="button" className="h-9 px-5 text-xs font-bold uppercase tracking-wide">
+              Hủy bỏ
+            </Button>
+            <Button type="submit" variant="primary" loading={isPending} className="h-9 px-6 text-xs font-bold uppercase tracking-wide bg-blue-600 text-white hover:bg-blue-700 rounded-md border-none">
+              Lưu Sản Phẩm
+            </Button>
+          </div>
+        </Form>
+      </Spin>
     </div>
   );
 }

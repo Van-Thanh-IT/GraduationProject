@@ -41,7 +41,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     String BASE_FILTER_WHERE =
             """
 		WHERE p.status = 'ACTIVE' AND p.deleted_at IS NULL
-		AND (:keyword IS NULL OR :keyword = '' OR to_tsvector('simple', p.name) @@ plainto_tsquery('simple', :keyword))
+		AND (:keyword IS NULL OR :keyword = '' OR p.name ILIKE CONCAT('%', :keyword, '%'))
 		AND (:categorySlug IS NULL OR :categorySlug = '' OR c.slug = :categorySlug)
 		AND (:brandSlug IS NULL OR :brandSlug = '' OR b.slug = :brandSlug)
 		-- Lọc giá dựa trên giá Flash Sale (nếu có), nếu không thì dùng giá gốc
