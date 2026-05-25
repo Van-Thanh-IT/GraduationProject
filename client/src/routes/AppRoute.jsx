@@ -22,6 +22,7 @@ import OrderHistoryPage from '@/modules/client/order/OrderHistoryPage';
 import OrderDetailPage from '@/modules/client/order/OrderDetailPage';
 import ArticlePage from '@/modules/client/home/ArtilcePage';
 import ArticleDetailPage from '@/modules/client/home/ArticleDetailPage';
+import PaymentResult from '@/modules/client/checkout/PaymentResult';
 
 import Dashboard from '@/modules/admin/dashboard/Dashboard';
 import UserManagement from '@/modules/admin/users/UserManagement';
@@ -39,6 +40,7 @@ import BannerManagement from '@/modules/admin/banners/BannerManagement';
 import ArticleManagement from '@/modules/admin/article/ArticleManagement';
 import ChatManagement from '@/modules/admin/chat/ChatManagement';
 import ProtectedRoute from './ProtectedRoute';
+
 
 const AppRoute = () => {
     return (
@@ -65,6 +67,9 @@ const AppRoute = () => {
                 <Route path="/product/:id/reviews" element={<ReviewListPage />} />
                 <Route path="/articles" element={<ArticlePage />} />
                 <Route path="/articles/:slug" element={<ArticleDetailPage />} />
+
+                <Route path="payment/success" element={<PaymentResult />} />
+                <Route path="payment/failed" element={<PaymentResult />} />
 
                 {/* YÊU CẦU ĐĂNG NHẬP (USER THƯỜNG) */}
                 {/* Không truyền roles -> Chỉ cần có Token là vào được */}

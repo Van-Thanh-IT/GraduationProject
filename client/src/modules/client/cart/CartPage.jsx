@@ -145,9 +145,9 @@ const CartPage = () => {
 
                  let limitMessage = "";
                  if (item.quantity >= actualMax) {
-                     if (actualMax === 20) limitMessage = "Tối đa 20 SP";
-                     else if (isFlashSale && actualMax === item.flashSale.maxQuantityPerUser) limitMessage = `Tối đa ${actualMax} SP`;
-                     else limitMessage = `Kho còn ${actualMax} SP`;
+                     if (actualMax === 20) limitMessage = "Tối đa 20 sản phẩm";
+                     else if (isFlashSale && actualMax === item.flashSale.maxQuantityPerUser) limitMessage = `Tối đa ${actualMax} sản phẩm`;
+                     else limitMessage = `Kho còn ${actualMax} sản phẩm`;
                  }
 
                  return (

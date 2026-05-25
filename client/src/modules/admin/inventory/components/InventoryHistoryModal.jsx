@@ -26,16 +26,6 @@ const InventoryHistoryModal = ({ visible, onClose, variantId, variantName }) => 
 
     const columns = [
         {
-            title: 'Thời gian',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            width: 160,
-            render: (date) => {
-                const d = new Date(date);
-                return <Text>{d.toLocaleDateString('vi-VN')} {d.toLocaleTimeString('vi-VN')}</Text>;
-            }
-        },
-        {
             title: 'Nghiệp vụ',
             key: 'reference',
             width: 180,

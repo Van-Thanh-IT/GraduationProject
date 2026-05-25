@@ -1,34 +1,55 @@
-import React, { useState } from 'react';
-import { Typography, Space } from 'antd';
-import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Typography, Space, Input, Select } from 'antd';
+import { PlusOutlined, MinusOutlined, SearchOutlined, ClearOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 
-// Import các Hooks và Components con
 import { useGetAllNotes } from '@/hooks/useInventory';
+import { useDebounce } from '@/hooks/useDebounce';
 import InventoryList from './components/InventoryList';
 import InventoryFormModal from './components/InventoryFormModal';
 import NoteDetailModal from './components/NoteDetailModal';
 import InventoryHistoryModal from './components/InventoryHistoryModal';
+import { ImportOutlined, ExportOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
 
 const InventoryManagement = () => {
-    // 1. Data Fetching
-    const { data: notes = [], isLoading } = useGetAllNotes();
+    // 1. States cho UI & Filters (Đã bỏ state status)
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedKeyword = useDebounce(searchTerm, 500); 
+    
+    const [type, setType] = useState(undefined);
+    const [page, setPage] = useState(1);
+    const limit = 10;
 
-    // 2. States for Modals
+    // 2. Data Fetching
+    const { data: response, isLoading, refetch } = useGetAllNotes({
+        keyword: debouncedKeyword,
+        type,
+        page,
+        limit,
+    });
+
+    const notes = response?.items || [];
+    const totalElements = response?.totalElements || 0;
+    const totalPages = response?.totalPages || 1;
+
+    // Reset về trang 1 nếu bộ lọc thay đổi
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedKeyword, type]);
+
+    // 3. Modal States
     const [isFormModalVisible, setIsFormModalVisible] = useState(false);
     const [formType, setFormType] = useState('IMPORT');
-
     const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
     const [selectedNote, setSelectedNote] = useState(null);
-
     const [historyModalVisible, setHistoryModalVisible] = useState(false);
     const [selectedVariantId, setSelectedVariantId] = useState(null);
 
-    // 3. Handlers
-    const openFormModal = (type) => {
-        setFormType(type);
+    // 4. Handlers
+    const openFormModal = (ft) => {
+        setFormType(ft);
         setIsFormModalVisible(true);
     };
 
@@ -38,72 +59,117 @@ const InventoryManagement = () => {
     };
 
     const handleViewHistory = (variantId) => {
-        setIsDetailModalVisible(false); // Đóng modal chi tiết để tránh đè lên nhau
+        setIsDetailModalVisible(false);
         setSelectedVariantId(variantId);
         setHistoryModalVisible(true);
     };
 
-  // 4. Render
+    const resetFilters = () => {
+        setSearchTerm('');
+        setType(undefined);
+        setPage(1);
+    };
+
     return (
-    <div className=" max-w-7xl mx-auto">
-
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-2 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-
-        <Title level={3} className="!mb-0 text-slate-800 font-black tracking-tight">
+        <div className="max-w-7xl mx-auto p-2 space-y-2">
+         {/* Header Area */}
+    <div className="flex flex-col md:flex-row justify-between items-center bg-white px-5 py-4 rounded-xl shadow-sm border border-slate-200">
+        <Title level={4} className="!mb-0 text-slate-800 font-bold">
             📦 Quản lý Kho Hàng
         </Title>
-
-        <Space size="middle" className="flex flex-col sm:flex-row w-full lg:w-auto">
-
+        <Space size="middle" className="mt-4 md:mt-0">
             <Button
-            variant="primary"
-            onClick={() => openFormModal('IMPORT')}
-            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 h-10 rounded-xl shadow-md shadow-blue-200"
+                variant="primary"
+                onClick={() => openFormModal('IMPORT')}
+                // Đổi sang màu Xanh Lục (emerald) - thường dùng cho hành động thêm/nhập vào
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
             >
-            <PlusOutlined className="mr-2" /> Nhập Kho
+                <ImportOutlined className="mr-2 text-lg" /> Nhập Kho
             </Button>
-
+            
             <Button
-            variant="danger"
-            onClick={() => openFormModal('EXPORT')}
-            className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 h-10 rounded-xl shadow-md shadow-orange-200 border-none"
+                variant="danger"
+                onClick={() => openFormModal('EXPORT')}
+                // Đổi sang màu Cam (amber/orange) - cảnh báo nhẹ cho hành động xuất/giảm đi
+                className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
             >
-            <MinusOutlined className="mr-2" /> Xuất Kho
+                <ExportOutlined className="mr-2 text-lg" /> Xuất Kho
             </Button>
-
         </Space>
-        </div>
-
-        {/* List */}
-        <InventoryList
-        notes={notes}
-        isLoading={isLoading}
-        onShowDetail={showDetail}
-        />
-
-        {/* Modals */}
-        <InventoryFormModal
-        visible={isFormModalVisible}
-        type={formType}
-        onClose={() => setIsFormModalVisible(false)}
-        />
-
-        <NoteDetailModal
-        visible={isDetailModalVisible}
-        note={selectedNote}
-        onClose={() => setIsDetailModalVisible(false)}
-        onViewHistory={handleViewHistory}
-        />
-
-        <InventoryHistoryModal
-        visible={historyModalVisible}
-        onClose={() => setHistoryModalVisible(false)}
-        variantId={selectedVariantId}
-        variantName={`Phân loại ID: ${selectedVariantId}`}
-        />
-
     </div>
+
+            {/* Filter Area (Đã căn chỉnh lại layout cho cân đối) */}
+            <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-8">
+                        <Input
+                            prefix={<SearchOutlined className="text-slate-400" />}
+                            placeholder="Tìm kiếm mã phiếu, lý do, người tạo..."
+                            allowClear
+                            size="large"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full rounded-lg"
+                        />
+                    </div>
+                    <div className="md:col-span-3">
+                        <Select
+                            placeholder="Tất cả loại phiếu"
+                            size="large"
+                            className="w-full"
+                            allowClear
+                            value={type}
+                            onChange={(value) => setType(value)}
+                        >
+                            <Select.Option value="IMPORT">Nhập Kho (Import)</Select.Option>
+                            <Select.Option value="EXPORT">Xuất Kho (Export)</Select.Option>
+                        </Select>
+                    </div>
+                    <div className="md:col-span-1 flex items-center justify-end">
+                        <Button 
+                            onClick={resetFilters} 
+                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 h-10 rounded-lg flex items-center justify-center border-none"
+                            title="Xóa bộ lọc"
+                        >
+                            <ClearOutlined />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* List Area */}
+            <InventoryList
+                notes={notes}
+                isLoading={isLoading}
+                onShowDetail={showDetail}
+                total={totalElements}
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+            />
+
+            {/* Modals */}
+            <InventoryFormModal
+                visible={isFormModalVisible}
+                type={formType}
+                onClose={() => setIsFormModalVisible(false)}
+                onSuccess={() => {
+                    setIsFormModalVisible(false);
+                    refetch();
+                }}
+            />
+            <NoteDetailModal
+                visible={isDetailModalVisible}
+                note={selectedNote}
+                onClose={() => setIsDetailModalVisible(false)}
+                onViewHistory={handleViewHistory}
+            />
+            <InventoryHistoryModal
+                visible={historyModalVisible}
+                onClose={() => setHistoryModalVisible(false)}
+                variantId={selectedVariantId}
+            />
+        </div>
     );
 };
 

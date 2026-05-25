@@ -6,11 +6,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.backend.dto.response.PageResponse;
+import com.example.backend.dto.response.admin.InventoryNoteDetailResponse;
+import com.example.backend.dto.response.admin.InventoryNoteResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.backend.dto.request.InventoryNoteRequest;
-import com.example.backend.dto.response.admin.InventoryNoteResponse;
 import com.example.backend.dto.response.admin.InventoryHistoryResponse;
 import com.example.backend.entity.*;
 import com.example.backend.enums.*;
@@ -34,10 +40,72 @@ public class InventoryService {
     private final ProductSerialRepository serialRepository;
     private final InventoryMapper inventoryMapper;
 
+//    @Transactional(readOnly = true)
+//    public List<InventoryNoteResponse> getAllNotes() {
+//        List<InventoryNote> notes = noteRepository.findAll();
+//        return notes.stream().map(this::mapToResponseWithSerials).toList();
+//    }
+
+    // Đổi hàm getAllNotes thành hàm tìm kiếm và phân trang
     @Transactional(readOnly = true)
-    public List<InventoryNoteResponse> getAllNotes() {
-        List<InventoryNote> notes = noteRepository.findAll();
-        return notes.stream().map(this::mapToResponseWithSerials).toList();
+    public PageResponse<InventoryNoteResponse> searchNotes(
+            String keyword, NoteType type, NoteStatus status, int page, int limit) {
+
+        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
+
+        Page<InventoryNote> notePage = noteRepository.searchNotes(keyword, type, status, pageable);
+
+        List<InventoryNoteResponse> dtoList = notePage.getContent().stream()
+                .map(this::mapToResponseWithSerials)
+                .toList();
+
+        return PageResponse.<InventoryNoteResponse>builder()
+                .items(dtoList)
+                .currentPage(page)
+                .totalPages(notePage.getTotalPages())
+                .totalElements(notePage.getTotalElements())
+                .hasNext(notePage.hasNext())
+                .build();
+    }
+
+    // Nâng cấp hàm Mapping để đắp thêm thông tin Sản phẩm và Trạng thái Serial
+    private InventoryNoteResponse mapToResponseWithSerials(InventoryNote note) {
+        InventoryNoteResponse response = inventoryMapper.toInventoryNoteResponse(note);
+        if (response.getDetails() != null) {
+            for (var detail : response.getDetails()) {
+
+                // 1. LẤY DANH SÁCH SERIAL KÈM STATUS
+                // Dùng hàm mới trong repository để lấy cả Entity
+                List<ProductSerial> productSerials = serialRepository.findByInventoryNoteIdAndProductVariantId(response.getId(), detail.getProductVariantId());
+
+                // Chuyển đổi từ Entity sang DTO SerialInfo
+                List<InventoryNoteDetailResponse.SerialInfo> serialInfos = productSerials != null
+                        ? productSerials.stream()
+                        .map(ps -> InventoryNoteDetailResponse.SerialInfo.builder()
+                                .serialNumber(ps.getSerialNumber())
+                                .status(ps.getStatus()) // Lấy thêm trạng thái từ DB
+                                .build())
+                        .toList()
+                        : new ArrayList<>();
+
+                // Set vào detail (Nhớ cập nhật setter trong DTO Detail)
+                detail.setSerials(serialInfos);
+
+                // 2. LẤY THÊM TÊN SẢN PHẨM VÀ THUỘC TÍNH (Giữ nguyên logic cũ của bạn)
+                variantRepository.findById(detail.getProductVariantId()).ifPresent(variant -> {
+                    detail.setSku(variant.getSku());
+                    detail.setProductName(variant.getProduct().getName());
+
+                    List<String> options = new ArrayList<>();
+                    if (variant.getOption1Value() != null && !variant.getOption1Value().isBlank()) options.add(variant.getOption1Value());
+                    if (variant.getOption2Value() != null && !variant.getOption2Value().isBlank()) options.add(variant.getOption2Value());
+                    if (variant.getOption3Value() != null && !variant.getOption3Value().isBlank()) options.add(variant.getOption3Value());
+
+                    detail.setVariantAttributes(String.join(" - ", options));
+                });
+            }
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -54,17 +122,17 @@ public class InventoryService {
                 .toList();
     }
 
-    private InventoryNoteResponse mapToResponseWithSerials(InventoryNote note) {
-        InventoryNoteResponse response = inventoryMapper.toInventoryNoteResponse(note);
-        if (response.getDetails() != null) {
-            for (var detail : response.getDetails()) {
-                List<String> serials =
-                        serialRepository.findSerialNumbers(response.getId(), detail.getProductVariantId());
-                detail.setSerialNumbers(serials != null ? serials : new ArrayList<>());
-            }
-        }
-        return response;
-    }
+//    private InventoryNoteResponse mapToResponseWithSerials(InventoryNote note) {
+//        InventoryNoteResponse response = inventoryMapper.toInventoryNoteResponse(note);
+//        if (response.getDetails() != null) {
+//            for (var detail : response.getDetails()) {
+//                List<String> serials =
+//                        serialRepository.findSerialNumbers(response.getId(), detail.getProductVariantId());
+//                detail.setSerialNumbers(serials != null ? serials : new ArrayList<>());
+//            }
+//        }
+//        return response;
+//    }
 
     @Transactional(rollbackFor = Exception.class)
     public InventoryNoteResponse createAndCompleteNote(InventoryNoteRequest request) {
@@ -129,7 +197,7 @@ public class InventoryService {
                     .map(sn -> {
                         ProductSerial ps = new ProductSerial();
                         ps.setProductVariantId(variant.getId());
-                        ps.setSerialNumber(sn.trim());
+                        ps.setSerialNumber(sn.trim().toUpperCase());
                         ps.setStatus(SerialStatus.AVAILABLE);
                         ps.setInventoryNoteId(noteId);
                         return ps;

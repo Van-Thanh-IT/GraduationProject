@@ -116,12 +116,6 @@ export default function OrderCard({ order, onViewDetail, onCancel, onGoToReviewT
              </ActionButton>
           )}
 
-          {showReorderBtn && (
-            <ActionButton onClick={() => { /* Logic Add to Cart */ }} className="bg-white border border-indigo-300 hover:bg-indigo-50 text-indigo-600">
-              Mua lại
-            </ActionButton>
-          )}
-
           <ActionButton onClick={() => onViewDetail && onViewDetail(id)} className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700">
             Xem chi tiết
           </ActionButton>

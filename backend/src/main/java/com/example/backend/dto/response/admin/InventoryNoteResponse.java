@@ -41,4 +41,5 @@ public class InventoryNoteResponse {
     private LocalDateTime createdAt;
 
     private List<InventoryNoteDetailResponse> details;
+
 }

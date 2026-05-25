@@ -1,26 +1,33 @@
 import React from 'react';
-import { Typography } from 'antd';
+import { Tag } from 'antd';
 import { 
     EyeOutlined, 
     ArrowDownOutlined, 
     ArrowUpOutlined, 
     FileTextOutlined,
-    ClockCircleOutlined
+    ClockCircleOutlined,
+    UserOutlined
 } from '@ant-design/icons';
 import moment from 'moment';
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/utils/format';
 
-const { Text } = Typography;
-
-const InventoryList = ({ notes, isLoading, onShowDetail }) => {
+const InventoryList = ({
+    notes,
+    isLoading,
+    onShowDetail,
+    total = 0,
+    currentPage = 1,
+    totalPages = 1,
+    onPageChange
+}) => {
     
     const columns = [
         { 
             title: 'Mã Phiếu', 
             dataIndex: 'code', 
-            width: 160,
+            width: 170,
             render: (text) => (
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
@@ -33,11 +40,11 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
         {
             title: 'Loại Phiếu', 
             dataIndex: 'type', 
-            width: 140,
+            width: 130,
             render: (type) => {
                 const isImport = type === 'IMPORT';
                 return (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${
                         isImport 
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                             : 'bg-orange-50 text-orange-600 border-orange-200'
@@ -49,22 +56,27 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
             }
         },
         { 
-            title: 'Lý do / Mục đích', 
-            dataIndex: 'reason',
-            render: (text) => (
-                <span className="text-sm font-medium text-slate-600 bg-slate-50 px-3 py-1 rounded-md line-clamp-1" title={text}>
-                    {text}
-                </span>
+            title: 'Lý do & Người tạo', 
+            key: 'info',
+            render: (_, record) => (
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium text-slate-700 line-clamp-1" title={record.reason}>
+                        {record.reason || 'Không có lý do'}
+                    </span>
+                    <span className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                        <UserOutlined /> {record.fullName}
+                    </span>
+                </div>
             )
         },
         { 
             title: 'Tổng Giá Trị', 
             dataIndex: 'totalAmount', 
             align: 'right',
-            width: 160,
+            width: 150,
             render: (amount, record) => (
                 <div className="flex flex-col items-end">
-                    <span className="font-black text-slate-800 text-base">
+                    <span className="font-black text-slate-800 text-[15px]">
                         {formatCurrency(amount)}
                     </span>
                     <span className="text-[11px] font-medium text-slate-400 mt-0.5">
@@ -73,10 +85,30 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
                 </div>
             ) 
         },
+        {
+            title: 'Trạng Thái',
+            dataIndex: 'status',
+            align: 'center',
+            width: 120,
+            render: (status) => {
+                const statusConfig = {
+                    COMPLETED: { color: 'green', text: 'Hoàn thành' },
+                    PENDING: { color: 'gold', text: 'Chờ xử lý' },
+                    CANCELLED: { color: 'red', text: 'Đã hủy' },
+                };
+                const config = statusConfig[status] || { color: 'default', text: status };
+                
+                return (
+                    <Tag color={config.color} className="rounded-md font-medium px-2 py-0.5 border-0">
+                        {config.text}
+                    </Tag>
+                );
+            }
+        },
         { 
             title: 'Ngày Lập', 
             dataIndex: 'createdAt', 
-            width: 140,
+            width: 130,
             render: (date) => (
                 <div className="flex items-start gap-2">
                     <ClockCircleOutlined className="text-slate-400 mt-0.5" />
@@ -92,9 +124,9 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
             ) 
         },
         {
-            title: 'Thao tác', 
+            title: '', 
             align: 'center', 
-            width: 120,
+            width: 100,
             render: (_, record) => (
                 <Button 
                     variant="outline" 
@@ -102,7 +134,7 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
                     onClick={() => onShowDetail(record)} 
                     className="w-full bg-white hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 transition-all rounded-lg font-semibold shadow-sm"
                 >
-                    <EyeOutlined className="mr-1.5" /> Chi tiết
+                    <EyeOutlined className="mr-1.5" /> Xem
                 </Button>
             )
         },
@@ -110,21 +142,25 @@ const InventoryList = ({ notes, isLoading, onShowDetail }) => {
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Tùy chọn: Thêm một Header nhỏ cho bảng để card nhìn hoàn thiện hơn */}
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <span className="font-bold text-slate-700 text-base">Danh sách chứng từ kho</span>
-                <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                    Tổng: {notes.length} phiếu
+                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                    Tổng cộng: {total} phiếu
                 </span>
             </div>
             
-            <div className="p-2">
+            <div className="p-0">
                 <CustomTable 
                     columns={columns} 
                     dataSource={notes} 
                     loading={isLoading} 
                     rowKey="id" 
-                    total={notes.length} 
+                    total={total}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                    pagination={true}
+                    className="border-none"
                 />
             </div>
         </div>

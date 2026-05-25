@@ -2,8 +2,8 @@ import API from "@/api/API";
 
 export const InventoryService = {
     // 1. Quản lý Phiếu Kho
-    getAllNotes: () => {
-        return API.get('/management/inventory/notes');
+    getAllNotes: ( params ) => {
+        return API.get('/management/inventory/notes', { params });
     },
     getNoteById: (id) => {
         return API.get(`/management/inventory/notes/${id}`);

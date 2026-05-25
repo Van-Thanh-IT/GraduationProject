@@ -1,9 +1,9 @@
 // File: src/modules/client/products/detail/components/ProductInfo.jsx
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Rate } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { Timer, ShieldCheck, ShoppingCart } from 'lucide-react';
+import { Timer, ShieldCheck, ShoppingCart, Minus, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useAddToCart } from '@/hooks/useCart';
 import { formatCurrency } from '@/utils/format'; 
@@ -29,6 +29,14 @@ const FlashSaleCountdown = ({ endTime }) => {
 export default function ProductInfo({ product, currentVariant, selectedOptions, onOptionChange }) {
   const { mutate: addToCart, isLoading: isAdding } = useAddToCart();
   const navigate = useNavigate();
+  
+  // State quản lý số lượng mua
+  const [quantity, setQuantity] = useState(1);
+
+  // Tự động reset số lượng về 1 khi đổi biến thể (đổi màu, dung lượng...)
+  useEffect(() => {
+    setQuantity(1);
+  }, [currentVariant?.id]);
 
   const isFlashSale = currentVariant?.flashSale && currentVariant.flashSale.isActiveNow;
   const fsData = currentVariant?.flashSale;
@@ -114,9 +122,18 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
     return isVariantFS ? variant.flashSale.flashSalePrice : variant?.price;
   };
 
+  const handleIncrease = () => {
+    const maxAllowed = Math.min(20, currentVariant?.stockQuantity || 0);
+    if (quantity < maxAllowed) setQuantity(prev => prev + 1);
+  };
+
+  const handleDecrease = () => {
+    if (quantity > 1) setQuantity(prev => prev - 1);
+  };
+
   const handleAddToCart = () => {
     if (!currentVariant || currentVariant.stockQuantity === 0) return;
-    addToCart({ productVariantId: currentVariant.id, quantity: 1 });
+    addToCart({ productVariantId: currentVariant.id, quantity });
   };
 
   const handleBuyNow = () => {
@@ -125,10 +142,10 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
       state: {
         buyNowItem: {
           variantId: currentVariant.id,
-          quantity: 1,
+          quantity,
           productName: product.name,
           imageUrl: currentVariant.images?.[0]?.imageUrl,
-          options: `${currentVariant.option1Value || ''} ${currentVariant.option2Value || ''}`,
+          options: `${currentVariant.option1Value || ''} ${currentVariant.option2Value || ''}`.trim(),
           price: displayPrice,
           flashSale: currentVariant.flashSale || null
         }
@@ -262,27 +279,62 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
         ))}
       </div>
 
-      {/* KHỐI KHO VÀ ĐIỀU KHOẢN */}
-      <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center gap-4 text-[13px] text-gray-500">
-        <span className="flex items-center gap-1"><ShieldCheck className="text-green-600 w-4 h-4" /> Bảo hành {product.warrantyPeriod}</span>
-        <span>Tình trạng: <strong className={currentVariant?.stockQuantity > 0 ? "text-green-600" : "text-red-500"}>{currentVariant?.stockQuantity > 0 ? `Còn ${currentVariant.stockQuantity} sản phẩm` : "Hết hàng"}</strong></span>
+      {/* KHỐI KHO VÀ CHỌN SỐ LƯỢNG */}
+      <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+        
+        {/* Chọn số lượng */}
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] font-bold text-gray-500">Số lượng:</span>
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg h-9 overflow-hidden">
+            <button
+              onClick={handleDecrease}
+              disabled={quantity <= 1 || currentVariant?.stockQuantity === 0}
+              className="w-9 h-full flex items-center justify-center text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Minus size={14} strokeWidth={2.5} />
+            </button>
+            <div className="w-12 h-full flex items-center justify-center bg-white border-x border-gray-200 text-[13px] font-bold text-gray-800 select-none">
+              {quantity}
+            </div>
+            <button
+              onClick={handleIncrease}
+              disabled={quantity >= 20 || quantity >= (currentVariant?.stockQuantity || 0) || currentVariant?.stockQuantity === 0}
+              className="w-9 h-full flex items-center justify-center text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Plus size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </div>
+
+        {/* Trạng thái kho & Bảo hành */}
+        <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-500">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="text-green-600 w-4 h-4" /> Bảo hành {product.warrantyPeriod}
+          </span>
+          <span className="text-gray-300">|</span>
+          <span>
+            Tình trạng: <strong className={currentVariant?.stockQuantity > 0 ? "text-green-600" : "text-red-500"}>
+              {currentVariant?.stockQuantity > 0 ? `Còn ${currentVariant.stockQuantity} sản phẩm` : "Hết hàng"}
+            </strong>
+          </span>
+        </div>
       </div>
 
       {/* HÀNG NÚT THAO TÁC CỐ ĐỊNH CHUẨN KÍCH THƯỚC */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 pt-2">
         <Button 
           disabled={currentVariant?.stockQuantity === 0}
           onClick={handleAddToCart}          
           loading={isAdding}
-          className="flex-1 h-11 bg-white border border-red-500 text-red-600 text-[14px] font-bold rounded-lg hover:bg-red-50 flex items-center justify-center gap-2"
+          className="flex-1 h-12 bg-white border-2 border-red-500 text-red-600 text-[14px] font-bold rounded-xl hover:bg-red-50 flex items-center justify-center gap-2 disabled:border-gray-200 disabled:text-gray-400 disabled:bg-gray-50 transition-colors"
         >
-          <ShoppingCart size={16} /> THÊM VÀO GIỎ
+          <ShoppingCart size={18} strokeWidth={2.5} /> THÊM VÀO GIỎ
         </Button>
         
         <Button 
           disabled={currentVariant?.stockQuantity === 0}
           onClick={handleBuyNow}
-          className="flex-1 h-11 bg-red-500 text-white text-[14px] font-bold rounded-lg hover:bg-red-600"
+          className="flex-1 h-12 bg-gradient-to-r from-red-600 to-red-500 text-white text-[14px] font-bold rounded-xl hover:from-red-700 hover:to-red-600 disabled:from-gray-300 disabled:to-gray-300 transition-all shadow-md hover:shadow-lg disabled:shadow-none"
         >
           MUA NGAY
         </Button>

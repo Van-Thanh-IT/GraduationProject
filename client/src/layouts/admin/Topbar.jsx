@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from "react-router-dom";
 import { Avatar, Dropdown } from "antd";
-import { UserOutlined, LogoutOutlined } from "@ant-design/icons";
+import { UserOutlined, LogoutOutlined, HomeOutlined } from "@ant-design/icons";
 import { Bars3Icon } from "@heroicons/react/24/outline"; // Nút Hamburger Menu
 import { useAuth } from '@/context/AuthContext';
 
@@ -36,16 +36,27 @@ const Topbar = ({ onMenuClick }) => {
   };
 
   return (
-    // Dùng justify-between để chia Topbar ra 2 đầu: Trái (Nút Menu) - Phải (Avatar)
+    // Dùng justify-between để chia Topbar ra 2 đầu: Trái (Nút Menu & Nút Home) - Phải (Avatar)
     <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 h-16 bg-white border-b border-gray-200 shadow-sm shrink-0">
       
-      {/* NÚT MENU (Hamburger) - Chỉ hiện trên Mobile (lg:hidden) */}
-      <div className="flex items-center">
+      {/* KHU VỰC BÊN TRÁI: Hamburger Menu & Nút Về Trang Chủ */}
+      <div className="flex items-center gap-2">
+        {/* NÚT MENU (Hamburger) - Chỉ hiện trên Mobile (lg:hidden) */}
         <button 
           onClick={onMenuClick}
           className="lg:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors focus:outline-none"
         >
           <Bars3Icon className="w-6 h-6" />
+        </button>
+
+        {/* NÚT VỀ TRANG CHỦ CLIENT */}
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200 rounded-lg transition-all shadow-sm group"
+          title="Quay lại trang giao diện khách hàng"
+        >
+          <HomeOutlined className="text-sm transition-transform group-hover:scale-110" />
+          <span className="hidden sm:inline">Xem trang chủ</span>
         </button>
       </div>
 

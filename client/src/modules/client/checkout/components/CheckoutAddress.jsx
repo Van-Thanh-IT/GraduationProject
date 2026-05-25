@@ -4,6 +4,7 @@ import { Select, Input, Spin } from 'antd';
 import { ShopOutlined } from '@ant-design/icons';
 import { MapPin } from 'lucide-react';
 import { useGetMyAddresses } from '@/hooks/useAddress';
+import { useGetProfile } from '@/hooks/useProfile';
 
 export default function CheckoutAddress({ 
   address, setAddress, 
@@ -15,26 +16,38 @@ export default function CheckoutAddress({
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
 
   const { data: myAddresses, isLoading: loadingAddresses } = useGetMyAddresses();
+  const { data: profile } = useGetProfile();
 
   useEffect(() => {
-    if (myAddresses?.length > 0 && !hasAutoFilled) {
-      const defaultAddr = myAddresses.find(a => a.isDefault) || myAddresses[0];
-      
-      setAddress({
-        fullName: defaultAddr.fullName,
-        phone: defaultAddr.phone,
-        city: defaultAddr.cityCode,           
-        cityName: defaultAddr.city,           
-        district: defaultAddr.districtCode,
-        districtName: defaultAddr.district,
-        ward: defaultAddr.wardCode,
-        wardName: defaultAddr.ward,
-        detail: defaultAddr.addressDetail
-      });
-      
-      setHasAutoFilled(true);
+    // Chỉ chạy khi dữ liệu myAddresses đã được fetch về (khác undefined) và chưa auto-fill
+    if (myAddresses !== undefined && !hasAutoFilled) {
+      if (myAddresses.length > 0) {
+        // LUỒNG 1 (Cũ): Đã có địa chỉ -> Lấy địa chỉ mặc định hoặc cái đầu tiên
+        const defaultAddr = myAddresses.find(a => a.isDefault) || myAddresses[0];
+        
+        setAddress({
+          fullName: defaultAddr.fullName,
+          phone: defaultAddr.phone,
+          city: defaultAddr.cityCode,          
+          cityName: defaultAddr.city,          
+          district: defaultAddr.districtCode,
+          districtName: defaultAddr.district,
+          ward: defaultAddr.wardCode,
+          wardName: defaultAddr.ward,
+          detail: defaultAddr.addressDetail
+        });
+        setHasAutoFilled(true);
+      } else if (profile) {
+        // LUỒNG 2 (Mới): Chưa có địa chỉ nào -> Điền username và phone từ profile
+        setAddress(prev => ({
+          ...prev,
+          fullName: profile.username || '',
+          phone: profile.phone || ''
+        }));
+        setHasAutoFilled(true);
+      }
     }
-  }, [myAddresses, hasAutoFilled, setAddress]);
+  }, [myAddresses, profile, hasAutoFilled, setAddress]);
 
   const handleBlur = (field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -43,7 +56,7 @@ export default function CheckoutAddress({
   const errors = {
     fullName: touched.fullName && !address.fullName?.trim() ? 'Vui lòng nhập họ và tên' : '',
     phone: touched.phone && !address.phone?.trim() ? 'Vui lòng nhập số điện thoại' : 
-           touched.phone && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(address.phone?.trim()) ? 'Số điện thoại không hợp lệ' : '',
+            touched.phone && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(address.phone?.trim()) ? 'Số điện thoại không hợp lệ' : '',
     city: touched.city && !address.city ? 'Vui lòng chọn Tỉnh / Thành' : '',
     district: touched.district && !address.district ? 'Vui lòng chọn Quận / Huyện' : '',
     ward: touched.ward && !address.ward ? 'Vui lòng chọn Phường / Xã' : '',
@@ -78,7 +91,7 @@ export default function CheckoutAddress({
          <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-1.5 m-0 uppercase tracking-wide">
            <ShopOutlined className="text-blue-500" /> 1. Địa chỉ giao hàng
          </h3>
-         {hasAutoFilled && (
+         {hasAutoFilled && myAddresses?.length > 0 && (
            <span className="flex items-center gap-1 text-[11px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-200">
              <MapPin size={12} /> Địa chỉ mặc định
            </span>

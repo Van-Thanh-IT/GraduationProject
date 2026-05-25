@@ -2,6 +2,9 @@ package com.example.backend.controller.management;
 
 import java.util.List;
 
+import com.example.backend.dto.response.PageResponse;
+import com.example.backend.enums.NoteStatus;
+import com.example.backend.enums.NoteType;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.*;
@@ -21,9 +24,23 @@ public class InventoryManagementController {
 
     private final InventoryService inventoryService;
 
+//    @GetMapping("/notes")
+//    public APIResponse<List<InventoryNoteResponse>> getAllNotes() {
+//        return APIResponse.success(inventoryService.getAllNotes());
+//    }
+
     @GetMapping("/notes")
-    public APIResponse<List<InventoryNoteResponse>> getAllNotes() {
-        return APIResponse.success(inventoryService.getAllNotes());
+    public APIResponse<PageResponse<InventoryNoteResponse>> searchNotes(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) NoteType type,
+            @RequestParam(required = false) NoteStatus status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+
+        PageResponse<InventoryNoteResponse> pageResponse =
+                inventoryService.searchNotes(keyword, type, status, page, limit);
+
+        return APIResponse.success(pageResponse);
     }
 
     @GetMapping("/notes/{id}")

@@ -33,6 +33,7 @@ export const useUpdateAddress = () => {
       message.success('Cập nhật địa chỉ thành công');
       queryClient.invalidateQueries({ queryKey: ['my-addresses'] });
     },
+    onError: (err) => message.error(err.response?.data?.messages || 'Không thể bỏ địa chỉ mặc định. Hãy chọn địa chỉ khác trước'),
   });
 };
 

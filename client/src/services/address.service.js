@@ -6,7 +6,10 @@ export const AddressService = {
   
   createAddress: (data) => API.post('/user/addresses', data),
   
-  updateAddress: (id, data) => API.put(`/user/addresses/${id}`, data),
+  updateAddress: (id, data) => {
+    console.log(data);
+    return  API.put(`/user/addresses/${id}`, data)
+  },
   
   deleteAddress: (id) => API.delete(`/user/addresses/${id}`),
   

@@ -2,16 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Form, Input, Select, Switch, Button } from 'antd';
 import { useGetCities, useGetDistricts, useGetWards, useCreateAddress, useUpdateAddress } from '@/hooks/useAddress';
+import { useGetProfile } from '@/hooks/useProfile';
 
 export default function AddressModal({ isOpen, onClose, editData }) {
   const [form] = Form.useForm();
   const isEdit = !!editData;
 
-  // States để lưu mã Tỉnh/Huyện đang được chọn (để trigger API cấp dưới)
   const [selectedCityCode, setSelectedCityCode] = useState(null);
   const [selectedDistrictCode, setSelectedDistrictCode] = useState(null);
 
-  // Gọi Hooks lấy data Goship
+  const { data: profile } = useGetProfile();
   const { data: cities = [], isLoading: isLoadingCities } = useGetCities();
   const { data: districts = [], isLoading: isLoadingDistricts } = useGetDistricts(selectedCityCode);
   const { data: wards = [], isLoading: isLoadingWards } = useGetWards(selectedDistrictCode);
@@ -19,28 +19,34 @@ export default function AddressModal({ isOpen, onClose, editData }) {
   const { mutate: createAddress, isLoading: isCreating } = useCreateAddress();
   const { mutate: updateAddress, isLoading: isUpdating } = useUpdateAddress();
 
-  // Đổ dữ liệu vào Form khi ấn Sửa
   useEffect(() => {
-    if (isOpen && editData) {
-      form.setFieldsValue({
-        fullName: editData.fullName,
-        phone: editData.phone,
-        cityCode: editData.cityCode,
-        districtCode: editData.districtCode,
-        wardCode: editData.wardCode,
-        addressDetail: editData.addressDetail,
-        isDefault: editData.isDefault,
-      });
-      setSelectedCityCode(editData.cityCode);
-      setSelectedDistrictCode(editData.districtCode);
-    } else if (isOpen && !editData) {
-      form.resetFields();
-      setSelectedCityCode(null);
-      setSelectedDistrictCode(null);
+    if (isOpen) {
+      if (isEdit && editData) {
+        form.setFieldsValue({
+          fullName: editData.fullName,
+          phone: editData.phone,
+          cityCode: editData.cityCode,
+          districtCode: editData.districtCode,
+          wardCode: editData.wardCode,
+          addressDetail: editData.addressDetail,
+          isDefault: editData.isDefault,
+        });
+        setSelectedCityCode(editData.cityCode);
+        setSelectedDistrictCode(editData.districtCode);
+      } else {
+        form.resetFields();
+        // Tự động điền Username và Phone từ Profile khi thêm mới
+        form.setFieldsValue({
+          fullName: profile?.username || '',
+          phone: profile?.phone || '',
+          isDefault: false
+        });
+        setSelectedCityCode(null);
+        setSelectedDistrictCode(null);
+      }
     }
-  }, [isOpen, editData, form]);
+  }, [isOpen, editData, form, profile, isEdit]);
 
-  // Xử lý Xóa Modal
   const handleClose = () => {
     form.resetFields();
     setSelectedCityCode(null);
@@ -48,27 +54,22 @@ export default function AddressModal({ isOpen, onClose, editData }) {
     onClose();
   };
 
-  // Logic khi đổi Tỉnh -> Reset Huyện/Xã
   const handleCityChange = (val) => {
     setSelectedCityCode(val);
     form.setFieldsValue({ districtCode: null, wardCode: null });
     setSelectedDistrictCode(null);
   };
 
-  // Logic khi đổi Huyện -> Reset Xã
   const handleDistrictChange = (val) => {
     setSelectedDistrictCode(val);
     form.setFieldsValue({ wardCode: null });
   };
 
-  // SUBMIT FORM
   const onFinish = (values) => {
-    // 1. Tìm TÊN Tỉnh, Huyện, Xã từ mảng data để gửi kèm lên Backend
     const cityName = cities.find(c => c.id === values.cityCode)?.name || editData?.city;
     const districtName = districts.find(d => d.id === values.districtCode)?.name || editData?.district;
     const wardName = wards.find(w => w.id === values.wardCode)?.name || editData?.ward;
 
-    // 2. Build Payload chuẩn JSON Backend yêu cầu
     const payload = {
       fullName: values.fullName,
       phone: values.phone,
@@ -82,7 +83,6 @@ export default function AddressModal({ isOpen, onClose, editData }) {
       isDefault: values.isDefault || false,
     };
 
-    // 3. Gọi API
     if (isEdit) {
       updateAddress({ id: editData.id, data: payload }, { onSuccess: handleClose });
     } else {
@@ -92,85 +92,133 @@ export default function AddressModal({ isOpen, onClose, editData }) {
 
   return (
     <Modal
-      title={<h3 className="text-lg font-bold">{isEdit ? 'Cập nhật địa chỉ' : 'Thêm địa chỉ mới'}</h3>}
+      title={
+        <div className="text-sm font-bold text-gray-800 uppercase tracking-wide pb-3 border-b border-gray-100">
+          {isEdit ? 'Cập nhật địa chỉ nhận hàng' : 'Thêm địa chỉ nhận hàng mới'}
+        </div>
+      }
       open={isOpen}
       onCancel={handleClose}
       footer={null}
       centered
+      destroyOnClose
+      width={600}
     >
-      <Form form={form} layout="vertical" onFinish={onFinish} className="mt-4">
-        <div className="grid grid-cols-2 gap-4">
+      <Form 
+        form={form} 
+        layout="vertical" 
+        onFinish={onFinish} 
+        className="mt-4 space-y-4 font-sans"
+        requiredMark={false}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Form.Item 
             name="fullName" 
-            label="Họ và tên" 
-            rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
+            label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Họ và tên người nhận <span className="text-red-500">*</span></span>} 
+            rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
+            className="m-0"
           >
-            <Input size="large" placeholder="Nguyễn Văn A" />
+            <Input className="h-10 text-sm rounded-lg" placeholder="VD: Nguyễn Văn A" />
           </Form.Item>
 
           <Form.Item 
             name="phone" 
-            label="Số điện thoại" 
+            label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Số điện thoại <span className="text-red-500">*</span></span>} 
             rules={[
-              { required: true, message: 'Vui lòng nhập SDT' },
-              { pattern: /^[0-9]{10}$/, message: 'SDT không hợp lệ' }
+              { required: true, message: 'Vui lòng nhập số điện thoại!' },
+              { pattern: /^[0-9]{10}$/, message: 'Số điện thoại gồm 10 chữ số!' }
             ]}
+            className="m-0"
           >
-            <Input size="large" placeholder="0912345678" />
+            <Input className="h-10 text-sm rounded-lg" placeholder="VD: 0912345678" />
           </Form.Item>
         </div>
 
-        <Form.Item name="cityCode" label="Tỉnh/Thành phố" rules={[{ required: true, message: 'Chọn Tỉnh/Thành' }]}>
-          <Select
-            size="large"
-            placeholder="Chọn Tỉnh/Thành phố"
-            loading={isLoadingCities}
-            onChange={handleCityChange}
-            options={cities.map(c => ({ label: c.name, value: c.id }))}
-            showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Form.Item 
+            name="cityCode" 
+            label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Tỉnh/Thành phố <span className="text-red-500">*</span></span>} 
+            rules={[{ required: true, message: 'Chọn Tỉnh/Thành!' }]}
+            className="m-0"
+          >
+            <Select
+              placeholder="Chọn Tỉnh/Thành"
+              loading={isLoadingCities}
+              onChange={handleCityChange}
+              options={cities.map(c => ({ label: c.name, value: c.id }))}
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              className="h-10 text-sm [&_.ant-select-selector]:!rounded-lg [&_.ant-select-selection-item]:!leading-[38px]"
+            />
+          </Form.Item>
+
+          <Form.Item 
+            name="districtCode" 
+            label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Quận/Huyện <span className="text-red-500">*</span></span>} 
+            rules={[{ required: true, message: 'Chọn Quận/Huyện!' }]}
+            className="m-0"
+          >
+            <Select
+              placeholder="Chọn Quận/Huyện"
+              loading={isLoadingDistricts}
+              onChange={handleDistrictChange}
+              disabled={!selectedCityCode}
+              options={districts.map(d => ({ label: d.name, value: d.id }))}
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              className="h-10 text-sm [&_.ant-select-selector]:!rounded-lg [&_.ant-select-selection-item]:!leading-[38px]"
+            />
+          </Form.Item>
+
+          <Form.Item 
+            name="wardCode" 
+            label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Phường/Xã <span className="text-red-500">*</span></span>} 
+            rules={[{ required: true, message: 'Chọn Phường/Xã!' }]}
+            className="m-0"
+          >
+            <Select
+              placeholder="Chọn Phường/Xã"
+              loading={isLoadingWards}
+              disabled={!selectedDistrictCode}
+              options={wards.map(w => ({ label: w.name, value: w.id }))}
+              showSearch
+              filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+              className="h-10 text-sm [&_.ant-select-selector]:!rounded-lg [&_.ant-select-selection-item]:!leading-[38px]"
+            />
+          </Form.Item>
+        </div>
+
+        <Form.Item 
+          name="addressDetail" 
+          label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Địa chỉ cụ thể <span className="text-red-500">*</span></span>} 
+          rules={[{ required: true, message: 'Vui lòng nhập địa chỉ chi tiết!' }]}
+          className="m-0"
+        >
+          <Input.TextArea rows={2} className="text-sm rounded-lg resize-none" placeholder="VD: Số nhà, Tên tòa nhà, Tên đường..." />
         </Form.Item>
 
-        <Form.Item name="districtCode" label="Quận/Huyện" rules={[{ required: true, message: 'Chọn Quận/Huyện' }]}>
-          <Select
-            size="large"
-            placeholder="Chọn Quận/Huyện"
-            loading={isLoadingDistricts}
-            onChange={handleDistrictChange}
-            disabled={!selectedCityCode}
-            options={districts.map(d => ({ label: d.name, value: d.id }))}
-            showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-          />
-        </Form.Item>
+        {/* ĐÃ FIX: Chuyển Form.Item vào bọc trực tiếp Switch và thêm noStyle */}
+        <div className="flex items-center gap-2 bg-gray-50/80 p-3 rounded-lg border border-gray-100 mt-2">
+          <Form.Item name="isDefault" valuePropName="checked" noStyle>
+            <Switch size="small" /> 
+          </Form.Item>
+          <span className="text-sm font-semibold text-gray-700">Thiết lập làm địa chỉ mặc định</span>
+        </div>
 
-        <Form.Item name="wardCode" label="Phường/Xã" rules={[{ required: true, message: 'Chọn Phường/Xã' }]}>
-          <Select
-            size="large"
-            placeholder="Chọn Phường/Xã"
-            loading={isLoadingWards}
-            disabled={!selectedDistrictCode}
-            options={wards.map(w => ({ label: w.name, value: w.id }))}
-            showSearch
-            filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-          />
-        </Form.Item>
-
-        <Form.Item name="addressDetail" label="Địa chỉ cụ thể" rules={[{ required: true, message: 'Nhập địa chỉ chi tiết' }]}>
-          <Input.TextArea rows={2} placeholder="Số nhà, Tên đường..." />
-        </Form.Item>
-
-        <Form.Item name="isDefault" valuePropName="checked">
-          <div className="flex items-center gap-2">
-            <Switch /> <span className="text-gray-600 font-medium">Đặt làm địa chỉ mặc định</span>
-          </div>
-        </Form.Item>
-
-        <div className="flex justify-end gap-3 mt-6">
-          <Button size="large" onClick={handleClose}>Hủy</Button>
-          <Button size="large" type="primary" htmlType="submit" className="bg-blue-600" loading={isCreating || isUpdating}>
-            Hoàn thành
+        <div className="flex justify-end gap-3 mt-2 pt-4 border-t border-gray-100">
+          <Button 
+            onClick={handleClose} 
+            className="h-10 px-6 font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 border-none rounded-lg transition-colors"
+          >
+            Hủy bỏ
+          </Button>
+          <Button 
+            type="primary" 
+            htmlType="submit" 
+            loading={isCreating || isUpdating} 
+            className="h-10 px-8 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm border-none"
+          >
+            {isEdit ? 'Lưu thay đổi' : 'Hoàn thành'}
           </Button>
         </div>
       </Form>

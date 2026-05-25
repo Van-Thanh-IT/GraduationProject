@@ -410,7 +410,9 @@ public class OrderService {
 
         for (String rawSerial : serialNumbers) {
 
-            String serialNumber = rawSerial.toUpperCase();
+            String serialNumber = rawSerial.trim().replaceAll("\\s+", "").toUpperCase();
+            log.info("DL nhân đc: {}", serialNumber);
+            log.info("DL độ dai: {}", serialNumber.length());
 
             ProductSerial ps = serialRepository
                     .findBySerialNumber(serialNumber)
