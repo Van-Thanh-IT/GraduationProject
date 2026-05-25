@@ -155,8 +155,7 @@ export default function ProductPage() {
           
           <div 
             className="hidden md:block w-[240px] lg:w-[260px] shrink-0 sticky h-max z-30"
-            style={{ top: "calc(var(--header-height) + 12px)" }}
-          >
+            style={{ top: "calc(var(--header-height) + 12px)" }}>
             <AdvancedFilterSidebar />
           </div>
 

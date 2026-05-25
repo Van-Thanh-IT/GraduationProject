@@ -1,3 +1,7 @@
+
+
+
+
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, MonitorSmartphone, ShieldCheck, Settings, Menu, X } from 'lucide-react';
@@ -64,6 +68,15 @@ const Header = () => {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, [lastScrollY, showHeader]);
+
+     useEffect(() => {
+        const height = showHeader ? 120 : 0;
+
+        document.documentElement.style.setProperty(
+            "--header-height",
+            `${height}px`
+        );
+    }, [showHeader]);
 
     return (
         <header className={`bg-white shadow-sm sticky top-0 z-[100] font-sans transition-transform duration-300

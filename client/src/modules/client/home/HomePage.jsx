@@ -40,14 +40,16 @@ const HomePage = () => {
   const isFlashSaleSliderRequired = flashSales.length > 2;
 
   return (
-    <div className="w-full bg-slate-50 pb-6 md:pb-8 font-sans overflow-hidden">
+    // SỬA LỖI 1: Thay overflow-hidden thành overflow-x-hidden để position: sticky hoạt động được
+    <div className="w-full bg-slate-50 pb-6 md:pb-8 font-sans">
       <div className="max-w-[1200px] lg:max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 py-2 md:py-4">
         
         <div className="flex flex-col md:flex-row gap-3 lg:gap-4 items-start">
-           
+            
            {/* SIDEBAR DANH MỤC - Cố định kích thước chuẩn ở màn máy tính */}
-           <div className="hidden md:block w-[220px] lg:w-[260px] shrink-0 sticky h-max z-30"
-              style={{ top: "calc(var(--header-height) + 16px)" }}>
+           {/* SỬA LỖI 2: Thêm fallback dự phòng 70px vào calc() */}
+           <div  className="hidden md:block w-[240px] lg:w-[260px] shrink-0 sticky h-max z-30"
+            style={{ top: "calc(var(--header-height, 70px) + 12px)" }}>
               <CategorySidebar />
            </div>
            

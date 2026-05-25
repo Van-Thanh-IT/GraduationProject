@@ -85,8 +85,12 @@ API.interceptors.response.use(
 
             try {
                 // Gọi API refresh token (Browser sẽ tự đính kèm HttpOnly Cookie)
-                const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh-token`, {}, {
-                    withCredentials: true // Nhớ bật cái này để gửi Cookie
+               const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh-token`, {}, {
+                    withCredentials: true,
+                    headers: {
+                        "ngrok-skip-browser-warning": "true", // Bắt buộc phải có khi dùng ngrok
+                        "Content-Type": "application/json"
+                    }
                 });
 
                 // Backend nhả token mới vào JSON Body
@@ -106,13 +110,11 @@ API.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
 
-                // 🔥 nếu đang logout thì KHÔNG hiện popup
                 if (isLoggingOut) {
                     isLoggingOut = false;
                     return Promise.reject(refreshError);
                 }
 
-                // 🔥 nếu chưa login cũng bỏ
                 if (!getAccessToken()) return Promise.reject(refreshError);
 
                
@@ -144,20 +146,26 @@ API.interceptors.response.use(
 // ==============================================================================
 // HÀM LOGOUT
 // ==============================================================================
-export const handleLogout = () => {
-    const hasToken = getAccessToken();
-   
-    if (!hasToken) return;
-
+export const handleLogout = async () => {
     isLoggingOut = true;
 
     setAccessToken(null);
     delete API.defaults.headers.common.Authorization;
 
-    axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`, {}, { withCredentials: true });
-    
-    window.location.href = "/login";
-
+    try {
+        await axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`, {}, { 
+            withCredentials: true,
+            headers: { "ngrok-skip-browser-warning": "true" }
+        });
+    } catch (err) {
+        console.error("Lỗi khi gọi API logout:", err);
+    } finally {
+        isLoggingOut = false;
+ 
+        sessionStorage.clear();
+        
+        window.location.href = "/login";
+    }
 };
 
 export default API;

@@ -14,7 +14,7 @@ const ClientLayout = () => {
         <Outlet />
       </main>
       <Footer />
-      <FloatingChatBot/>
+      {/* <FloatingChatBot/> */}
       <CustomerChatWidget/>
     </div>
   );
