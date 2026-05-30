@@ -1,4 +1,3 @@
-// File: src/modules/client/cart/CartPage.jsx
 import React, { useState, useMemo } from 'react';
 import { Spin, Popconfirm, Checkbox, message } from 'antd';
 import { 
@@ -6,8 +5,7 @@ import {
   ShoppingCartOutlined, 
   SafetyCertificateFilled,
   MinusOutlined,
-  PlusOutlined,
-  ThunderboltFilled
+  PlusOutlined
 } from '@ant-design/icons';
 import { useGetCart, useDeleteCartItem, useUpdateCartQuantity } from '@/hooks/useCart'; 
 import { useNavigate, Link } from 'react-router-dom';
@@ -37,8 +35,12 @@ const CartPage = () => {
   const { mutate: deleteItem } = useDeleteCartItem();
   const { mutate: updateQuantity, isLoading: isUpdating } = useUpdateCartQuantity();
 
-  const cartItems = cartData?.items || [];
   const [selectedItems, setSelectedItems] = useState([]);
+
+  const cartItems = useMemo(() => {
+    if (!cartData?.items) return [];
+    return [...cartData.items].sort((a, b) => Number(a.itemId) - Number(b.itemId));
+  }, [JSON.stringify(cartData?.items)]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -119,7 +121,6 @@ const CartPage = () => {
 
         <div className="flex flex-col lg:flex-row gap-5 items-start">
           
-          {/* CỘT TRÁI: DANH SÁCH ITEM */}
           <div className="w-full lg:flex-1 flex flex-col gap-3">
             <div className="hidden md:flex items-center px-4 py-2.5 bg-white rounded-lg border border-gray-200 text-[12px] font-bold text-gray-400 uppercase tracking-wider">
                <div className="w-[5%] flex justify-center">
@@ -137,17 +138,12 @@ const CartPage = () => {
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
                {cartItems.map((item, index) => {
                  const isFlashSale = !!item.flashSale; 
-                 
-                 let actualMax = Math.min(item.maxStock, 20);
-                 if (isFlashSale) {
-                     actualMax = Math.min(actualMax, item.flashSale.maxQuantityPerUser, item.flashSale.saleStockRemaining);
-                 }
+                 const stockLimit = isFlashSale ? item.flashSale.saleStockRemaining : item.maxStock;
+                 const actualMax = Math.min(stockLimit, 99);
 
                  let limitMessage = "";
                  if (item.quantity >= actualMax) {
-                     if (actualMax === 20) limitMessage = "Tối đa 20 sản phẩm";
-                     else if (isFlashSale && actualMax === item.flashSale.maxQuantityPerUser) limitMessage = `Tối đa ${actualMax} sản phẩm`;
-                     else limitMessage = `Kho còn ${actualMax} sản phẩm`;
+                     limitMessage = actualMax >= 99 ? "Tối đa 99 sản phẩm" : `Kho còn ${actualMax} sản phẩm`;
                  }
 
                  return (
@@ -193,13 +189,14 @@ const CartPage = () => {
                         </div>
                      </div>
 
-                     <div className={`hidden md:block md:w-[15%] text-center text-[14px] font-medium text-gray-500`}>
+                     <div className="hidden md:block md:w-[15%] text-center text-[14px] font-medium text-gray-500">
                         {formatCurrency(item.price)}
                      </div>
 
                      <div className="w-full md:w-[18%] flex justify-between md:justify-center items-center mt-1 md:mt-0 pl-7 md:pl-0 relative flex-col pb-2">
                         <div className="md:hidden text-[12px] text-gray-400 font-medium w-full text-left mb-1">Số lượng:</div>
-                        <div className={`flex items-center bg-gray-50 border border-gray-200 rounded-md p-0.5 ${isUpdating ? 'opacity-40 pointer-events-none' : ''}`}>
+                        
+                        <div className={`flex items-center bg-gray-50 border border-gray-200 rounded-md p-0.5 ${(isUpdating) ? 'opacity-50 pointer-events-none' : ''}`}>
                            <button
                              type="button"
                              disabled={item.quantity <= 1}
@@ -235,7 +232,6 @@ const CartPage = () => {
                         </div>
                      </div>
 
-                     {/* NÚT XÓA Ở GÓC TUYỆT ĐỐI */}
                      <div className="absolute top-3 right-3 flex justify-end">
                         <Popconfirm
                            title="Xóa khỏi giỏ hàng?"
@@ -255,8 +251,7 @@ const CartPage = () => {
             </div>
           </div>
 
-          {/* CỘT PHẢI: KHỐI TỔNG THANH TOÁN */}
-          <div className="w-full lg:w-[280px] shrink-0 sticky top-32"  style={{ top: "calc(var(--header-height) + 16px)" }}>
+          <div className="w-full lg:w-[280px] shrink-0 sticky top-32" style={{ top: "calc(var(--header-height) + 16px)" }}>
              <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col gap-4">
                 <div className="flex justify-between items-end">
                    <div className="flex flex-col">

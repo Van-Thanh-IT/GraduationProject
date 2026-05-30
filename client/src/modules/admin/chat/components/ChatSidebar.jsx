@@ -4,7 +4,8 @@ import { UserCircle } from "lucide-react";
 
 export const ChatSidebar = ({ conversations, activeRoomId, onSelectRoom }) => {
     return (
-        <div className="w-1/3 max-w-sm bg-slate-50 border-r border-slate-200 flex flex-col h-full">
+        // Đã gỡ bỏ w-1/3 max-w-sm ở đây để AdminChatBoard toàn quyền kiểm soát độ rộng (Responsive)
+        <div className="flex flex-col h-full w-full bg-slate-50">
             <div className="p-4 bg-white border-b border-slate-200 shrink-0">
                 <h3 className="text-lg font-bold text-slate-800 tracking-tight">Hội thoại hỗ trợ</h3>
             </div>

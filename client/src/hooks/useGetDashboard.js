@@ -1,14 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import API from '@/api/API'; // File cấu hình axios của bạn
+import API from '@/api/API'; 
 
-export const useGetDashboard = () => {
+export const useGetDashboard = ({startDate, endDate} = {}) => {
   return useQuery({
-    queryKey: ['admin-dashboard'],
+    queryKey: ['dashboard', startDate, endDate],
+
     queryFn: async () => {
-      const res = await API.get('/management/dashboard');
-      // Trả về thẳng block "data" trong JSON của bạn
-      return res.data?.data || {}; 
+      const params = {
+        startDate,
+        endDate,
+      };
+
+      const res = await API.get('/management/dashboard', {
+        params,
+      });
+
+
+      return res.data?.data;
     },
-    refetchInterval: 60000, 
+
+    refetchInterval: 60000,
   });
 };

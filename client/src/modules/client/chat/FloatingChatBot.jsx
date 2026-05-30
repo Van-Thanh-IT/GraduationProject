@@ -8,8 +8,7 @@ import ChatMessageList from './components/ChatMessageList';
 import ChatInput from './components/ChatInput';
 import iconChatAi from "@/assets/icons/icon-chat-ai.png";
 
-export default function FloatingChatBot() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function FloatingChatBot({isOpen, onOpen, onClose }) {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [inputText, setInputText] = useState("");
   const [tempNewChatMsg, setTempNewChatMsg] = useState(null); 
@@ -55,27 +54,25 @@ export default function FloatingChatBot() {
     document.removeEventListener('mouseup', handleMouseUp);
   };
 
-  // Mở Chat: Trả về vị trí gốc & Ẩn bong bóng
   const handleBubbleClick = () => {
     if (dragInfo.current.hasDragged) {
       dragInfo.current.hasDragged = false; 
       return; 
     }
-    setPos({ x: 0, y: 0 }); // Reset vị trí
-    setIsOpen(true);
+    setPos({ x: 0, y: 0 });
+    onOpen(); 
   };
 
-  // Đóng Chat: Trả bong bóng về vị trí gốc
   const handleCloseChat = () => {
-    setPos({ x: 0, y: 0 }); // Reset vị trí
-    setIsOpen(false);
+    setPos({ x: 0, y: 0 });
+    onClose();
   };
   // ==========================================
 
   const queryClient = useQueryClient();
   const { data: sessions } = useGetChatSessions();
   const { data: messages, isLoading: isLoadingMessages } = useGetChatMessages(activeSessionId);
-  const { mutate: sendMessage, isLoading: isSending } = useSendMessage();
+  const { mutate: sendMessage, isPending: isSending } = useSendMessage();
 
   useEffect(() => {
     if (sessions && sessions.length > 0 && !activeSessionId) {
@@ -128,7 +125,7 @@ export default function FloatingChatBot() {
 
   return (
     // ĐẶT VỊ TRÍ GỐC: Cách Top 40% màn hình, sát mí phải
-    <div className="fixed top-[40vh] right-6 z-[9999] font-sans">
+    <div className="fixed top-[50vh] right-6 z-[9999] font-sans">
       
       {/* KHỐI KÉO THẢ TỔNG */}
       <div 

@@ -40,24 +40,27 @@ const HomePage = () => {
   const isFlashSaleSliderRequired = flashSales.length > 2;
 
   return (
-    // SỬA LỖI 1: Thay overflow-hidden thành overflow-x-hidden để position: sticky hoạt động được
     <div className="w-full bg-slate-50 pb-6 md:pb-8 font-sans">
       <div className="max-w-[1200px] lg:max-w-[1400px] mx-auto px-2.5 sm:px-4 md:px-6 py-2 md:py-4">
         
         <div className="flex flex-col md:flex-row gap-3 lg:gap-4 items-start">
             
-           {/* SIDEBAR DANH MỤC - Cố định kích thước chuẩn ở màn máy tính */}
-           {/* SỬA LỖI 2: Thêm fallback dự phòng 70px vào calc() */}
-           <div  className="hidden md:block w-[240px] lg:w-[260px] shrink-0 sticky h-max z-30"
+           {/* SIDEBAR DANH MỤC - CHỈ HIỂN THỊ TRÊN PC (hidden md:block) */}
+           <div className="hidden md:block w-[240px] lg:w-[260px] shrink-0 sticky h-max z-30"
             style={{ top: "calc(var(--header-height, 70px) + 12px)" }}>
               <CategorySidebar />
            </div>
            
-           {/* CONTENT CHÍNH - Chống tràn layout trên Mobile di động cực tốt */}
+           {/* CONTENT CHÍNH */}
            <div className="flex-1 min-w-0 w-full space-y-4 md:space-y-6">
               
               <div className="w-full rounded-xl overflow-hidden border border-gray-100 shadow-sm">
                  <HeroBanner />
+              </div>
+
+              {/* TÍNH NĂNG MỚI: DANH MỤC - CHỈ HIỂN THỊ TRÊN MOBILE (block md:hidden) */}
+              <div className="block md:hidden w-full">
+                 <CategorySidebar />
               </div>
 
               <BrandSection brands={brands} />
@@ -98,7 +101,6 @@ const HomePage = () => {
                         nextEl: '.fs-next-btn',
                       }}
                       breakpoints={{
-                        // Từ màn hình Smartphone nằm ngang / Máy tính bảng cỡ nhỏ trở lên
                         480: { slidesPerView: 2, spaceBetween: 10 },
                         640: { slidesPerView: 3, spaceBetween: 12 },
                         1024: { slidesPerView: 4, spaceBetween: 12 },
@@ -113,7 +115,7 @@ const HomePage = () => {
                       ))}
                     </Swiper>
 
-                    {/* NÚT BẤM ĐIỀU HƯỚNG < > (Chỉ hiện từ màn hình tablet trở lên khi hover) */}
+                    {/* NÚT BẤM ĐIỀU HƯỚNG < > */}
                     {isFlashSaleSliderRequired && (
                       <>
                         <button 
@@ -148,7 +150,6 @@ const HomePage = () => {
                     </Link>
                   </div>
                   
-                  {/* Thay thế grid cứng thành hệ thống cột co giãn thông minh linh hoạt */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     {bestSellers.map((product) => (
                       <ProductCard key={`best-${product.id}`} product={product} />
@@ -169,7 +170,6 @@ const HomePage = () => {
                     </Link>
                   </div>
                   
-                  {/* Hệ thống grid nâng cấp hỗ trợ hiển thị 3 cột trên tablet cỡ trung */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                     {defaultProducts.map((product) => (
                       <ProductCard key={`def-${product.id}`} product={product} />

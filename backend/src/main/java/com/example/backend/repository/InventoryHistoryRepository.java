@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.backend.entity.InventoryHistory;
 
 public interface InventoryHistoryRepository extends JpaRepository<InventoryHistory, Integer> {
-    List<InventoryHistory> findByProductVariantIdOrderByCreatedAtDesc(Integer productVariantId);
+    List<InventoryHistory> findTop100ByProductVariantIdOrderByCreatedAtDesc(Integer productVariantId);
 }

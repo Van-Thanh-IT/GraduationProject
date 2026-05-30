@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { message, Button as AntButton, Radio } from 'antd'; // Thay Switch bằng Radio
-import { DeleteOutlined, PlusOutlined, BarcodeOutlined } from '@ant-design/icons';
+import { message, Button as AntButton } from 'antd'; // Đã xóa Radio
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'; // Đã xóa BarcodeOutlined
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
@@ -21,7 +21,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
     originalPrice: '',
     weight: '', 
     isDefault: false,
-    isSerialRequired: null 
+    isSerialRequired: true 
   };
 
   const [variants, setVariants] = useState([{ ...emptyVariant }]);
@@ -47,10 +47,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
       return message.warning("Vui lòng thêm ít nhất 1 biến thể!");
     }
 
-    const hasUnselectedSerial = variants.some(v => v.isSerialRequired === null);
-    if (hasUnselectedSerial) {
-       return message.error("Vui lòng tích chọn CÓ hoặc KHÔNG cho phần Quản lý Serial ở tất cả các dòng!");
-    }
+    // Đã xóa phần validate kiểm tra hasUnselectedSerial
 
     setLoading(true);
     try {
@@ -86,7 +83,8 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
               {index + 1}
             </div>
 
-            <div className="flex-1 grid grid-cols-2 lg:grid-cols-6 gap-3">
+            {/* Chuyển grid-cols-6 thành grid-cols-5 cho cân đối sau khi bỏ bớt 1 ô */}
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-5 gap-3">
               {hasOpt1 && (
                 <Input label={product.option1Name} required placeholder="VD: Đỏ" value={variant.option1Value} onChange={e => handleChange(index, 'option1Value', e.target.value)} />
               )}
@@ -119,20 +117,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
               />
               <Input label="Trọng lượng (kg)" type="number" step="0.01" placeholder="VD: 0.22" value={variant.weight} onChange={e => handleChange(index, 'weight', e.target.value)} />
               
-              {/* === KHU VỰC CHỌN SERIAL (DÙNG RADIO BUTTONS) === */}
-              <div className={`flex flex-col gap-1.5 justify-center mt-1 p-2 rounded-lg border ${variant.isSerialRequired === null ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'}`}>
-                 <span className={`text-[11px] font-bold flex items-center gap-1 ${variant.isSerialRequired === null ? 'text-rose-600' : 'text-slate-600'}`}>
-                    <BarcodeOutlined />Serial/IMEI {variant.isSerialRequired === null && <span className="text-rose-500">*</span>}
-                 </span>
-                 <Radio.Group 
-                   onChange={e => handleChange(index, 'isSerialRequired', e.target.value)} 
-                   value={variant.isSerialRequired}
-                   className="flex gap-2"
-                 >
-                   <Radio value={true} className="text-xs mr-0">CÓ</Radio>
-                   <Radio value={false} className="text-xs">KHÔNG</Radio>
-                 </Radio.Group>
-              </div>
+              {/* Đã xóa UI phần chọn isSerialRequired */}
             </div>
 
             {variants.length > 1 && (

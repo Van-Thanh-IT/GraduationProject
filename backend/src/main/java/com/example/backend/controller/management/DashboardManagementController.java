@@ -1,12 +1,11 @@
 package com.example.backend.controller.management;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.backend.dto.response.APIResponse;
 import com.example.backend.dto.response.DashboardResponse;
@@ -25,9 +24,13 @@ public class DashboardManagementController {
     private final ProductAttributeValueRepository productAttributeValueRepo;
     private final DashboardService dashboardService;
 
+
     @GetMapping
-    public APIResponse<DashboardResponse> getDashboardOverview() {
-        return APIResponse.success(dashboardService.getDashboardData());
+    public APIResponse<DashboardResponse> getDashboard(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        return APIResponse.success(dashboardService.getDashboardData(startDate, endDate));
     }
 
     @GetMapping("/stats")

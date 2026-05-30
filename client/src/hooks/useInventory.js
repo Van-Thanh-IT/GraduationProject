@@ -12,14 +12,10 @@ export const inventoryKeys = {
 export const useGetAllNotes = (params = {}) => {
     const { keyword, type, status, page = 1, limit = 10 } = params;
 
-    console.log('🔍 Filter params gửi đi:', { keyword, type, status, page, limit });
-
     return useQuery({
         queryKey: inventoryKeys.notes({ keyword, type, status, page, limit }),
         
         queryFn: async () => {
-            console.log('📡 Gọi API với params:', { keyword, type, status, page, limit });
-            
             const res = await InventoryService.getAllNotes({
                 keyword: keyword || undefined,
                 type: type || undefined,
@@ -28,7 +24,6 @@ export const useGetAllNotes = (params = {}) => {
                 limit,
             });
 
-            console.log('📦 API trả về:', res.data);
             return res.data?.data;
         },
 
@@ -43,6 +38,7 @@ export const useGetNoteById = (id) => {
         queryFn: async () => {
             const res = await InventoryService.getNoteById(id);
             return res.data?.data || res.data;
+            
         },
         enabled: !!id,
     });
@@ -66,6 +62,7 @@ export const useGetHistoryByVariant = (variantId) => {
         queryFn: async () => {
             const res = await InventoryService.getHistoryByVariant(variantId);
             let data = res.data?.data || res.data || [];
+            console.log(data);
             if (Array.isArray(data)) {
                 return [...data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             }

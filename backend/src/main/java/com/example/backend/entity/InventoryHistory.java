@@ -43,4 +43,9 @@ public class InventoryHistory {
 
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

@@ -45,7 +45,6 @@ public class FlashSaleService {
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .saleStockQuantity(request.getSaleStockQuantity())
-                .maxQuantityPerUser(request.getMaxQuantityPerUser() != null ? request.getMaxQuantityPerUser() : 1)
                 .build();
 
         return flashSaleMapper.toFlashSaleResponse(flashSaleRepository.save(flashSale));
@@ -71,7 +70,6 @@ public class FlashSaleService {
         flashSale.setStartTime(request.getStartTime());
         flashSale.setEndTime(request.getEndTime());
         flashSale.setSaleStockQuantity(request.getSaleStockQuantity());
-        flashSale.setMaxQuantityPerUser(request.getMaxQuantityPerUser() != null ? request.getMaxQuantityPerUser() : 1);
 
         return flashSaleMapper.toFlashSaleResponse(flashSale);
     }
@@ -81,6 +79,7 @@ public class FlashSaleService {
         FlashSale flashSale = getFlashSaleByIdOrThrow(id);
         flashSale.setStatus(status);
     }
+
 
     private ProductVariant validateFlashSaleLogic(FlashSaleRequest request, Integer excludeId) {
         if (!request.getStartTime().isBefore(request.getEndTime())) {
@@ -103,13 +102,6 @@ public class FlashSaleService {
             throw new IllegalArgumentException(String.format(
                     "Giá Flash Sale giảm quá sâu! Chỉ được giảm tối đa 50%% so với giá gốc. Vui lòng nhập tối thiểu: %sđ",
                     minAllowedPrice.stripTrailingZeros().toPlainString()));
-        }
-
-        int maxPerUser = request.getMaxQuantityPerUser() != null ? request.getMaxQuantityPerUser() : 1;
-        if (maxPerUser > request.getSaleStockQuantity()) {
-            throw new IllegalArgumentException(String.format(
-                    "Giới hạn mua mỗi người (%d) không được lớn hơn tổng suất Sale (%d)!",
-                    maxPerUser, request.getSaleStockQuantity()));
         }
 
         if (request.getSaleStockQuantity() > variant.getStockQuantity()) {
@@ -144,6 +136,21 @@ public class FlashSaleService {
         int updatedRows = flashSaleRepository.incrementSoldQuantitySafely(flashSaleId, quantityBought);
         if (updatedRows == 0) {
             throw new IllegalStateException("Rất tiếc, suất Flash Sale đã bán hết hoặc bạn mua vượt quá suất còn lại!");
+        }
+    }
+
+    @Transactional
+    public void restoreFlashSaleStock(Integer variantId, Integer quantityReturned, LocalDateTime orderCreatedAt, BigDecimal itemPrice) {
+        if (orderCreatedAt == null || itemPrice == null) return;
+
+        List<FlashSale> sales = flashSaleRepository.findFlashSalesByVariantAndDate(variantId, orderCreatedAt);
+
+        for (FlashSale sale : sales) {
+            if (sale.getFlashSalePrice().compareTo(itemPrice) == 0) {
+                int newSoldQty = Math.max(0, sale.getSoldQuantity() - quantityReturned);
+                sale.setSoldQuantity(newSoldQty);
+                break;
+            }
         }
     }
 

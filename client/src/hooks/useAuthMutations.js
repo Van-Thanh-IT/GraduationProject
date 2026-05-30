@@ -19,7 +19,6 @@ export const useAuthMutations = () => {
       throw new Error("Tài khoản của bạn đã bị khóa hoặc chưa được kích hoạt!");
     }
     
-    // Đã đồng bộ: gọi loginContext chỉ truyền token, refreshToken sẽ được xử lý ở axios interceptor nếu có
     await loginContext(userData.token);
 
     const roles = userData.roles || [];
@@ -33,17 +32,17 @@ export const useAuthMutations = () => {
 
   const loginMutation = useMutation({
     mutationFn: (credentials) => AuthService.login(credentials),
-    onSuccess: (res) => handleAuthSuccess(res.data),
+    onSuccess: (res) =>{return handleAuthSuccess(res.data)},
   });
 
   const googleLoginMutation = useMutation({
     mutationFn: (idToken) => AuthService.googleLogin({ idToken }),
-    onSuccess: (res) => handleAuthSuccess(res.data),
+    onSuccess: (res) => {return handleAuthSuccess(res.data)},
   });
 
   const facebookLoginMutation = useMutation({
     mutationFn: (accessToken) => AuthService.facebookLogin({ accessToken }),
-    onSuccess: (res) => handleAuthSuccess(res.data),
+    onSuccess: (res) => {return handleAuthSuccess(res.data)},
   });
 
   const registerMutation = useMutation({

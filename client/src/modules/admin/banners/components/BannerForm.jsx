@@ -8,8 +8,26 @@ import Button from '@/components/ui/Button';
 const { RangePicker } = DatePicker;
 
 const PLACEMENT_OPTIONS = [
-  { label: 'Slider Chính Trang Chủ (HOME_MAIN_SLIDER)', value: 'HOME_MAIN_SLIDER' },
- 
+  {
+    label: 'Slider Chính Trang Chủ (HOME_MAIN_SLIDER)',
+    value: 'HOME_MAIN_SLIDER',
+  },
+  {
+    label: 'Banner Phụ Trang Chủ (HOME_SUB_BANNER)',
+    value: 'HOME_SUB_BANNER',
+  },
+  {
+    label: 'Banner Danh Mục Laptop (CATEGORY_LAPTOP)',
+    value: 'CATEGORY_LAPTOP',
+  },
+  {
+    label: 'Banner Danh Mục Điện Thoại (CATEGORY_SMARTPHONE)',
+    value: 'CATEGORY_SMARTPHONE',
+  },
+  {
+    label: 'Popup Khuyến Mãi (POPUP_PROMO)',
+    value: 'POPUP_PROMO',
+  },
 ];
 
 export default function BannerForm({ isOpen, onClose, initialData, onSubmit, isPending, backendError }) {
@@ -145,7 +163,7 @@ export default function BannerForm({ isOpen, onClose, initialData, onSubmit, isP
           <Input placeholder="VD: Siêu Sale iPhone 17 Pro Max" className="rounded-md h-9 text-sm" />
         </Form.Item>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
           <Form.Item name="placement" label={<span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Vị trí hiển thị</span>} rules={[{ required: true, message: 'Vui lòng chọn vị trí hiển thị!' }]}>
             <Select options={PLACEMENT_OPTIONS} placeholder="Chọn vị trí..." className="h-9 text-sm rounded-md" />
           </Form.Item>

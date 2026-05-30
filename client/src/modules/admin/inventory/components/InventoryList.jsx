@@ -14,13 +14,7 @@ import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/utils/format';
 
 const InventoryList = ({
-    notes,
-    isLoading,
-    onShowDetail,
-    total = 0,
-    currentPage = 1,
-    totalPages = 1,
-    onPageChange
+  notes, isLoading, onShowDetail, total, currentPage, limit, onPageChange
 }) => {
     
     const columns = [
@@ -155,11 +149,14 @@ const InventoryList = ({
                     dataSource={notes} 
                     loading={isLoading} 
                     rowKey="id" 
-                    total={total}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={onPageChange}
-                    pagination={true}
+                    // THIẾT LẬP PAGINATION ĐỂ KHỚP VỚI LIMIT 20 CỦA BẠN
+                    pagination={{
+                        current: currentPage,
+                        pageSize: limit,
+                        total: total,
+                        onChange: (page) => onPageChange(page),
+                        showSizeChanger: false 
+                    }}
                     className="border-none"
                 />
             </div>

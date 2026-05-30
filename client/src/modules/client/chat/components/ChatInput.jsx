@@ -3,11 +3,12 @@ import { Input } from 'antd';
 import { Loader2, Send } from 'lucide-react';
 
 export default function ChatInput({ inputText, setInputText, onSend, isSending }) {
-  
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      if (inputText.trim() && !isSending) {
+        onSend();
+      }
     }
   };
 
@@ -24,14 +25,20 @@ export default function ChatInput({ inputText, setInputText, onSend, isSending }
       />
       <button
         onClick={onSend}
-        disabled={!inputText.trim() || isSending}
+        disabled={isSending || !inputText.trim()}
         className={`w-11 h-11 shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ${
-          inputText.trim() && !isSending
+          isSending
+            ? 'bg-blue-500 text-white cursor-wait opacity-80'
+            : inputText.trim()
             ? 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-105 shadow-md shadow-blue-200'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         }`}
       >
-        {isSending ? <Loader2 size={20} className="animate-spin text-blue-600" /> : <Send size={20} className="ml-1" />}
+        {isSending ? (
+          <Loader2 size={20} className="animate-spin text-white" />
+        ) : (
+          <Send size={20} className="ml-1" />
+        )}
       </button>
     </div>
   );

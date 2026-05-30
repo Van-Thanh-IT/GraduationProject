@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.data.domain.PageRequest;
@@ -138,7 +139,9 @@ public class UserService {
             throw new CustomException(ErrorCode.USER_EMAIL_EXISTED);
         }
 
-        if (!user.getPhone().equals(request.getPhone()) && userRepository.existsByPhone(request.getPhone())) {
+        if (!Objects.equals(user.getPhone(), request.getPhone())
+                && request.getPhone() != null
+                && userRepository.existsByPhone(request.getPhone())) {
             throw new CustomException(ErrorCode.USER_PHONE_EXISTED);
         }
 

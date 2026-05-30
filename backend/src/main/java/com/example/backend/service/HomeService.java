@@ -4,8 +4,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.example.backend.dto.response.client.*;
@@ -19,9 +23,10 @@ import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.projection.ProductCardProjection;
 
 import lombok.RequiredArgsConstructor;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
+
 public class HomeService {
 
     private final ProductRepository productRepository;
@@ -33,7 +38,7 @@ public class HomeService {
     private final ProductMapper productMapper;
     private final FlashSaleMapper flashSaleMapper;
 
-    // @Cacheable(value = "home", key = "'homepage'")
+    @Cacheable(value = "homePageData", key = "'default'")
     public HomeResponse getHomePageData() {
 
         List<ProductCardProjection> bestSellerProjections = productRepository.getBestSellers();
@@ -87,6 +92,12 @@ public class HomeService {
                     return dto;
                 })
                 .toList();
+    }
+
+    @CacheEvict(value = "homePageData", allEntries = true)
+    @Scheduled(fixedRateString = "180000")
+    public void clearHomePageCache() {
+        log.info("Đã dọn dẹp Cache trang chủ để cập nhật dữ liệu mới!");
     }
 
     private List<CategoryResponse> getFlatCategories() {

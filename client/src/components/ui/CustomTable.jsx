@@ -45,7 +45,7 @@ const CustomTable = ({
       dataSource={dataSource}
       loading={loading}
       pagination={paginationConfig}
-      onChange={handleTableChange} // Use the internal handler
+      onChange={handleTableChange}
       scroll={dataSource.length > 0 ? { x: 'max-content', y: 300 } : undefined}
       bordered
       size="middle"

@@ -99,6 +99,8 @@ const LoginForm = () => {
                 facebookLogin.mutate(res.accessToken);
               }
             }}
+            scope="public_profile,email"
+            
             onFail={(err) => console.log(err)}
             className="w-full h-9 flex items-center justify-center gap-2 rounded-md bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-semibold transition-colors border-none cursor-pointer"
           >

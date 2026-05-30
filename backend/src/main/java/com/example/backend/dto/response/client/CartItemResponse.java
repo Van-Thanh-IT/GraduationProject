@@ -43,7 +43,6 @@ public class CartItemResponse {
 
         private BigDecimal flashSalePrice;
 
-        private Integer maxQuantityPerUser;
 
         private Integer saleStockRemaining;
 

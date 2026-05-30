@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -67,6 +68,7 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
             @Param("status") ReviewStatus status,
             Pageable pageable);
 
+
     @Query(
             value =
                     """
@@ -83,4 +85,6 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 			""",
             nativeQuery = true)
     ReviewSummaryProjection getReviewSummaryByProductId(@Param("productId") Integer productId);
+
+	List<Review> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
 }

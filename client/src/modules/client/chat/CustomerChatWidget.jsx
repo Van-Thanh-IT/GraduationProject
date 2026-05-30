@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import { MessageCircle, X, Send, ImagePlus, Loader2, User } from "lucide-react";
+import { MessageCircle, X, Send, ImagePlus, Loader2, User, Smile } from "lucide-react";
+import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from "@/context/AuthContext";
 import API from "@/api/API";
 
-const CustomerChatWidget = () => {
-    // Auth & Context
+const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
     const { user, isAuthenticated, getAccessToken } = useAuth();
 
-    // UI States
-    const [isOpen, setIsOpen] = useState(false);
-    const [step, setStep] = useState("INIT"); // INIT (nhập tên) | CHAT (đang chat)
+    const [step, setStep] = useState("INIT");
     
-    // Data States
     const [guestId] = useState(() => {
         let savedId = localStorage.getItem("chat_guest_id");
         if (!savedId) {
@@ -28,49 +25,47 @@ const CustomerChatWidget = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
 
-    // Input States
     const [messageInput, setMessageInput] = useState("");
     const [selectedImages, setSelectedImages] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [showEmoji, setShowEmoji] = useState(false);
 
-    // Refs
     const stompClientRef = useRef(null);
     const messagesEndRef = useRef(null);
+    const emojiRef = useRef(null);
 
-    // ==========================================
-    // 1. TỰ ĐỘNG KHỞI TẠO NẾU ĐÃ ĐĂNG NHẬP
-    // ==========================================
     useEffect(() => {
-        // Nếu user đã login, lấy tên user làm customerName và tự động mở phòng
         if (isAuthenticated && user) {
             setCustomerName(user.username);
-            // Nếu widget đang mở mà chưa có phòng, tự động init
             if (isOpen && !roomId) {
                 initializeChat(user.username);
             }
         }
     }, [isAuthenticated, user, isOpen]);
 
-    // Tự động cuộn xuống cuối
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
 
-    // Dọn dẹp khi unmount
     useEffect(() => {
         return () => disconnect();
     }, []);
 
-    // ==========================================
-    // 2. KHỞI TẠO PHÒNG & KẾT NỐI WEBSOCKET
-    // ==========================================
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiRef.current && !emojiRef.current.contains(event.target)) {
+                setShowEmoji(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const initializeChat = async (nameToUse) => {
         setErrorMsg("");
         setIsUploading(true);
 
         try {
-            // Bước 1: Gọi API để lấy/tạo phòng chat
-            // (Interceptor của API sẽ tự động đính kèm Token nếu có)
             const res = await API.post(`/chat/init?guestId=${guestId}&customerName=${encodeURIComponent(nameToUse)}`);
             const conversation = res.data;
             const newRoomId = conversation.id;
@@ -78,11 +73,9 @@ const CustomerChatWidget = () => {
             setRoomId(newRoomId);
             setStep("CHAT");
 
-            // Bước 2: Lấy lịch sử chat cũ
             const historyRes = await API.get(`/chat/${newRoomId}/history`);
             setMessages(historyRes.data || []);
 
-            // Bước 3: Cắm ống Websocket
             connectWebSocket(newRoomId);
 
         } catch (error) {
@@ -102,12 +95,11 @@ const CustomerChatWidget = () => {
         const client = new Client({
             webSocketFactory: () => new SockJS("http://localhost:8080/ws/chat"),
             connectHeaders: headers,
-            debug: () => {}, // Ẩn log
+            debug: () => {},
             onConnect: () => {
                 setIsConnected(true);
                 setErrorMsg("");
                 
-                // Lắng nghe tin nhắn từ phòng này
                 client.subscribe(`/topic/conversation/${currentRoomId}`, (message) => {
                     setMessages((prev) => [...prev, JSON.parse(message.body)]);
                 });
@@ -126,9 +118,6 @@ const CustomerChatWidget = () => {
         setIsConnected(false);
     };
 
-    // ==========================================
-    // 3. XỬ LÝ ẢNH & GỬI TIN NHẮN
-    // ==========================================
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length + selectedImages.length > 3) {
@@ -143,14 +132,18 @@ const CustomerChatWidget = () => {
         setSelectedImages((prev) => prev.filter((_, idx) => idx !== idxToRemove));
     };
 
+    const onEmojiClick = (emojiObject) => {
+        setMessageInput((prevMsg) => prevMsg + emojiObject.emoji);
+    };
+
     const sendMessage = async () => {
         if (!stompClientRef.current || !isConnected || !roomId) return;
         if (!messageInput.trim() && selectedImages.length === 0) return;
 
+        setShowEmoji(false);
         setIsUploading(true);
         let uploadedUrls = [];
 
-        // Upload ảnh
         if (selectedImages.length > 0) {
             const formData = new FormData();
             selectedImages.forEach((file) => formData.append("files", file));
@@ -167,7 +160,6 @@ const CustomerChatWidget = () => {
             }
         }
 
-        // Bắn WebSocket
         const payload = {
             conversationId: roomId,
             senderRole: isAuthenticated ? "USER" : "GUEST",
@@ -186,26 +178,20 @@ const CustomerChatWidget = () => {
         setIsUploading(false);
     };
 
-    // ==========================================
-    // 4. GIAO DIỆN (UI)
-    // ==========================================
     return (
         <div className="fixed bottom-6 right-6 z-[999] font-sans">
-            {/* NÚT MỞ CHAT (Bong bóng) */}
             {!isOpen && (
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => onOpen()}
                     className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:bg-blue-700 hover:scale-105 transition-all animate-bounce-short"
                 >
                     <MessageCircle className="w-7 h-7" />
                 </button>
             )}
 
-            {/* KHUNG CHAT */}
             {isOpen && (
                 <div className="w-[350px] sm:w-[380px] h-[550px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 animate-slide-up">
                     
-                    {/* Header */}
                     <div className="bg-blue-600 p-4 text-white flex items-center justify-between shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -218,7 +204,7 @@ const CustomerChatWidget = () => {
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
+                        <button onClick={() => onClose()} className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -229,7 +215,6 @@ const CustomerChatWidget = () => {
                         </div>
                     )}
 
-                    {/* Body: Form Nhập Tên (Nếu chưa init và là GUEST) */}
                     {step === "INIT" ? (
                         <div className="flex-1 flex flex-col justify-center p-6 bg-gray-50 text-center">
                             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -255,7 +240,6 @@ const CustomerChatWidget = () => {
                             </button>
                         </div>
                     ) : (
-                        // Body: Khu vực Chat
                         <>
                             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4 custom-scrollbar">
                                 {messages.length === 0 ? (
@@ -264,7 +248,6 @@ const CustomerChatWidget = () => {
                                     </div>
                                 ) : (
                                     messages.map((msg, idx) => {
-                                        // Phân biệt tin nhắn của Khách/User với Admin
                                         const isMyMsg = msg.senderRole === "GUEST" || msg.senderRole === "USER";
                                         
                                         return (
@@ -293,9 +276,18 @@ const CustomerChatWidget = () => {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Vùng nhập liệu */}
-                            <div className="bg-white border-t border-gray-100 p-3 shrink-0">
-                                {/* Preview Ảnh */}
+                            <div className="bg-white border-t border-gray-100 p-3 shrink-0 relative">
+                                {showEmoji && (
+                                    <div ref={emojiRef} className="absolute bottom-[70px] left-3 z-50 shadow-2xl">
+                                        <EmojiPicker 
+                                            onEmojiClick={onEmojiClick} 
+                                            searchPlaceHolder="Tìm biểu tượng..."
+                                            width={300}
+                                            height={400}
+                                        />
+                                    </div>
+                                )}
+
                                 {selectedImages.length > 0 && (
                                     <div className="flex gap-2 mb-2 overflow-x-auto p-1 custom-scrollbar">
                                         {selectedImages.map((file, idx) => (
@@ -310,6 +302,15 @@ const CustomerChatWidget = () => {
                                 )}
 
                                 <div className="flex items-end gap-2">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowEmoji(!showEmoji)}
+                                        disabled={isUploading || !isConnected}
+                                        className="p-2.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-full cursor-pointer transition-colors shrink-0 disabled:opacity-50"
+                                    >
+                                        <Smile className="w-5 h-5" />
+                                    </button>
+
                                     <label className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full cursor-pointer transition-colors shrink-0">
                                         <ImagePlus className="w-5 h-5" />
                                         <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} disabled={isUploading || !isConnected} />

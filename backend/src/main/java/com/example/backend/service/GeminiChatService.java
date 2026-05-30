@@ -26,7 +26,6 @@ import com.example.backend.utils.SecurityUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
@@ -38,7 +37,7 @@ public class GeminiChatService {
             NavType.ORDER, List.of("ORDER", "ĐƠN", "LỊCH SỬ"),
             NavType.CART, List.of("CART", "GIỎ"),
             NavType.AUTH, List.of("TÀI KHOẢN", "PASS", "ĐĂNG", "LOGIN"),
-            NavType.WARRANTY, List.of("BẢO HÀNH", "TRA CỨU"),
+            NavType.WARRANTY, List.of("BẢO HÀNH", "TRA CỨU", "IMEI", "SERI", "SERI SẢN PHẨM", "BẢO HÀNH SẢN PHẨM"),
             NavType.CONTACT, List.of("LIÊN HỆ", "HOTLINE", "CONTACT"),
             NavType.PRODUCT, List.of("SẢN PHẨM", "DANH MỤC", "MUA HÀNG", "TẤT CẢ"),
             NavType.ABOUT, List.of("GIỚI THIỆU", "TIN TỨC", "BLOG")
@@ -57,48 +56,34 @@ public class GeminiChatService {
     @Value("${spring.gemini.url}")
     private String url;
 
-    // Lớp chứa dữ liệu ngữ cảnh sau khi phân tích Routing
     private record RoutingResult(String dynamicContext, Object productAttachment, List<ActionItem> actions) {}
 
-    // ==========================================
-    // LUỒNG XỬ LÝ CHÍNH (ORCHESTRATOR)
-    // ==========================================
     @Transactional
     public AIChatResponse processChat(AIChatRequest request, String guestSessionKey) {
-        // 1. Khởi tạo phiên & Lưu lịch sử
         ChatSessionAI session = getOrCreateSession(request, guestSessionKey);
         List<ChatMessageAI> history = messageRepository.findTop6BySessionOrderByCreatedAtDesc(session);
         Collections.reverse(history);
         saveMessage(session, RoleAI.USER, request.getMessage(), null);
 
-        // 2. Trích xuất Intent (Ý định khách hàng)
         AiSearchCriteria criteria = extractIntent(request.getMessage());
 
-        // 3. Xử lý Routing & Lấy Dữ liệu (RAG)
         RoutingResult routingResult = processRoutingLogic(criteria, session);
 
-        // 4. Sinh câu trả lời tự nhiên
         String aiResponseText = generateFinalResponse(criteria.getIntent(), routingResult.dynamicContext(), request.getMessage(), history);
 
-        // 5. Lưu DB & Trả về kết quả
         return buildAndSaveResponse(session, aiResponseText, criteria, routingResult);
     }
 
-    // ==========================================
-    // CÁC HÀM XỬ LÝ NGHIỆP VỤ ĐƯỢC TÁCH NHỎ
-    // ==========================================
 
     private AiSearchCriteria extractIntent(String userMessage) {
         String intentPrompt = promptBuilder.buildIntentExtractionPrompt(userMessage);
 
-        // SỬA LỖI TOKEN LEAK: Không truyền 'history' vào đây, chỉ cần prompt để đoán Intent
         String intentJsonString = callGeminiApi(intentPrompt, Collections.emptyList());
 
         AiSearchCriteria criteria = new AiSearchCriteria();
         criteria.setIntent("CHAT"); // Fallback mặc định
 
         try {
-            // Tối ưu parse JSON: Lấy chính xác từ dấu { đến dấu }
             int startIndex = intentJsonString.indexOf("{");
             int endIndex = intentJsonString.lastIndexOf("}");
             if (startIndex != -1 && endIndex != -1) {
@@ -134,6 +119,9 @@ public class GeminiChatService {
             case NAVIGATION -> {
                 NavType type = resolveNavType(criteria.getKeyword());
                 handleNavigation(type, isLoggedIn, actions);
+                if (type == NavType.DEFAULT && criteria.getIntent().equalsIgnoreCase("WARRANTY")) {
+                    type = NavType.WARRANTY;
+                }
                 dynamicContext = buildNavigationContext(type, isLoggedIn);
             }
             default -> {
@@ -162,7 +150,6 @@ public class GeminiChatService {
             }
             case CART -> actions.add(new ActionItem("Xem giỏ hàng", "/cart", "LINK"));
             case WARRANTY -> actions.add(new ActionItem("Tra cứu bảo hành", "/warranty", "LINK"));
-            case CONTACT -> actions.add(new ActionItem("Liên hệ cửa hàng", "/contact", "LINK"));
             case PRODUCT -> actions.add(new ActionItem("Xem tất cả sản phẩm", "/products", "LINK"));
             case ABOUT -> {
                 actions.add(new ActionItem("Về chúng tôi", "/abouts", "LINK"));
@@ -210,17 +197,19 @@ public class GeminiChatService {
 
     private NavType resolveNavType(String rawKey) {
         if (rawKey == null || rawKey.isBlank()) return NavType.DEFAULT;
-        String key = rawKey.toUpperCase();
-        return KEYWORD_MAP.entrySet().stream()
-                .filter(e -> e.getValue().stream().anyMatch(key::contains))
-                .map(Map.Entry::getKey)
-                .findFirst()
-                .orElse(NavType.DEFAULT);
+        String key = rawKey.toUpperCase().trim();
+
+        try {
+            return NavType.valueOf(key);
+        } catch (IllegalArgumentException e) {
+            return KEYWORD_MAP.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream().anyMatch(val -> key.contains(val) || val.contains(key)))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(NavType.DEFAULT);
+        }
     }
 
-    // ==========================================
-    // CÁC HÀM TIỆN ÍCH & GIAO TIẾP API
-    // ==========================================
 
     private ChatSessionAI getOrCreateSession(AIChatRequest request, String guestSessionKey) {
         if (request.getSessionId() != null) {

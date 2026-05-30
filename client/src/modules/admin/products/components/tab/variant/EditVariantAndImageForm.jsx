@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { message, Spin, Popconfirm, Switch, Radio } from 'antd';
-import { DeleteOutlined, StarFilled, UploadOutlined, InfoCircleOutlined, BarcodeOutlined } from '@ant-design/icons';
+import { message, Spin, Popconfirm, Switch } from 'antd'; // Đã xóa Radio
+import { DeleteOutlined, StarFilled, UploadOutlined, InfoCircleOutlined } from '@ant-design/icons'; // Đã xóa BarcodeOutlined
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
@@ -15,12 +15,12 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
   const [formData, setFormData] = useState({
     price: variant.price || '',
     originalPrice: variant.originalPrice || '', 
-    weight: variant.weight || '',               
+    weight: variant.weight || '',              
     option1Value: variant.option1Value || '',
     option2Value: variant.option2Value || '',
     option3Value: variant.option3Value || '',
     isDefault: variant.isDefault || false,
-    isSerialRequired: variant.isSerialRequired !== undefined ? variant.isSerialRequired : null 
+    isSerialRequired: true // Luôn luôn gán bằng true
   });
 
   const [loadingImg, setLoadingImg] = useState(false);
@@ -30,7 +30,7 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
     setFormData(prev => ({
       ...prev,
       isDefault: variant.isDefault || false,
-      isSerialRequired: variant.isSerialRequired !== undefined ? variant.isSerialRequired : null
+      isSerialRequired: true // Luôn luôn gán bằng true khi đổi biến thể
     }));
   }, [variant]);
 
@@ -38,11 +38,7 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
 
-    // Bắt lỗi: Nếu người dùng cố tình xóa trạng thái hoặc chưa chọn
-    if (formData.isSerialRequired === null) {
-      message.error("Vui lòng tích chọn CÓ hoặc KHÔNG cho phần Quản lý Serial!");
-      return;
-    }
+    // Đã xóa phần bắt lỗi kiểm tra isSerialRequired === null
 
     setLoadingInfo(true);
     try {
@@ -166,27 +162,10 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
               }
             />
           </div>
+          
           <div className="grid grid-cols-2 gap-3">
             <Input label="Trọng lượng (kg)" type="number" step="0.01" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} />
-            
-            {/* === Ô CHỌN SERIAL BẰNG RADIO CÓ/KHÔNG === */}
-            <div className={`p-2 rounded-lg border flex flex-col justify-center ${formData.isSerialRequired === null ? 'bg-rose-50 border-rose-200' : 'bg-slate-50 border-slate-200'}`}>
-                <div className="flex flex-col mb-1.5">
-                  <span className={`text-xs font-bold flex items-center gap-1 ${formData.isSerialRequired === null ? 'text-rose-600' : 'text-slate-700'}`}>
-                     <BarcodeOutlined />Serial/IMEI {formData.isSerialRequired === null && <span className="text-rose-500">*</span>}
-                  </span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">Bắt buộc</span>
-                </div>
-                
-                <Radio.Group 
-                   onChange={e => setFormData({...formData, isSerialRequired: e.target.value})} 
-                   value={formData.isSerialRequired}
-                   className="flex gap-4 ml-1"
-                >
-                   <Radio value={true} className="text-sm">CÓ</Radio>
-                   <Radio value={false} className="text-sm">KHÔNG</Radio>
-                </Radio.Group>
-            </div>
+            {/* Đã xóa hoàn toàn giao diện chọn Serial/IMEI tại đây */}
           </div>
 
           <div className="mt-1 flex justify-end">
@@ -197,7 +176,7 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
         </form>
       </div>
 
-      {/* ================= CỘT PHẢI (Giữ nguyên phần Quản lý hình ảnh) ================= */}
+      {/* ================= CỘT PHẢI ================= */}
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <h4 className="font-bold text-slate-700">Quản lý Hình ảnh ({images.length})</h4>

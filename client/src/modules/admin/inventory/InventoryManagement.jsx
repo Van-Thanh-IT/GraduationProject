@@ -14,13 +14,13 @@ import { ImportOutlined, ExportOutlined } from '@ant-design/icons';
 const { Title } = Typography;
 
 const InventoryManagement = () => {
-    // 1. States cho UI & Filters (Đã bỏ state status)
+    // 1. States cho UI & Filters
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedKeyword = useDebounce(searchTerm, 500); 
     
     const [type, setType] = useState(undefined);
     const [page, setPage] = useState(1);
-    const limit = 10;
+    const limit = 20;
 
     // 2. Data Fetching
     const { data: response, isLoading, refetch } = useGetAllNotes({
@@ -29,12 +29,10 @@ const InventoryManagement = () => {
         page,
         limit,
     });
-
+    
     const notes = response?.items || [];
     const totalElements = response?.totalElements || 0;
-    const totalPages = response?.totalPages || 1;
 
-    // Reset về trang 1 nếu bộ lọc thay đổi
     useEffect(() => {
         setPage(1);
     }, [debouncedKeyword, type]);
@@ -72,33 +70,31 @@ const InventoryManagement = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-2 space-y-2">
-         {/* Header Area */}
-    <div className="flex flex-col md:flex-row justify-between items-center bg-white px-5 py-4 rounded-xl shadow-sm border border-slate-200">
-        <Title level={4} className="!mb-0 text-slate-800 font-bold">
-            📦 Quản lý Kho Hàng
-        </Title>
-        <Space size="middle" className="mt-4 md:mt-0">
-            <Button
-                variant="primary"
-                onClick={() => openFormModal('IMPORT')}
-                // Đổi sang màu Xanh Lục (emerald) - thường dùng cho hành động thêm/nhập vào
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
-            >
-                <ImportOutlined className="mr-2 text-lg" /> Nhập Kho
-            </Button>
-            
-            <Button
-                variant="danger"
-                onClick={() => openFormModal('EXPORT')}
-                // Đổi sang màu Cam (amber/orange) - cảnh báo nhẹ cho hành động xuất/giảm đi
-                className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
-            >
-                <ExportOutlined className="mr-2 text-lg" /> Xuất Kho
-            </Button>
-        </Space>
-    </div>
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white px-5 py-4 rounded-xl shadow-sm border border-slate-200">
+                <Title level={4} className="!mb-0 text-slate-800 font-bold">
+                    📦 Quản lý Kho Hàng
+                </Title>
+                <Space size="middle" className="mt-4 md:mt-0">
+                    <Button
+                        variant="primary"
+                        onClick={() => openFormModal('IMPORT')}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
+                    >
+                        <ImportOutlined className="mr-2 text-lg" /> Nhập Kho
+                    </Button>
+                    
+                    <Button
+                        variant="danger"
+                        onClick={() => openFormModal('EXPORT')}
+                        className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm flex items-center justify-center px-4 py-2 rounded-lg transition-colors font-medium border-none"
+                    >
+                        <ExportOutlined className="mr-2 text-lg" /> Xuất Kho
+                    </Button>
+                </Space>
+            </div>
 
-            {/* Filter Area (Đã căn chỉnh lại layout cho cân đối) */}
+            {/* Filter Area */}
             <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div className="md:col-span-8">
@@ -142,9 +138,10 @@ const InventoryManagement = () => {
                 notes={notes}
                 isLoading={isLoading}
                 onShowDetail={showDetail}
+                // TRUYỀN PROPS ĐẦY ĐỦ ĐỂ SERVER-SIDE PAGINATION HOẠT ĐỘNG
                 total={totalElements}
                 currentPage={page}
-                totalPages={totalPages}
+                limit={limit}
                 onPageChange={setPage}
             />
 

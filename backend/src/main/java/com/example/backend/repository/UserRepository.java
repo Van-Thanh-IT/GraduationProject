@@ -1,5 +1,6 @@
 package com.example.backend.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     boolean existsByEmail(String email);
 
-    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.name = 'user'")
-    Long countTotalCustomers();
+    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.name = 'USER'")
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

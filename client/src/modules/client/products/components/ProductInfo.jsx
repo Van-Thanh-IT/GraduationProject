@@ -122,15 +122,6 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
     return isVariantFS ? variant.flashSale.flashSalePrice : variant?.price;
   };
 
-  const handleIncrease = () => {
-    const maxAllowed = Math.min(20, currentVariant?.stockQuantity || 0);
-    if (quantity < maxAllowed) setQuantity(prev => prev + 1);
-  };
-
-  const handleDecrease = () => {
-    if (quantity > 1) setQuantity(prev => prev - 1);
-  };
-
   const handleAddToCart = () => {
     if (!currentVariant || currentVariant.stockQuantity === 0) return;
     addToCart({ productVariantId: currentVariant.id, quantity });
@@ -287,7 +278,7 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
           <span className="text-[13px] font-bold text-gray-500">Số lượng:</span>
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg h-9 overflow-hidden">
             <button
-              onClick={handleDecrease}
+              onClick={() => setQuantity(prev => prev - 1)}
               disabled={quantity <= 1 || currentVariant?.stockQuantity === 0}
               className="w-9 h-full flex items-center justify-center text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
@@ -297,8 +288,8 @@ export default function ProductInfo({ product, currentVariant, selectedOptions, 
               {quantity}
             </div>
             <button
-              onClick={handleIncrease}
-              disabled={quantity >= 20 || quantity >= (currentVariant?.stockQuantity || 0) || currentVariant?.stockQuantity === 0}
+              onClick={() => setQuantity(prev => prev + 1)}
+              disabled={quantity >= (currentVariant?.stockQuantity || 0) || currentVariant?.stockQuantity === 0}
               className="w-9 h-full flex items-center justify-center text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <Plus size={14} strokeWidth={2.5} />

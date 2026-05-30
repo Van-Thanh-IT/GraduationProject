@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // IMPORT THÊM useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import { Bot, User, Loader2, ShoppingCart } from 'lucide-react';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
@@ -13,9 +13,8 @@ const renderFormattedText = (text) => {
 
 export default function ChatMessageList({ messages, isLoading, isSending, onActionClick }) {
   const messagesEndRef = useRef(null);
-  const navigate = useNavigate(); // KHỞI TẠO NAVIGATE
+  const navigate = useNavigate();
 
-  // Tự động cuộn xuống dòng mới nhất (Mượt mà / Realtime)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSending]);
@@ -23,7 +22,6 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
   return (
     <div className="flex-1 overflow-y-auto p-4 bg-[#f8fafc] custom-scrollbar flex flex-col gap-5">
       
-      {/* Lời chào khi chưa có tin nhắn */}
       {(!messages || messages.length === 0) && !isLoading && (
         <div className="flex gap-3 text-sm mt-2 animate-fade-in">
            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -59,7 +57,6 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
                   {isUser ? msg.content : renderFormattedText(msg.content)}
                 </div>
 
-                {/* Thẻ sản phẩm */}
                 {!isUser && msg.attachment && (
                    <div className="bg-white border border-blue-200 p-2.5 rounded-xl shadow-sm w-full max-w-[270px] hover:border-blue-400 hover:shadow-md transition-all cursor-pointer">
                       <div className="flex gap-3">
@@ -85,7 +82,6 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
                    </div>
                 )}
 
-                {/* Nút Gợi ý (Actions) */}
                 {!isUser && msg.actions && msg.actions.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-1">
                     {msg.actions.map((action, idx) => {
@@ -95,12 +91,10 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
                           key={idx}
                           onClick={() => {
                             if (typeof action === 'object' && action.type === 'LINK' && action.url) {
-                              // ĐÃ SỬA: Kiểm tra nếu là link ngoài (bắt đầu bằng http) thì mở tab mới
-                              // Còn nếu là link nội bộ (/login, /cart...) thì chuyển trang mượt mà
                               if (action.url.startsWith('http')) {
                                 window.open(action.url, '_blank');
                               } else {
-                                navigate(action.url); // <--- CHUYỂN TRANG NGAY TẠI TAB NÀY
+                                navigate(action.url);
                               }
                             } else {
                               onActionClick(buttonLabel);
@@ -126,7 +120,6 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
         })
       )}
 
-      {/* Hiệu ứng AI đang gõ */}
       {isSending && (
          <div className="flex gap-3 text-sm mt-1 animate-fade-in-up">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shrink-0 shadow-sm">

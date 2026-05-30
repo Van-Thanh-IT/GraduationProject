@@ -12,7 +12,6 @@ import com.example.backend.entity.FlashSale;
 
 public interface FlashSaleRepository extends JpaRepository<FlashSale, Integer> {
 
-    // 1. Kiểm tra xem Biến thể này có đang nằm trong chương trình FlashSale nào bị TRÙNG THỜI GIAN không?
     @Query("SELECT COUNT(f) > 0 FROM FlashSale f WHERE f.productVariant.id = :variantId "
             + "AND f.status = 1 "
             + "AND f.id != :excludeId "
@@ -32,4 +31,10 @@ public interface FlashSaleRepository extends JpaRepository<FlashSale, Integer> {
             "SELECT fs FROM FlashSale fs WHERE fs.productVariant.id IN :variantIds AND fs.status = 1 AND fs.soldQuantity < fs.saleStockQuantity AND fs.startTime <= :now AND fs.endTime >= :now")
     List<FlashSale> findActiveByVariantIds(
             @Param("variantIds") List<Integer> variantIds, @Param("now") LocalDateTime now);
+
+    @Query("SELECT f FROM FlashSale f WHERE f.productVariant.id = :variantId " +
+            "AND f.startTime <= :orderTime AND f.endTime >= :orderTime")
+    List<FlashSale> findFlashSalesByVariantAndDate(
+            @Param("variantId") Integer variantId,
+            @Param("orderTime") LocalDateTime orderTime);
 }

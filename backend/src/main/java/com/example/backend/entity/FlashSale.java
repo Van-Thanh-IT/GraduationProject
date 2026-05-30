@@ -39,10 +39,6 @@ public class FlashSale {
     @Builder.Default
     private Integer soldQuantity = 0;
 
-    @Column(name = "max_quantity_per_user")
-    @Builder.Default
-    private Integer maxQuantityPerUser = 1;
-
     @Column(name = "status")
     @Builder.Default
     private Integer status = 1;

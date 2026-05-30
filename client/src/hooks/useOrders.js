@@ -32,7 +32,7 @@ export const useConfirmOrder = () => {
   return useMutation({
     mutationFn: (id) => orderService.confirmOrder(id),
     onSuccess: () => {
-      toast.success("Xác nhận đơn hàng thành công!");
+
       queryClient.invalidateQueries({ queryKey: orderKeys.all });
     },
     onError: () => {

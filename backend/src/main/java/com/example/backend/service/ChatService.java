@@ -25,7 +25,6 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final CloudinaryUtil cloudinaryutil;
 
-    // 1. TÌM HOẶC TẠO MỚI PHÒNG CHAT
     @Transactional
     public Conversation getOrCreateConversation(Integer userId, String guestId, String customerName) {
         if (userId != null) {
@@ -50,7 +49,6 @@ public class ChatService {
         return conversationRepository.save(conversation);
     }
 
-    // 2. LƯU TIN NHẮN (Gọi từ WebSocket)
     @Transactional
     public ChatMessage saveMessage(ChatMessageRequest request) {
         Conversation conversation = conversationRepository
@@ -66,7 +64,6 @@ public class ChatService {
                 .isRead(false)
                 .build();
 
-        // Tạo text hiển thị ngắn gọn cho Sidebar
         String lastMsgText = request.getContent();
         if (lastMsgText == null || lastMsgText.isEmpty()) {
             lastMsgText = "Đã gửi "
@@ -75,9 +72,7 @@ public class ChatService {
             lastMsgText = lastMsgText.substring(0, 30) + "...";
         }
 
-        // Cập nhật phòng chat
         conversation.setLastMessage(lastMsgText);
-        // Nếu Admin gửi tin, tự động chuyển trạng thái thành ASSIGNED nếu đang WAITING
         if ((request.getSenderRole() == SenderRole.ADMIN || request.getSenderRole() == SenderRole.STAFF)
                 && conversation.getStatus() == ChatStatus.WAITING) {
             conversation.setStatus(ChatStatus.ASSIGNED);
@@ -88,12 +83,10 @@ public class ChatService {
         return chatMessageRepository.save(message);
     }
 
-    // 3. LẤY LỊCH SỬ TIN NHẮN (Khi khách vừa mở khung chat lên)
     public List<ChatMessage> getChatHistory(Integer conversationId) {
         return chatMessageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
     }
 
-    // Thêm hàm này vào ChatService
     public List<Conversation> getAllConversationsForAdmin() {
         return conversationRepository.findAllByOrderByUpdatedAtDesc();
     }

@@ -88,11 +88,9 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8 pt-3 font-sans">
-      <div className="max-w-[1200px] lg:max-w-[1400px] mx-auto px-4 md:px-6">
+      <div className="max-w-[1200px] lg:max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6">
 
-      
-        
-        <div className="mb-2">
+        <div className="mb-2 pl-1">
           <Breadcrumb
             items={[
               { title: <span className="cursor-pointer flex items-center gap-1 hover:text-blue-600" onClick={() => navigate('/')}><HomeOutlined /> Trang chủ</span> },
@@ -104,7 +102,7 @@ export default function ProductPage() {
         </div>
 
         {isFiltering && (
-          <div className="mb-2 flex flex-wrap items-center gap-2 bg-white px-4 py-2.5 rounded-lg border border-gray-100 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-center gap-2 bg-white px-3 sm:px-4 py-2.5 rounded-lg border border-gray-100 shadow-sm">
             <span className="text-gray-500 text-[13px] font-medium mr-1">Đang lọc theo:</span>
             
             {keyword && (
@@ -151,25 +149,28 @@ export default function ProductPage() {
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row gap-5 items-start">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-5 items-start">
           
+          {/* SIDEBAR BỘ LỌC CĂN CHỈNH CHO MOBILE */}
           <div 
-            className="hidden md:block w-[240px] lg:w-[260px] shrink-0 sticky h-max z-30"
+            className="w-full md:w-[240px] lg:w-[260px] shrink-0 md:sticky h-max z-30"
             style={{ top: "calc(var(--header-height) + 12px)" }}>
             <AdvancedFilterSidebar />
           </div>
 
           <div className="flex-1 min-w-0 w-full flex flex-col gap-3.5">
             
-            <div className="bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-medium text-[13px] hidden sm:block">Sắp xếp:</span>
-                <div className="flex gap-2 flex-wrap">
+            {/* THANH CÔNG CỤ SẮP XẾP */}
+            <div className="bg-white px-3 sm:px-4 py-3 rounded-xl shadow-sm border border-gray-100 flex flex-col xl:flex-row xl:items-center justify-between gap-3 xl:gap-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-2 w-full xl:w-auto">
+                <span className="text-gray-500 font-medium text-[13px] hidden md:block shrink-0">Sắp xếp:</span>
+                
+                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 w-full">
                   {['newest', 'best_seller'].map((sortType) => (
                     <button 
                       key={sortType}
                       onClick={() => handleSortChange(sortType)}
-                      className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all ${
+                      className={`w-full md:w-auto px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[12px] sm:text-[13px] font-semibold transition-all ${
                         sortBy === sortType 
                           ? 'bg-blue-600 text-white shadow-sm' 
                           : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
@@ -181,7 +182,7 @@ export default function ProductPage() {
 
                   <button 
                     onClick={toggleFlashSale}
-                    className={`px-4 py-1.5 rounded-lg text-[13px] font-semibold transition-all flex items-center gap-1 border ${
+                    className={`w-full md:w-auto justify-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[12px] sm:text-[13px] font-semibold transition-all flex items-center gap-1 border ${
                       isFlashSale 
                         ? 'bg-red-50 text-red-600 border-red-200 shadow-sm' 
                         : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -194,7 +195,7 @@ export default function ProductPage() {
                   <Select
                     value={sortBy.includes('price') ? sortBy : 'price_default'}
                     onChange={handleSortChange}
-                    className="w-[160px] custom-sort-select"
+                    className="w-full md:w-[160px] custom-sort-select h-[32px] sm:h-[36px]"
                     options={[
                       { value: 'price_default', label: 'Giá (Cao - Thấp)', disabled: true },
                       { value: 'price_asc', label: 'Giá: Thấp đến Cao' },
@@ -204,7 +205,7 @@ export default function ProductPage() {
                 </div>
               </div>
 
-              <div className="hidden lg:flex items-center gap-1.5">
+              <div className="hidden xl:flex items-center gap-1.5 shrink-0">
                 <span className="text-blue-600 font-bold text-sm">{page}</span>
                 <span className="text-gray-300 text-xs">/</span>
                 <span className="text-gray-500 font-medium text-sm">{totalPages}</span>
@@ -237,7 +238,7 @@ export default function ProductPage() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 md:gap-3.5">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 xl:gap-4">
                   {products.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}

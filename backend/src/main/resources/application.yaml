@@ -29,8 +29,8 @@ spring:
     secret: 7A24432646294A404E635266556A586E3272357538782F413F4428472B4B6250655368566D597133743677397A24432646294A404E635266556A586E
     google-client-id: 595448726961-kvt4kksrmn17de509lksfsidkfcflh9q.apps.googleusercontent.com
     facebook:
-      app-id: 2016734672462629
-      secret: 13376117c3fc11184eb29f7d6b042a4e
+      app-id: 1653496869039051
+      secret: 6250d4c224beb41d6d8a274ff5cd7b96
 
   mail:
     host: smtp.gmail.com

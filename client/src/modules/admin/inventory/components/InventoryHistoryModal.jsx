@@ -1,102 +1,111 @@
+// File: src/modules/admin/inventory/components/InventoryHistoryModal.jsx
 import React from 'react';
-import { Modal, Tag, Typography } from 'antd';
+import { Modal, Tag, Typography, Tooltip } from 'antd';
 import CustomTable from '@/components/ui/CustomTable'; 
 import Button from '@/components/ui/Button';
 import { useGetHistoryByVariant } from '@/hooks/useInventory';
+import moment from 'moment';
 
 const { Text } = Typography;
 
 const InventoryHistoryModal = ({ visible, onClose, variantId, variantName }) => {
-    // Gọi Hook lấy lịch sử. Nếu !visible hoặc !variantId, API sẽ không được gọi nhờ thuộc tính 'enabled' trong hook
     const { data: historyData = [], isLoading } = useGetHistoryByVariant(visible ? variantId : null);
-
-    // Hàm render màu sắc cho Loại chứng từ
+   
+    // Render Tag nghiệp vụ thông minh
     const renderReferenceTag = (type, id) => {
-        switch (type) {
-            case 'INVENTORY_NOTE':
-                return <Tag color="blue">Phiếu Kho #{id}</Tag>;
-            case 'ORDER':
-                return <Tag color="green">Đơn hàng #{id}</Tag>;
-            case 'RETURN':
-                return <Tag color="volcano">Khách trả hàng #{id}</Tag>;
-            default:
-                return <Tag>{type} #{id}</Tag>;
-        }
+        const config = {
+            'INVENTORY_NOTE': { color: 'blue', label: 'Phiếu Kho' },
+            'ORDER': { color: 'green', label: 'Đơn hàng' },
+            'RETURN': { color: 'volcano', label: 'Trả hàng' }
+        };
+        const item = config[type] || { color: 'default', label: type };
+        return <Tag color={item.color}>{item.label} #{id}</Tag>;
     };
 
     const columns = [
         {
-            title: 'Nghiệp vụ',
-            key: 'reference',
-            width: 180,
+            title: 'Thời gian',
+            dataIndex: 'createdAt',
+            width: 160,
+            render: (date) => date ? (
+                <div className="flex flex-col">
+                    <span className="font-semibold text-slate-700">{moment(date).format('DD/MM/YYYY')}</span>
+                    <span className="text-[11px] text-slate-400">{moment(date).format('HH:mm:ss')}</span>
+                </div>
+            ) : <span className="text-gray-400 italic">---</span>
+        },
+        {
+            title: 'Nghiệp vụ & Ghi chú',
             render: (_, record) => (
                 <div className="flex flex-col gap-1">
-                    <span className="font-medium text-slate-700">{record.note}</span>
+                    <Tooltip title={record.note}>
+                        <span className="font-medium text-slate-800 text-[13px] line-clamp-1">{record.note}</span>
+                    </Tooltip>
                     <div>{renderReferenceTag(record.referenceType, record.referenceId)}</div>
                 </div>
             )
         },
         {
-            title: 'Tồn đầu',
-            dataIndex: 'previousQuantity',
-            key: 'previousQuantity',
-            align: 'center',
-            width: 100,
-            render: (val) => <Text className="text-gray-500">{val}</Text>
-        },
-        {
-            title: 'Biến động',
-            dataIndex: 'changeAmount',
-            key: 'changeAmount',
-            align: 'center',
-            width: 120,
-            render: (amount) => {
-                // Đổi màu: Dương -> Xanh lá, Âm -> Đỏ
-                const isPositive = amount > 0;
-                return (
-                    <div className={`font-bold text-base ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-                        {isPositive ? `+${amount}` : amount}
-                    </div>
-                );
-            }
-        },
-        {
-            title: 'Tồn cuối',
-            dataIndex: 'newQuantity',
-            key: 'newQuantity',
-            align: 'center',
-            width: 100,
-            render: (val) => <Text strong className="text-blue-600 text-base">{val}</Text>
+            title: 'Số lượng',
+            children: [
+                {
+                    title: 'Đầu',
+                    dataIndex: 'previousQuantity',
+                    align: 'center',
+                    width: 80,
+                    render: (val) => <span className="text-slate-500 font-medium">{val}</span>
+                },
+                {
+                    title: 'Biến động',
+                    dataIndex: 'changeAmount',
+                    align: 'center',
+                    width: 100,
+                    render: (amount) => (
+                        <span className={`font-black ${amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {amount > 0 ? `+${amount}` : amount}
+                        </span>
+                    )
+                },
+                {
+                    title: 'Cuối',
+                    dataIndex: 'newQuantity',
+                    align: 'center',
+                    width: 80,
+                    render: (val) => <span className="font-bold text-blue-600">{val}</span>
+                }
+            ]
         }
     ];
 
     return (
         <Modal
             title={
-                <div>
-                    <span className="text-xl font-bold">Lịch sử biến động kho</span>
-                    {variantName && <div className="text-sm font-normal text-gray-500 mt-1">Sản phẩm: {variantName}</div>}
+                <div className="flex flex-col gap-1">
+                    <span className="text-lg font-bold text-slate-800">Lịch sử biến động</span>
+                    {variantName && <span className="text-[12px] font-medium text-slate-400 uppercase tracking-wide">{variantName}</span>}
                 </div>
             }
             open={visible}
             onCancel={onClose}
+            width={850}
+            centered
             footer={[
-                <Button key="close" variant="secondary" onClick={onClose}>
-                    Đóng lại
+                <Button key="close" variant="secondary" onClick={onClose} className="px-6 font-bold">
+                    Đóng cửa sổ
                 </Button>
             ]}
-            width={850}
             destroyOnClose
         >
-            <div className="mt-4 border border-slate-200 rounded-lg overflow-hidden">
+            <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                 <CustomTable 
                     columns={columns} 
                     dataSource={historyData} 
                     loading={isLoading}
                     rowKey="id"
-                    showPagination={true}
+                    showPagination={historyData.length > 10}
                     pageSize={10}
-                    scroll={{ y: 400 }} // Fix chiều cao bảng, cuộn bên trong để Modal không bị quá dài
+                    scroll={{ y: 400 }}
+                    className="[&_.ant-table-thead_th]:!bg-slate-50"
                 />
             </div>
         </Modal>

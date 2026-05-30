@@ -40,13 +40,7 @@ public class InventoryService {
     private final ProductSerialRepository serialRepository;
     private final InventoryMapper inventoryMapper;
 
-//    @Transactional(readOnly = true)
-//    public List<InventoryNoteResponse> getAllNotes() {
-//        List<InventoryNote> notes = noteRepository.findAll();
-//        return notes.stream().map(this::mapToResponseWithSerials).toList();
-//    }
 
-    // Đổi hàm getAllNotes thành hàm tìm kiếm và phân trang
     @Transactional(readOnly = true)
     public PageResponse<InventoryNoteResponse> searchNotes(
             String keyword, NoteType type, NoteStatus status, int page, int limit) {
@@ -68,30 +62,24 @@ public class InventoryService {
                 .build();
     }
 
-    // Nâng cấp hàm Mapping để đắp thêm thông tin Sản phẩm và Trạng thái Serial
     private InventoryNoteResponse mapToResponseWithSerials(InventoryNote note) {
         InventoryNoteResponse response = inventoryMapper.toInventoryNoteResponse(note);
         if (response.getDetails() != null) {
             for (var detail : response.getDetails()) {
 
-                // 1. LẤY DANH SÁCH SERIAL KÈM STATUS
-                // Dùng hàm mới trong repository để lấy cả Entity
                 List<ProductSerial> productSerials = serialRepository.findByInventoryNoteIdAndProductVariantId(response.getId(), detail.getProductVariantId());
 
-                // Chuyển đổi từ Entity sang DTO SerialInfo
                 List<InventoryNoteDetailResponse.SerialInfo> serialInfos = productSerials != null
                         ? productSerials.stream()
                         .map(ps -> InventoryNoteDetailResponse.SerialInfo.builder()
                                 .serialNumber(ps.getSerialNumber())
-                                .status(ps.getStatus()) // Lấy thêm trạng thái từ DB
+                                .status(ps.getStatus())
                                 .build())
                         .toList()
                         : new ArrayList<>();
 
-                // Set vào detail (Nhớ cập nhật setter trong DTO Detail)
                 detail.setSerials(serialInfos);
 
-                // 2. LẤY THÊM TÊN SẢN PHẨM VÀ THUỘC TÍNH (Giữ nguyên logic cũ của bạn)
                 variantRepository.findById(detail.getProductVariantId()).ifPresent(variant -> {
                     detail.setSku(variant.getSku());
                     detail.setProductName(variant.getProduct().getName());
@@ -117,22 +105,11 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<InventoryHistoryResponse> getHistoryByVariantId(Integer variantId) {
-        return historyRepository.findByProductVariantIdOrderByCreatedAtDesc(variantId).stream()
+        return historyRepository.findTop100ByProductVariantIdOrderByCreatedAtDesc(variantId).stream()
                 .map(inventoryMapper::toInventoryHistoryResponse)
                 .toList();
     }
 
-//    private InventoryNoteResponse mapToResponseWithSerials(InventoryNote note) {
-//        InventoryNoteResponse response = inventoryMapper.toInventoryNoteResponse(note);
-//        if (response.getDetails() != null) {
-//            for (var detail : response.getDetails()) {
-//                List<String> serials =
-//                        serialRepository.findSerialNumbers(response.getId(), detail.getProductVariantId());
-//                detail.setSerialNumbers(serials != null ? serials : new ArrayList<>());
-//            }
-//        }
-//        return response;
-//    }
 
     @Transactional(rollbackFor = Exception.class)
     public InventoryNoteResponse createAndCompleteNote(InventoryNoteRequest request) {
@@ -243,6 +220,85 @@ public class InventoryService {
         }
 
         updateStockAndHistory(variant, -exportQuantity, noteId, "Xuất kho");
+    }
+
+    public void exportStockFromOrder(Order order) {
+        for (OrderItem item : order.getOrderItems()) {
+
+            ProductVariant variant = variantRepository
+                    .findByIdWithLock(item.getProductVariant().getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.VARIANT_NOT_FOUND));
+
+            if (variant.getStockQuantity() < item.getQuantity()) {
+                throw new CustomException(ErrorCode.INVENTORY_LOW_STOCK);
+            }
+
+            int prev = variant.getStockQuantity();
+            int change = -item.getQuantity();
+            int newQty = prev + change;
+
+            variant.setStockQuantity(newQty);
+
+            variantRepository.save(variant);
+
+            historyRepository.save(
+                    InventoryHistory.builder()
+                            .productVariantId(variant.getId())
+                            .previousQuantity(prev)
+                            .changeAmount(change)
+                            .newQuantity(newQty)
+                            .referenceType(ReferenceType.ORDER)
+                            .referenceId(order.getId())
+                            .note("Xuất kho đơn #" + order.getId())
+                            .build()
+            );
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreStockFromCancelledOrder(Order order) {
+        log.info("Tiến hành hoàn lại tồn kho cho đơn hàng: {}", order.getCode());
+
+        for (OrderItem item : order.getOrderItems()) {
+            if (item.getProductVariant() != null) {
+
+                ProductVariant variant = variantRepository
+                        .findByIdWithLock(item.getProductVariant().getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.VARIANT_NOT_FOUND));
+
+                int prev = variant.getStockQuantity();
+                int change = item.getQuantity();
+                int newQty = prev + change;
+
+                variant.setStockQuantity(newQty);
+                variantRepository.save(variant);
+
+                historyRepository.save(
+                        InventoryHistory.builder()
+                                .productVariantId(variant.getId())
+                                .previousQuantity(prev)
+                                .changeAmount(change)
+                                .newQuantity(newQty)
+                                .referenceType(ReferenceType.ORDER)
+                                .referenceId(order.getId())
+                                .note("Hoàn kho do hủy đơn hàng #" + order.getId())
+                                .build()
+                );
+
+                if (Boolean.TRUE.equals(variant.getIsSerialRequired())) {
+                    List<ProductSerial> serials = serialRepository.findByOrderIdAndProductVariantId(order.getId(), variant.getId());
+
+                    if (serials != null && !serials.isEmpty()) {
+                        for (ProductSerial serial : serials) {
+                            serial.setStatus(SerialStatus.AVAILABLE);
+                            serial.setOrderId(null);
+                        }
+                        serialRepository.saveAll(serials);
+                        log.info("Đã hoàn lại trạng thái AVAILABLE cho {} mã Serial của Variant ID {}", serials.size(), variant.getId());
+                    }
+                }
+            }
+        }
     }
 
     private ProductVariant getVariantWithLock(Integer variantId) {

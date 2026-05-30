@@ -17,6 +17,7 @@ createRoot(document.getElementById('root')).render(
           <App />
         </AuthProvider>
       </GoogleOAuthProvider>
+       {/* <ReactQueryDevtools/> */}
     </QueryClientProvider>
   </StrictMode>,
 )

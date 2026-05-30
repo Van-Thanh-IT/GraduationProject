@@ -51,6 +51,7 @@ public class OrderService {
     private final com.example.backend.repository.VoucherRepository voucherRepository;
     private final GoshipService goshipService;
     private final FlashSaleService flashSaleService;
+    private final InventoryService inventoryService;
     private final ProductSerialRepository serialRepository;
     private final ObjectMapper objectMapper;
 
@@ -145,6 +146,8 @@ public class OrderService {
 
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.setCancelReason("Khách hàng tự hủy: " + cancelReason);
+
+        restoreInventory(order);
     }
 
     @Transactional
@@ -157,6 +160,8 @@ public class OrderService {
 
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.setCancelReason(reason);
+
+        restoreInventory(order);
     }
 
     @Transactional
@@ -183,6 +188,8 @@ public class OrderService {
         }
 
         processProductSerials(order, request.getSerials());
+
+        inventoryService.exportStockFromOrder(order);
 
         Map<String, Object> shipmentData = buildGoshipShipmentData(order);
 
@@ -273,7 +280,7 @@ public class OrderService {
                     payment.setStatus(PaymentStatus.REFUNDED);
                 }
 
-                restoreStockForOrder(order);
+                restoreInventory(order);
             }
 
             case 913 -> {
@@ -282,7 +289,6 @@ public class OrderService {
                     payment.setStatus(PaymentStatus.COMPLETED);
                 }
             }
-
 
             case 914 -> {
                 order.setOrderStatus(OrderStatus.CANCELLED);
@@ -294,7 +300,7 @@ public class OrderService {
                     payment.setStatus(PaymentStatus.REFUNDED);
                 }
 
-                restoreStockForOrder(order);
+               restoreInventory(order);
             }
 
             default -> log.info("Chưa xử lý status Goship: {}", request.getGoshipStatusCode());
@@ -328,20 +334,6 @@ public class OrderService {
         return shipmentData;
     }
 
-    private void restoreStockForOrder(Order order) {
-        log.info("Tiến hành hoàn lại tồn kho cho đơn hàng: {}", order.getCode());
-
-        for (OrderItem item : order.getOrderItems()) {
-
-            if (item.getProductVariant() != null) {
-                int updated = variantRepository.incrementStockSafely(
-                        item.getProductVariant().getId(), item.getQuantity());
-                if (updated == 0) {
-                    throw new CustomException(ErrorCode.VARIANT_NOT_FOUND);
-                }
-            }
-        }
-    }
 
     private Integer getCurrentUserId() {
         try {
@@ -362,6 +354,19 @@ public class OrderService {
     private void validateCancelReason(String reason) {
         if (reason == null || reason.isBlank()) {
             throw new CustomException(ErrorCode.ORDER_EMPTY_CANCEL_REASON);
+        }
+    }
+
+    private void restoreInventory(Order order) {
+        inventoryService.restoreStockFromCancelledOrder(order);
+        for (OrderItem item : order.getOrderItems()) {
+            log.info("Số luong ban flah slae hoan lại: {} ", item.getQuantity());
+            flashSaleService.restoreFlashSaleStock(
+                    item.getProductVariant().getId(),
+                    item.getQuantity(),
+                    order.getCreatedAt(),
+                    item.getPrice()
+            );
         }
     }
 
@@ -411,8 +416,6 @@ public class OrderService {
         for (String rawSerial : serialNumbers) {
 
             String serialNumber = rawSerial.trim().replaceAll("\\s+", "").toUpperCase();
-            log.info("DL nhân đc: {}", serialNumber);
-            log.info("DL độ dai: {}", serialNumber.length());
 
             ProductSerial ps = serialRepository
                     .findBySerialNumber(serialNumber)

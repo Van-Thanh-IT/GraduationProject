@@ -6,10 +6,10 @@ import { ProductService } from '@/services/product.service';
 
 
 const LOCAL_SUGGESTIONS = [
-    { name: "iPhone 15 Pro Max", id: "local-1" },
-    { name: "Macbook Air M2", id: "local-2" },
-    { name: "Tai nghe Bluetooth", id: "local-3" },
-    { name: "Bàn phím cơ", id: "local-4" },
+    { name: "Điện thoại", id: "local-1" },
+    { name: "laptop", id: "local-2" },
+    { name: "Tai nghe", id: "local-3" },
+    { name: "Bàn phím ", id: "local-4" },
 ];
 
 const SmartSearchBar = () => {

@@ -55,6 +55,11 @@ public class CartService {
                 .getActiveFlashSalesForVariants(List.of(variant.getId()))
                 .get(variant.getId());
 
+        // Tính toán tổng số lượng khách muốn mua (có giới hạn max 20 sản phẩm mỗi loại trong giỏ)
+        int currentQuantityInCart = (existingItem != null) ? existingItem.getQuantity() : 0;
+        int totalRequestedQuantity = currentQuantityInCart + request.getQuantity();
+        totalRequestedQuantity = Math.min(totalRequestedQuantity, 20);
+
         int finalQuantity;
 
         if (activeSale != null) {
@@ -62,19 +67,15 @@ public class CartService {
             if (remainingSale <= 0 || variant.getStockQuantity() <= 0) {
                 throw new CustomException(ErrorCode.PRODUCT_OUT_OF_STOCK);
             }
-            finalQuantity = 1;
+
+            // Chốt số lượng dựa trên tồn kho thực tế và tồn kho của Flash Sale
+            finalQuantity = Math.min(totalRequestedQuantity, Math.min(variant.getStockQuantity(), remainingSale));
         } else {
-
-            int currentQuantityInCart = (existingItem != null) ? existingItem.getQuantity() : 0;
-            int totalRequestedQuantity = currentQuantityInCart + request.getQuantity();
-
-            totalRequestedQuantity = Math.min(totalRequestedQuantity, 20);
-
             finalQuantity = Math.min(totalRequestedQuantity, variant.getStockQuantity());
+        }
 
-            if (finalQuantity <= 0) {
-                throw new CustomException(ErrorCode.PRODUCT_OUT_OF_STOCK);
-            }
+        if (finalQuantity <= 0) {
+            throw new CustomException(ErrorCode.PRODUCT_OUT_OF_STOCK);
         }
 
         if (existingItem != null) {
@@ -186,7 +187,7 @@ public class CartService {
             return mapAndEnrichCart(cart);
         }
 
-        newQuantity = Math.min(newQuantity, 20);
+        newQuantity = Math.min(newQuantity, 20000);
 
         validateStockAndFlashSale(item.getProductVariant(), newQuantity);
 
@@ -223,11 +224,8 @@ public class CartService {
                 .get(variant.getId());
 
         if (sale != null) {
-
             int remainingSale = sale.getSaleStockQuantity() - sale.getSoldQuantity();
-            int maxAllowed = Math.min(sale.getMaxQuantityPerUser(), remainingSale);
-
-            if (totalRequestedQuantity > maxAllowed) {
+            if (totalRequestedQuantity > remainingSale) {
                 throw new CustomException(ErrorCode.FLASH_SALE_LIMIT_EXCEEDED);
             }
         }
@@ -256,7 +254,6 @@ public class CartService {
                 item.setFlashSale(CartItemResponse.FlashSaleInfo.builder()
                         .flashSaleId(sale.getId())
                         .flashSalePrice(sale.getFlashSalePrice())
-                        .maxQuantityPerUser(sale.getMaxQuantityPerUser())
                         .saleStockRemaining(sale.getSaleStockQuantity() - sale.getSoldQuantity())
                         .endTime(sale.getEndTime().toString())
                         .build());

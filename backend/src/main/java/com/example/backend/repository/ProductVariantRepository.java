@@ -47,8 +47,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.id = :id")
     Optional<ProductVariant> findByIdWithLock(Integer id);
 
-    @Query("SELECT pv FROM ProductVariant pv WHERE pv.stockQuantity < :threshold AND pv.deletedAt IS NULL")
-    List<ProductVariant> findLowStockVariants(@Param("threshold") int threshold);
+    List<ProductVariant> findTop10ByStockQuantityLessThanAndDeletedAtIsNull(int threshold);
 
     @Query("SELECT DISTINCT v FROM ProductVariant v "
             + "LEFT JOIN FETCH v.images "

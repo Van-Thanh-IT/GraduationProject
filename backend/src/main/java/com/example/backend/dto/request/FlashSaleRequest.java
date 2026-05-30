@@ -31,6 +31,4 @@ public class FlashSaleRequest {
     @Min(value = 1, message = "Số lượng kho sale phải từ 1 trở lên")
     private Integer saleStockQuantity;
 
-    @Min(value = 1, message = "Mỗi người phải mua được ít nhất 1 sản phẩm")
-    private Integer maxQuantityPerUser;
 }

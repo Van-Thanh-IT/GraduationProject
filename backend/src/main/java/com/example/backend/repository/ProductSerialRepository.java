@@ -15,6 +15,8 @@ public interface ProductSerialRepository extends JpaRepository<ProductSerial, In
 
     List<ProductSerial> findBySerialNumberIn(List<String> serialNumbers);
 
+    List<ProductSerial> findByOrderIdAndProductVariantId(Integer orderId, Integer productVariantId);
+
     @Query(
             "SELECT ps.serialNumber FROM ProductSerial ps WHERE ps.inventoryNoteId = :noteId AND ps.productVariantId = :variantId")
     List<String> findSerialNumbers(@Param("noteId") Integer noteId, @Param("variantId") Integer variantId);

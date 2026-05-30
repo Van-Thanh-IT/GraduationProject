@@ -217,14 +217,14 @@ const OrderManagement = () => {
           </button>
 
           {/* Thanh tìm kiếm */}
-          <div className="relative w-full xl:w-72 shrink-0">
+          <div className="relative w-full xl:w-full shrink-0">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={15} className="text-gray-400" />
             </div>
             <input
               type="text"
               placeholder="Tìm mã đơn, tên, SĐT..."
-              className="w-74 pl-9 pr-9 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[13px] transition-all outline-none font-medium shadow-sm"
+              className="w-64 pl-9 pr-9 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-[13px] transition-all outline-none font-medium shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

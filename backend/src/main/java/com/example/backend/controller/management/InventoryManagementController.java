@@ -24,11 +24,6 @@ public class InventoryManagementController {
 
     private final InventoryService inventoryService;
 
-//    @GetMapping("/notes")
-//    public APIResponse<List<InventoryNoteResponse>> getAllNotes() {
-//        return APIResponse.success(inventoryService.getAllNotes());
-//    }
-
     @GetMapping("/notes")
     public APIResponse<PageResponse<InventoryNoteResponse>> searchNotes(
             @RequestParam(required = false) String keyword,

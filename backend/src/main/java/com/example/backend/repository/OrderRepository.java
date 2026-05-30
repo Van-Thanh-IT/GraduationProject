@@ -23,20 +23,6 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     List<Order> findByCodeIn(List<String> codes);
 
-    // dashboard
-    @Query(
-            "SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o WHERE o.orderStatus = 'COMPLETED' AND o.createdAt BETWEEN :startDate AND :endDate")
-    BigDecimal sumRevenueBetweenDates(
-            @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
-
-    long countByOrderStatus(OrderStatus orderStatus);
-
-    @Query("SELECT DATE(o.createdAt) as date, SUM(o.finalAmount) as revenue "
-            + "FROM Order o WHERE o.orderStatus = 'COMPLETED' AND o.createdAt >= :startDate "
-            + "GROUP BY DATE(o.createdAt) ORDER BY DATE(o.createdAt) ASC")
-    List<Object[]> getRevenueChartData(@Param("startDate") LocalDateTime startDate);
-
-    List<Order> findTop5ByOrderByCreatedAtDesc();
 
     // CLIENT
     @Query(
@@ -104,4 +90,18 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 		""",
             nativeQuery = true)
     List<WarrantyProjection> searchWarranty(@Param("keyword") String keyword);
+
+
+
+	// dashboard
+	@Query("SELECT SUM(o.finalAmount) FROM Order o WHERE o.createdAt BETWEEN :start AND :end AND o.orderStatus = 'COMPLETED'")
+	BigDecimal sumRevenueBetweenDates(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+	@Query("SELECT DATE(o.createdAt), SUM(o.finalAmount) FROM Order o WHERE o.createdAt BETWEEN :start AND :end GROUP BY DATE(o.createdAt)")
+	List<Object[]> getRevenueChartData(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+	long countByOrderStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime start, LocalDateTime end);
+
+	List<Order> findTop5ByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime start, LocalDateTime end);
+
 }

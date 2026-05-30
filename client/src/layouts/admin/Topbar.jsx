@@ -18,7 +18,7 @@ const Topbar = ({ onMenuClick }) => {
     items: [
       {
         key: '1',
-        label: <span className="font-medium">Cài đặt hệ thống</span>,
+        label: <span className="font-medium">Cài đặt</span>,
         icon: <UserOutlined />,
         onClick: () => navigate("/admin/settings"), 
       },
