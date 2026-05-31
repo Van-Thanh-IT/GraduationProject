@@ -109,15 +109,44 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
         }
     };
 
+    // const connectWebSocket = (currentRoomId) => {
+    //     const token = getAccessToken();
+    
+    //     const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    //     const client = new Client({
+    //         webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws/chat`),
+    //         connectHeaders: headers,
+    //         debug: () => {},
+    //         onConnect: () => {
+    //             setIsConnected(true);
+    //             setErrorMsg("");
+                
+    //             client.subscribe(`/topic/conversation/${currentRoomId}`, (message) => {
+    //                 setMessages((prev) => [...prev, JSON.parse(message.body)]);
+    //             });
+    //         },
+    //         onStompError: () => setErrorMsg("Lỗi từ máy chủ chat!"),
+    //         onWebSocketError: () => setErrorMsg("Lỗi kết nối mạng!"),
+    //         onWebSocketClose: () => setIsConnected(false)
+    //     });
+
+    //     client.activate();
+    //     stompClientRef.current = client;
+    // };
+
     const connectWebSocket = (currentRoomId) => {
         const token = getAccessToken();
-    
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    
+
+        const apiUrl = import.meta.env.VITE_API_URL || "";
+        const wsUrl = apiUrl.replace("http://", "ws://").replace("https://", "wss://");
+
         const client = new Client({
-            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws/chat`),
+            // SỬ DỤNG WEBSOCKET THUẦN (gọi vào endpoint mới tạo ở backend)
+            brokerURL: `${wsUrl}/ws/chat-raw`, 
             connectHeaders: headers,
-            debug: () => {},
+            debug: () => {}, 
             onConnect: () => {
                 setIsConnected(true);
                 setErrorMsg("");
