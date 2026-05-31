@@ -1,6 +1,6 @@
 // File: src/modules/admin/categories/components/CategoryForm.jsx
 import React, { useState, useEffect } from 'react';
-import { message, Select, Spin, Tooltip } from 'antd';
+import { Select, Spin, Tooltip } from 'antd';
 import { PictureOutlined, LoadingOutlined, DeleteOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -34,7 +34,7 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) return message.error("Kích thước file ảnh tối đa 2MB!");
+      if (file.size > 2 * 1024 * 1024) return toast.error("Kích thước file ảnh tối đa 2MB!");
       setImageFile(file);
       setPreviewImage(URL.createObjectURL(file)); 
       if (errors.image) setErrors({ ...errors, image: null });
@@ -71,7 +71,7 @@ export default function CategoryForm({ initialData, categories, onSuccess, onCan
         if (resData?.errors) {
           setErrors(resData.errors);
         } else {
-          message.error(resData?.messages || resData?.message || "Thao tác xử lý thất bại!");
+          toast.error(resData?.messages || resData?.message || "Thao tác xử lý thất bại!");
         }
       }
     });

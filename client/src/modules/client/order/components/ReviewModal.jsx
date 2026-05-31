@@ -1,8 +1,9 @@
 // File: src/modules/client/order/components/ReviewModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Modal, Rate, Input, Upload, message } from 'antd';
+import { Modal, Rate, Input, Upload } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useCreateReview } from '@/hooks/useReviews';
+import { toast } from 'react-toastify';
 
 const { TextArea } = Input;
 
@@ -24,7 +25,7 @@ export default function ReviewModal({ isOpen, onClose, reviewItem }) {
 
   const handleSubmit = () => {
     if (rating === 0) {
-      return message.warning("Vui lòng chọn số sao đánh giá!");
+      return toast.warning("Vui lòng chọn số sao đánh giá!");
     }
 
     // Vì có đính kèm file nên bắt buộc dùng FormData
@@ -43,7 +44,7 @@ export default function ReviewModal({ isOpen, onClose, reviewItem }) {
 
     createReview(formData, {
       onSuccess: () => {
-        onClose(); // Đóng Modal nếu API thành công
+        onClose(); 
       }
     });
   };
@@ -53,7 +54,7 @@ export default function ReviewModal({ isOpen, onClose, reviewItem }) {
     // Chỉ giữ lại những file thỏa mãn định dạng (AntD chặn upload ảo)
     const filteredList = newFileList.filter(file => {
       if (file.size > 5 * 1024 * 1024) {
-        message.error(`File ${file.name} quá lớn (Tối đa 5MB)`);
+        toast.error(`File ${file.name} quá lớn (Tối đa 5MB)`);
         return false;
       }
       return true;

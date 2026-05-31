@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Input, Image, Switch, message, Tag } from 'antd';
+import { Modal, Input, Image, Switch, Tag } from 'antd';
 import { SearchOutlined, EditOutlined, PictureOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import CategoryForm from './CategoryForm';
 import { useGetCategories, useUpdateCategoryStatus } from '@/hooks/useCategories';
+import toast from 'react-hot-toast';
 
 export default function CategoryManagement() {
   const [keyword, setKeyword] = useState('');
@@ -21,7 +22,7 @@ export default function CategoryManagement() {
       centered: true,
       onOk: () => {
         updateStatus({ id: record.id, status: newStatus }, {
-          onSuccess: () => message.success("Cập nhật trạng thái thành công!")
+          onSuccess: () => toast.success("Cập nhật trạng thái thành công!")
         });
       }
     });

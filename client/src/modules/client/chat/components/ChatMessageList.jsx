@@ -11,7 +11,7 @@ const renderFormattedText = (text) => {
   );
 };
 
-export default function ChatMessageList({ messages, isLoading, isSending, onActionClick }) {
+export default function ChatMessageList({onClose, messages, isLoading, isSending, onActionClick }) {
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
@@ -73,7 +73,8 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
                           </div>
                         </div>
                       </div>
-                      <Link 
+                      <Link
+                        onClick={() => onClose()}
                         to={`/product/${msg.attachment.slug || msg.attachment.id}`} 
                         className="mt-3 w-full flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-600 py-2 rounded-lg text-[13px] font-bold transition-colors"
                       >
@@ -95,9 +96,12 @@ export default function ChatMessageList({ messages, isLoading, isSending, onActi
                                 window.open(action.url, '_blank');
                               } else {
                                 navigate(action.url);
+                                onClose();
                               }
                             } else {
                               onActionClick(buttonLabel);
+                              onClose();
+  
                             }
                           }}
                           className="px-3.5 py-1.5 bg-white border border-blue-300 text-blue-600 rounded-full text-[13px] font-medium shadow-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all active:scale-95"

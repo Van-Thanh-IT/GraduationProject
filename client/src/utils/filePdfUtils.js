@@ -22,7 +22,6 @@ export const downloadFileFromResponse = (data, defaultFileName, mimeType = 'appl
     }
   }
 
-  // 3. Tạo thẻ <a> ảo để ép trình duyệt tải file
   const link = document.createElement('a');
   link.href = url;
   link.setAttribute('download', fileName);
@@ -35,12 +34,8 @@ export const downloadFileFromResponse = (data, defaultFileName, mimeType = 'appl
   window.URL.revokeObjectURL(url);
 };
 
-/**
- * Hàm ép mở file sang Tab mới (Dành cho việc in ấn trực tiếp)
- */
 export const openFileInNewTab = (data, mimeType = 'application/pdf') => {
   const blob = new Blob([data], { type: mimeType });
   const url = window.URL.createObjectURL(blob);
   window.open(url, '_blank');
-  // Lưu ý: Mở tab mới thì trình duyệt sẽ tự quản lý bộ nhớ, không dùng revokeObjectURL ngay lập tức được
 };

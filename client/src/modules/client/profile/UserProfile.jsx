@@ -1,11 +1,12 @@
 // File: src/pages/Profile/UserProfile.jsx
 import React, { useState, useEffect } from 'react';
-import { Form, Upload, message, Spin } from 'antd';
+import { Form, Upload, Spin } from 'antd';
 import dayjs from 'dayjs';
 
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
 import ProfileSidebar from './components/ProfileSidebar';
 import ProfileForm from './components/ProfileForm';
+import { toast } from 'react-toastify';
 
 export default function UserProfile() {
   const [form] = Form.useForm();
@@ -34,12 +35,12 @@ export default function UserProfile() {
   const handleBeforeUpload = (file) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      message.error('Bạn chỉ có thể tải lên file hình ảnh!');
+      toast.error('Bạn chỉ có thể tải lên file hình ảnh!');
       return Upload.LIST_IGNORE;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error('Hình ảnh phải nhỏ hơn 2MB!');
+      toast.error('Hình ảnh phải nhỏ hơn 2MB!');
       return Upload.LIST_IGNORE;
     }
     
@@ -73,12 +74,12 @@ export default function UserProfile() {
       { userId: profile.id, formData }, 
       {
         onSuccess: () => {
-          message.success('Cập nhật thông tin cá nhân thành công!');
+          toast.success('Cập nhật thông tin cá nhân thành công!');
           form.setFieldValue('password', '');
           form.setFieldValue('confirmPassword', '');
         },
         onError: (error) => {
-          message.error(error.response?.data?.messages || 'Có lỗi xảy ra, vui lòng thử lại!');
+          toast.error(error.response?.data?.messages || 'Có lỗi xảy ra, vui lòng thử lại!');
         }
       }
     );

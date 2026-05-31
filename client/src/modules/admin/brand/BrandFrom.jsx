@@ -5,7 +5,8 @@ import { PictureOutlined, DeleteOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useSaveBrand } from '@/hooks/useBrands';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import { ToastBar, Toaster } from 'react-hot-toast';
 
 export default function BrandForm({ initialData, onSuccess, onCancel }) {
   const isEdit = !!initialData;

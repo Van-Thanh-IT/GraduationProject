@@ -7,12 +7,11 @@ export const useGetBanners = (placement = 'HOME_MAIN_SLIDER') => {
     queryKey: ['banners', placement],
     queryFn: async () => {
       // Gọi API với tham số placement
-      const response = await API.get('/public/banners', {
+      const response = await API.get('/api/public/banners', {
         params: { placement }
       });
       return response.data.data;
     },
-    // Tùy chọn giữ dữ liệu cũ trong lúc load mới
     keepPreviousData: true,
   });
 };

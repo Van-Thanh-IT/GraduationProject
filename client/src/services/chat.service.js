@@ -2,23 +2,36 @@
 import API from '@/api/API';
 
 export const ChatService = {
-  // 1. Lấy danh sách lịch sử chat
-  getSessions: (guestKey) => {
-    return API.get('/public/chat/sessions', {
+  //CHAT AI
+  getSessionsAI: (guestKey) => {
+    return API.get('/api/public/chat/sessions', {
       headers: { 'X-Guest-Session-Key': guestKey }
     });
   },
 
-  // 2. Lấy tin nhắn của 1 phiên chat
-  getMessages: (sessionId) => {
-    return API.get(`/public/chat/sessions/${sessionId}/messages`);
+  getMessagesAI: (sessionId) => {
+    return API.get(`/api/public/chat/sessions/${sessionId}/messages`);
   },
 
-  // 3. Gửi tin nhắn mới cho AI
-  sendMessage: (payload, guestKey) => {
+  sendMessageAI: (payload, guestKey) => {
    
-    return API.post('/public/chat', payload, {
+    return API.post('/api/public/chat', payload, {
       headers: { 'X-Guest-Session-Key': guestKey }
     });
-  }
+  },
+
+  //CHAT
+    getConversations: () => {
+    return API.get("/api/chat/admin/list");
+  },
+
+  getMessages: (roomId) => {
+    return API.get(`/api/chat/${roomId}/history`);
+  },
+
+  uploadImages: (formData) => {
+    return API.post("/api/chat/upload-images", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  }, 
 };

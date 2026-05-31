@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { message, Button as AntButton } from 'antd'; // Đã xóa Radio
+import {Button as AntButton } from 'antd'; // Đã xóa Radio
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'; // Đã xóa BarcodeOutlined
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
 import { formatNumber, parseNumber } from '@/utils/format';
+import { toast } from 'react-toastify';
 
 export default function AddVariantForm({ product, onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (variants.length === 0) {
-      return message.warning("Vui lòng thêm ít nhất 1 biến thể!");
+      return toast.warning("Vui lòng thêm ít nhất 1 biến thể!");
     }
 
     // Đã xóa phần validate kiểm tra hasUnselectedSerial
@@ -52,7 +53,7 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
     setLoading(true);
     try {
       await ProductService.createVariant(product.id, variants);
-      message.success(`Đã tạo thành công ${variants.length} biến thể!`);
+      toast.success(`Đã tạo thành công ${variants.length} biến thể!`);
       onSuccess();
     } catch (error) {
        console.log("CHI TIẾT LỖI TỪ BACKEND:", error.response?.data);
@@ -63,9 +64,9 @@ export default function AddVariantForm({ product, onSuccess, onCancel }) {
          "Tạo biến thể thất bại do dữ liệu không hợp lệ!"; 
  
        if (Array.isArray(errorMessage)) {
-          message.error(`Lỗi: ${errorMessage.join(', ')}`);
+          toast.error(`Lỗi: ${errorMessage.join(', ')}`);
        } else {
-          message.error(`Lỗi: ${errorMessage}`);
+          toast.error(`Lỗi: ${errorMessage}`);
        }
     } finally {
       setLoading(false);

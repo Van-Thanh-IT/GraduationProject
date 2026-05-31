@@ -1,7 +1,7 @@
 import API from "@/api/API";
 
 export const UserService = {
-  getUsers: (role) => API.get('/admin/users', { params: { role } }),
+  getUsers: (role) => API.get('/api/admin/users', { params: { role } }),
   
   createStaff: (data) => {
     const formData = new FormData();
@@ -10,11 +10,11 @@ export const UserService = {
         formData.append(key, data[key]);
       }
     });
-    return API.post('/admin/users', formData, {
+    return API.post('/api/admin/users', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
 
   updateStatus: (userId, status) => 
-    API.patch(`/admin/users/${userId}/status`, null, { params: { status } })
+    API.patch(`/api/admin/users/${userId}/status`, null, { params: { status } })
 };

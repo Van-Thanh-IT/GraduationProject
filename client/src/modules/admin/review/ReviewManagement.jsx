@@ -1,11 +1,12 @@
 // File: src/modules/admin/reviews/AdminReviewList.jsx
 import React, { useState } from 'react';
-import { message, Popconfirm, Select, Input, Rate, Image, Dropdown } from 'antd';
+import { Popconfirm, Select, Input, Rate, Image, Dropdown } from 'antd';
 import { Trash2, Search, CheckCircle, XCircle, EyeOff, CheckCircle2, MoreVertical } from 'lucide-react';
 
 // Import Custom Hooks vừa tạo
 import { useGetAdminReviews, useUpdateReviewStatus, useDeleteReview } from '@/hooks/useReviews';
 import CustomTable from '@/components/ui/CustomTable';
+import { toast } from 'react-toastify';
 
 const STATUS_TABS = [
   { key: '', label: 'Tất cả' },
@@ -15,30 +16,21 @@ const STATUS_TABS = [
 ];
 
 const ReviewManagement = () => {
-  // ==============================================================
-  // 1. QUẢN LÝ STATE BỘ LỌC
-  // ==============================================================
   const [filters, setFilters] = useState({
     page: 1,
     size: 10,
     rating: null,
     productId: null,
-    status: '', // Rỗng nghĩa là lấy tất cả
+    status: '', 
   });
 
-  // ==============================================================
-  // 2. TÍCH HỢP HOOKS NGHIỆP VỤ
-  // ==============================================================
   const { data: reviewData, isLoading, isFetching } = useGetAdminReviews(filters);
   const { mutate: updateStatus, isPending: isUpdating } = useUpdateReviewStatus();
   const { mutate: deleteReview, isPending: isDeleting } = useDeleteReview();
 
   const reviews = reviewData?.content || [];
-  const totalElements = reviewData?.totalElements || 0;
+  const totalElements = reviewData?.totalElements || 0
 
-  // ==============================================================
-  // 3. HANDLERS THAO TÁC
-  // ==============================================================
   const handleTableChange = (newPagination) => {
     setFilters(prev => ({ ...prev, page: newPagination.current, size: newPagination.pageSize }));
   };
@@ -49,21 +41,18 @@ const ReviewManagement = () => {
 
   const handleUpdateStatus = (id, newStatus) => {
     updateStatus({ id, status: newStatus }, {
-      onSuccess: () => message.success(`Đã chuyển sang trạng thái: ${newStatus}`),
-      onError: () => message.error("Cập nhật trạng thái thất bại!")
+      onSuccess: () => toast.success(`Đã chuyển sang trạng thái: ${newStatus}`),
+      onError: () => toast.error("Cập nhật trạng thái thất bại!")
     });
   };
 
   const handleDelete = (id) => {
     deleteReview(id, {
-      onSuccess: () => message.success("Đã xóa đánh giá thành công!"),
-      onError: () => message.error("Lỗi khi xóa đánh giá!")
+      onSuccess: () => toast.success("Đã xóa đánh giá thành công!"),
+      onError: () => toast.error("Lỗi khi xóa đánh giá!")
     });
   };
 
-  // ==============================================================
-  // 4. CẤU HÌNH CỘT CHO TABLE
-  // ==============================================================
   const columns = [
     {
       title: 'Khách hàng',

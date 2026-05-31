@@ -6,7 +6,7 @@ export const useGetCities = () => {
     queryKey: ['cities'],
     queryFn: async () => {
       const res = await goshipService.getCities();
-      return res.data?.data || []; // Tùy cấu trúc bọc của Goship API
+      return res.data?.data || [];
     },
     staleTime: Infinity, // Tỉnh thành ít khi thay đổi, cache luôn
   });
@@ -19,7 +19,7 @@ export const useGetDistricts = (cityCode) => {
       const res = await goshipService.getDistricts(cityCode);
       return res.data?.data || [];
     },
-    enabled: !!cityCode, // Chỉ gọi khi đã chọn Tỉnh
+    enabled: !!cityCode,
   });
 };
 
@@ -34,7 +34,6 @@ export const useGetWards = (districtCode) => {
   });
 };
 
-// Hook để post dữ liệu tính phí Ship
 export const useCalculateFee = () => {
   return useMutation({
     mutationFn: (payload) => goshipService.calculateFee(payload),

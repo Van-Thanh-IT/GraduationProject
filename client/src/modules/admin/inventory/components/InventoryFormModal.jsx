@@ -1,12 +1,13 @@
 // File: src/modules/admin/inventory/components/InventoryFormModal.jsx
 import React, { useEffect, useState, useRef } from 'react';
-import { Modal, Form, Select, InputNumber, Card, Row, Col, message, Tooltip, Empty, Spin } from 'antd';
+import { Modal, Form, Select, InputNumber, Card, Row, Col, Tooltip, Empty, Spin } from 'antd';
 import { MinusCircleOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button'; 
 import Input from '@/components/ui/Input';    
 import { useCreateNote } from '@/hooks/useInventory';
 import { useSearchSimpleVariants } from '@/hooks/useProducts'; 
 import { extractSerialsFromExcel } from '@/utils/excelHelper';
+import { toast } from 'react-toastify';
 
 const { Option } = Select;
 
@@ -57,7 +58,7 @@ const InventoryFormModal = ({ visible, onClose, onSuccess, type }) => {
             const mergedSerials = Array.from(new Set([...currentSerials, ...importedSerials]));
             
             if (mergedSerials.length < currentSerials.length + importedSerials.length) {
-                message.info("Hệ thống đã tự động lọc bỏ các mã IMEI bị trùng lặp.");
+                toast.info("Hệ thống đã tự động lọc bỏ các mã IMEI bị trùng lặp.");
             }
 
             currentDetails[activeImportIndex].serialNumbers = mergedSerials;
@@ -65,9 +66,9 @@ const InventoryFormModal = ({ visible, onClose, onSuccess, type }) => {
             form.setFieldsValue({ details: currentDetails });
             
             form.validateFields([['details', activeImportIndex, 'serialNumbers']]);
-            message.success(`Đã import thành công ${mergedSerials.length - currentSerials.length} mã IMEI mới!`);
+            toast.success(`Đã import thành công ${mergedSerials.length - currentSerials.length} mã IMEI mới!`);
         } catch (error) {
-            message.error(error.message);
+            toast.error(error.message);
         } finally {
             e.target.value = null;
         }
@@ -80,22 +81,22 @@ const InventoryFormModal = ({ visible, onClose, onSuccess, type }) => {
 
     const onFinish = (values) => {
         const details = values.details || [];
-        if (details.length === 0) return message.error("Vui lòng thêm ít nhất 1 sản phẩm vào phiếu!");
+        if (details.length === 0) return toast.error("Vui lòng thêm ít nhất 1 sản phẩm vào phiếu!");
 
         const variantIds = details.map(d => d.productVariantId);
         if (variantIds.some((id, idx) => variantIds.indexOf(id) !== idx)) {
-            return message.error("Phát hiện sản phẩm bị trùng lặp. Vui lòng gộp chung số lượng lại!");
+            return toast.error("Phát hiện sản phẩm bị trùng lặp. Vui lòng gộp chung số lượng lại!");
         }
 
         createNote(values, {
             onSuccess: () => {
-                message.success(`Tạo phiếu ${type === 'IMPORT' ? 'Nhập' : 'Xuất'} kho thành công!`);
+                toast.success(`Tạo phiếu ${type === 'IMPORT' ? 'Nhập' : 'Xuất'} kho thành công!`);
                 if(onSuccess) onSuccess();
                 onClose(); 
             },
             onError: (error) => {
                 const errData = error.response?.data;
-                message.error(errData?.messages || errData?.message || 'Có lỗi xảy ra từ máy chủ!');
+                toast.error(errData?.messages || errData?.message || 'Có lỗi xảy ra từ máy chủ!');
             }
         });
     };

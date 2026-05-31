@@ -20,24 +20,19 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    // Khách hàng gọi API này khi vừa mở khung chat lên để lấy/tạo phòng chat
     @PostMapping("/init")
     public ResponseEntity<Conversation> initConversation(
             @RequestParam(required = false) String guestId, @RequestParam String customerName) {
-        // 1. DÙNG SECURITY UTILS LẤY USER_ID (Nếu khách chưa login, nó sẽ trả về null)
         Integer currentUserId = SecurityUtils.getCurrentUserId();
 
-        // 2. Gọi Service xử lý
         return ResponseEntity.ok(chatService.getOrCreateConversation(currentUserId, guestId, customerName));
     }
 
-    // Lấy lịch sử chat cũ trước khi kết nối WebSocket
     @GetMapping("/{conversationId}/history")
     public ResponseEntity<List<ChatMessage>> getHistory(@PathVariable Integer conversationId) {
         return ResponseEntity.ok(chatService.getChatHistory(conversationId));
     }
 
-    // Admin lấy danh sách tất cả các phòng chat (sắp xếp theo thời gian chat mới nhất)
     @GetMapping("/admin/list")
     public ResponseEntity<List<Conversation>> getAllConversationsForAdmin() {
         return ResponseEntity.ok(chatService.getAllConversationsForAdmin());

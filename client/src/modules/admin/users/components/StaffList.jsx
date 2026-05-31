@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, message, Modal, Select, Image, Input, Dropdown, Tooltip } from 'antd';
+import { Modal,  Image, Dropdown, Tooltip } from 'antd';
 import { 
   UserOutlined, 
   SearchOutlined, 
@@ -15,6 +15,7 @@ import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import AddStaffForm from './AddStaffFrom'; // Nhớ sửa lại tên file import nếu trước đó bạn viết sai chính tả (From -> Form)
 import { useGetUsers, useUpdateUserStatus } from '@/hooks/useUsers';
+import { toast } from 'react-toastify';
 
 // Cấu hình trạng thái với icon và màu sắc chi tiết hơn
 const STATUS_CONFIG = {
@@ -49,14 +50,13 @@ export default function StaffList() {
       okButtonProps: { className: 'bg-blue-600 hover:bg-blue-700 shadow-md' },
       onOk: () => {
         updateStatus({ userId, status: newStatus }, {
-          onSuccess: () => message.success("Cập nhật trạng thái thành công!"),
-          onError: (err) => message.error(err.response?.data?.message || "Cập nhật thất bại!")
+          onSuccess: () => toast.success("Cập nhật trạng thái thành công!"),
+          onError: (err) => toast.error(err.response?.data?.message || "Cập nhật thất bại!")
         });
       }
     });
   };
 
-  // 3. LOGIC TÌM KIẾM TẠI CLIENT
   const displayedStaffs = staffs.filter((staff) => {
     if (!keyword) return true;
     const lowerKeyword = keyword.toLowerCase();

@@ -1,6 +1,6 @@
 // File: src/modules/admin/products/components/tab/BasicInfoForm.jsx
 import React, { useEffect, useRef } from 'react';
-import { message, Select, Spin, Form } from 'antd';
+import { Select, Spin, Form } from 'antd';
 import { TagOutlined, FileTextOutlined, SettingOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -10,6 +10,7 @@ import { useGetBrands } from "@/hooks/useBrands";
 import { useGetCategories } from "@/hooks/useCategories";
 
 import 'react-quill/dist/quill.snow.css';
+import { toast } from 'react-toastify';
 
 const OPTION_SUGGESTIONS = [
   { value: "Mặc Định", label: "Mặc Định" },
@@ -87,7 +88,7 @@ useEffect(() => {
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       }
       if (backendError.errors) {
         const formFieldsError = Object.keys(backendError.errors).map((key) => ({
@@ -111,12 +112,12 @@ useEffect(() => {
 
     try {
       await ProductService.updateProduct(initialData.id, payload);
-      message.success("Cập nhật thông tin cơ bản thành công!");
+      toast.success("Cập nhật thông tin cơ bản thành công!");
       if(onSuccess) onSuccess();
     } catch (error) {
       const errData = error.response?.data;
       if (errData?.messages && errData.messages !== "Validation failed") {
-        message.error(errData.messages);
+        toast.error(errData.messages);
       }
       if (errData?.errors) {
         const formFieldsError = Object.keys(errData.errors).map((key) => ({

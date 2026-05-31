@@ -74,7 +74,8 @@ spring:
 
   vnpay:
     url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-    returnUrl: http://localhost:8080/api/public/orders/vnpay-callback
+#    returnUrl: http://localhost:8080/api/public/orders/vnpay-callback
+    returnUrl:  https://tinpot-tammy-barbless.ngrok-free.dev/api/public/orders/vnpay-callback
     tmnCode: DERNIVW1
     hashSecret: 2G98GIEQG37OR8J0AMPJEZ1I9V42ZGEO
     version: 2.1.0

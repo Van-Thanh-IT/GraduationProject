@@ -11,7 +11,7 @@ export const useGetDashboard = ({startDate, endDate} = {}) => {
         endDate,
       };
 
-      const res = await API.get('/management/dashboard', {
+      const res = await API.get('/api/management/dashboard', {
         params,
       });
 

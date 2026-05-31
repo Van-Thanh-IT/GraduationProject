@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Spin, Popconfirm, Checkbox, message } from 'antd';
+import { Spin, Popconfirm, Checkbox} from 'antd';
 import { 
   DeleteOutlined, 
   ShoppingCartOutlined, 
@@ -11,6 +11,7 @@ import { useGetCart, useDeleteCartItem, useUpdateCartQuantity } from '@/hooks/us
 import { useNavigate, Link } from 'react-router-dom';
 import { formatCurrency } from '@/utils/format';
 import { useCountdown } from '@/hooks/useCountdown';
+import { toast } from 'react-toastify';
 
 const CartCountdown = ({ endTime }) => {
   const { hours, minutes, seconds } = useCountdown(endTime);
@@ -72,7 +73,7 @@ const CartPage = () => {
   
   const handleCheckout = () => {
       if (selectedItems.length === 0) {
-          message.error("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!");
+          toast.error("Vui lòng chọn ít nhất 1 sản phẩm để thanh toán!");
           return;
       }
       navigate('/checkout', { state: { selectedItems } });

@@ -1,8 +1,9 @@
 // File: src/modules/client/order/components/CancelOrderModal.jsx
 import React, { useState } from 'react';
-import { Modal, Radio, Input, message } from 'antd';
+import { Modal, Radio, Input} from 'antd';
 import { AlertCircle } from 'lucide-react';
 import { useCancelOrderByUser } from '@/hooks/useOrders';
+import { toast } from 'react-toastify';
 
 const CANCEL_REASONS = [
   'Tôi muốn thay đổi địa chỉ nhận hàng',
@@ -22,7 +23,7 @@ export default function CancelOrderModal({ isOpen, onClose, orderCode }) {
     const finalReason = selectedReason === 'Khác' ? otherReason : selectedReason;
     
     if (selectedReason === 'Khác' && !otherReason.trim()) {
-      message.error('Vui lòng nhập lý do hủy đơn!');
+      toast.error('Vui lòng nhập lý do hủy đơn!');
       return;
     }
 
@@ -30,11 +31,11 @@ export default function CancelOrderModal({ isOpen, onClose, orderCode }) {
       { code: orderCode, reason: finalReason },
       {
         onSuccess: () => {
-          message.success('Hủy đơn hàng thành công!');
+          toast.success('Hủy đơn hàng thành công!');
           onClose();
         },
         onError: (error) => {
-          message.error(error.response?.data?.messages || 'Có lỗi xảy ra khi hủy đơn!');
+          toast.error(error.response?.data?.messages || 'Có lỗi xảy ra khi hủy đơn!');
         }
       }
     );

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Modal, Input, Switch, message, Tag } from 'antd';
+import { Modal, Input, Switch, Tag } from 'antd';
 import { SearchOutlined, EditOutlined, SlidersOutlined } from '@ant-design/icons';
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import AttributeForm from './AttributeFrom';
 import { useGetAttributes, useUpdateAttributeStatus } from '@/hooks/useAttributes';
+import { toast } from 'react-toastify';
 
 export default function AttributeManagement() {
   const [keyword, setKeyword] = useState('');
@@ -22,7 +23,7 @@ export default function AttributeManagement() {
       centered: true,
       onOk: () => {
         updateStatus({ id: record.id, status: newStatus }, {
-          onSuccess: () => message.success("Cập nhật thành công!")
+          onSuccess: () => toast.success("Cập nhật thành công!")
         });
       }
     });

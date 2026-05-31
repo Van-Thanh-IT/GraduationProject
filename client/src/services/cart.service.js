@@ -18,17 +18,17 @@ const getHeaders = () => ({
 
 export const cartService = {
   // Lấy giỏ hàng
-  getCart: () => API.get('public/cart', { headers: getHeaders() }),
+  getCart: () => API.get('/api/public/cart', { headers: getHeaders() }),
   
   // Thêm vào giỏ (request: { productVariantId: 3, quantity: 2 })
-  addToCart: (data) => API.post('public/cart/items', data, { headers: getHeaders() }),
+  addToCart: (data) => API.post('/api/public/cart/items', data, { headers: getHeaders() }),
 
   updateQuantity: ({ cartItemId, quantity }) => 
-    API.put(`public/cart/items/${cartItemId}`, { quantity }, { headers: getHeaders() }),
+    API.put(`/api/public/cart/items/${cartItemId}`, { quantity }, { headers: getHeaders() }),
   
   // Đồng bộ giỏ hàng (Gọi ngay sau khi gọi API Login thành công)
   mergeCart: () => API.post('/public/cart/merge', null, { headers: getHeaders() }),
   
   // Xóa 1 item trong giỏ
-  deleteCartItem: (cartItemId) => API.delete(`public/cart/items/${cartItemId}`, { headers: getHeaders() })
+  deleteCartItem: (cartItemId) => API.delete(`/api/public/cart/items/${cartItemId}`, { headers: getHeaders() })
 };

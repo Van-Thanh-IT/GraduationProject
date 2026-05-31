@@ -5,7 +5,7 @@ import API from '@/api/API';
 export const useGetProfile = () => {
   return useQuery({
     queryKey: ['profile'],
-    queryFn: () => API.get('/profile/me').then(res => res.data.data),
+    queryFn: () => API.get('/api/profile/me').then(res => res.data.data),
   });
 };
 
@@ -13,7 +13,7 @@ export const useUpdateProfile = () => {
     const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ userId, formData }) => {
-      return API.put(`/profile/${userId}`, formData, {
+      return API.put(`/api/profile/${userId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
     },

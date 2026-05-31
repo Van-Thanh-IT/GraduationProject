@@ -18,7 +18,6 @@ export default function ReviewListPage() {
   // State bộ lọc sao (null = Tất cả)
   const [filterRating, setFilterRating] = useState(null);
 
-  // Gọi API
   const { data: reviews, isLoading, isFetching } = useGetProductReviews(id, filterRating);
   const { data: reviewSummary, isLoading: isSummaryLoading } = useGetProductReviewSummary(id);
   

@@ -6,14 +6,14 @@ function App() {
   return (<>
     <ToastContainer
     position="top-center"
-    autoClose={3000} // mặc định 3s
+    autoClose={3000} 
     hideProgressBar={false}
     newestOnTop
     closeOnClick
     pauseOnHover
     draggable
-    // theme="dark"
-    theme="colored"
+    theme="dark"
+    // theme="colored"
   />
     <AppRoute/>
   </>)

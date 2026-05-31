@@ -1,6 +1,6 @@
 // File: src/modules/admin/products/ProductManagement.jsx
 import React, { useState } from 'react';
-import { Modal, Input, Image, Spin, Dropdown, message, Tooltip } from 'antd';
+import { Modal, Image, Spin, Dropdown, Tooltip } from 'antd';
 import { 
   SearchOutlined, 
   EditOutlined, 
@@ -20,6 +20,7 @@ import EditProductForm from './components/EditProductForm';
 import API from '@/api/API'; 
 
 import { useGetAllProducts, useUpdateProductStatus, useGetProductStats } from '@/hooks/useProducts';
+import { toast } from 'react-toastify';
 
 const STATUS_CONFIG = {
   ACTIVE: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', label: 'Đang bán' },
@@ -87,8 +88,8 @@ export default function ProductManagement() {
       centered: true,
       onOk: () => {
         updateStatus({ id: productId, status: newStatus }, {
-          onSuccess: () => message.success("Cập nhật thành công!"),
-          onError: () => message.error("Cập nhật thất bại!")
+          onSuccess: () => toast.success("Cập nhật thành công!"),
+          onError: () => toast.error("Cập nhật thất bại!")
         });
       }
     });

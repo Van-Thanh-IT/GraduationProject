@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { message } from 'antd';
 import { X, Receipt, Copy, Check } from 'lucide-react';
 
 // Import các file con
@@ -7,6 +6,7 @@ import { OrderCustomerInfo } from './OrderCustomerInfo';
 import { OrderProductList } from './OrderProductList';
 import { OrderSummary } from './OrderSummary';
 import { OrderActionFooter } from './OrderActionFooter';
+import { toast } from 'react-toastify';
 
 const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
 
@@ -25,7 +25,6 @@ export const OrderDetailModal = ({ isOpen, onClose, order, onCancelOrder, onConf
     setActiveAction(null);
     setCancelReason('');
     setCopiedField(null);
-    // Reset lại state khi mở/đóng modal để không bị dính mã Serial của đơn cũ
     setPackData({ serials: {} });
   }, [isOpen, order]);
 
@@ -36,13 +35,13 @@ export const OrderDetailModal = ({ isOpen, onClose, order, onCancelOrder, onConf
   const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    message.success(`Đã copy ${field}!`);
+    toast.success(`Đã copy ${field}!`);
     setTimeout(() => setCopiedField(null), 2000);
   };
 
   const handleConfirmCancel = () => {
     if (!cancelReason.trim()) {
-      message.warning("Vui lòng nhập lý do hủy đơn!");
+      toast.warning("Vui lòng nhập lý do hủy đơn!");
       return;
     }
     // Gọi prop truyền từ Component cha
@@ -50,25 +49,21 @@ export const OrderDetailModal = ({ isOpen, onClose, order, onCancelOrder, onConf
   };
 
   const handleConfirmPack = () => {
-    // === VALIDATE CHẶT CHẼ THEO IS_SERIAL ===
     for (const item of itemsList) {
         const variantId = item.productVariantId || item.variantId || item.id;
         const scannedList = packData.serials[variantId] || [];
-        
-        // FIX: Đón đầu cả 2 trường hợp tên biến Backend có thể trả về
+  
         const isRequireSerial = item.isSerialRequired;
 
         if (isRequireSerial) {
            // NẾU BẮT BUỘC CÓ MÃ: Kiểm tra phải quét đủ
            if (scannedList.length !== item.quantity) {
-               message.error(`❌ BẮT BUỘC: "${item.productName}" phải quét ĐỦ ${item.quantity} mã! Bạn mới quét ${scannedList.length}/${item.quantity} mã.`);
-               return; // Dừng toàn bộ hàm, không gọi API
+               toast.error(`BẮT BUỘC: "${item.productName}" phải quét ĐỦ ${item.quantity} mã! Bạn mới quét ${scannedList.length}/${item.quantity} mã.`);
+               return;
            }
         } 
     }
 
-    // Nếu lọt qua vòng for an toàn -> Đẩy payload chuẩn xuống backend
-    // Format gửi đi: { serials: { "101": ["IMEI-ABC"], "102": ["SN-XYZ"] } }
     onPackOrder(order.id, packData);
   };
 

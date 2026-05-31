@@ -1,6 +1,6 @@
 // File: src/modules/admin/products/components/AddProductForm.jsx
 import React, { useEffect, useRef } from "react";
-import { message, Select, Spin, Form } from "antd";
+import {Select, Spin, Form } from "antd";
 import { TagOutlined, FileTextOutlined, SettingOutlined } from "@ant-design/icons";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -11,6 +11,7 @@ import { useGetBrands } from "@/hooks/useBrands";
 import { useGetCategories } from "@/hooks/useCategories";   
 
 import 'react-quill/dist/quill.snow.css';
+import { toast } from "react-toastify";
 
 const OPTION_SUGGESTIONS = [
   { value: "Mặc Định", label: "Mặc Định" },
@@ -70,9 +71,9 @@ export default function AddProductForm({ onSuccess, onCancel, backendError }) {
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       } else if (!backendError.errors && backendError.messages === "Validation failed") {
-        message.error("Biểu mẫu không hợp lệ, vui lòng kiểm tra các trường báo đỏ!");
+        toast.error("Biểu mẫu không hợp lệ, vui lòng kiểm tra các trường báo đỏ!");
       }
 
       if (backendError.errors) {
@@ -93,7 +94,7 @@ export default function AddProductForm({ onSuccess, onCancel, backendError }) {
 
   const handleFinish = (values) => {
     if (!values.brandId || !values.categoryId) {
-      return message.error("Vui lòng chọn Thương hiệu và Danh mục sản phẩm!");
+      return toast.error("Vui lòng chọn Thương hiệu và Danh mục sản phẩm!");
     }
 
     const payload = {
@@ -105,13 +106,13 @@ export default function AddProductForm({ onSuccess, onCancel, backendError }) {
 
     createProduct({ data: payload }, {
       onSuccess: () => {
-        message.success("Thêm sản phẩm mới thành công!");
+        toast.success("Thêm sản phẩm mới thành công!");
         onSuccess();
       },
       onError: (error) => {
         const errData = error.response?.data;
         if (errData?.messages && errData.messages !== "Validation failed") {
-          message.error(errData.messages);
+          toast.error(errData.messages);
         }
         if (errData?.errors) {
           const formFieldsError = Object.keys(errData.errors).map((key) => ({

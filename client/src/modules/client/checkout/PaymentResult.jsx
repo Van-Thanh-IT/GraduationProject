@@ -17,15 +17,10 @@ const PaymentResult = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Tùy chọn: Gọi API tới backend để xác thực lại trạng thái đơn hàng thực tế
-        // Tránh trường hợp user tự gõ URL /payment/success
         const verifyPayment = async () => {
             setIsLoading(true);
             try {
-                // Xử lý API ở đây nếu cần thiết...
-                // const res = await api.get(`/orders/${orderCode}`);
-                
-                // Tạm thời dùng setTimeout để giả lập độ trễ
+             
                 setTimeout(() => setIsLoading(false), 800);
             } catch (error) {
                 console.error("Lỗi xác thực thanh toán", error);

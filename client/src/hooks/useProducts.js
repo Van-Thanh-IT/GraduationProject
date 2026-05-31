@@ -1,25 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ProductService } from '@/services/product.service'; // Chỉnh lại đường dẫn nếu cần
 
-// ==========================================
-// 1. QUẢN LÝ QUERY KEYS (QUAN TRỌNG NHẤT)
-// ==========================================
 export const productKeys = {
   all: ['products'],
   lists: () => [...productKeys.all, 'list'],
   stats: (id) => [...productKeys.all, 'stats', id],
-  
-  // Thuộc tính
   attributes: (productId) => [...productKeys.all, 'attributes', productId],
-  
-  // Biến thể
   variants: (productId) => [...productKeys.all, 'variants', productId],
   searchVariants: (keyword) => [...productKeys.all, 'search', keyword],
 };
 
-// ==========================================
-// 2. HOOKS CHO SẢN PHẨM (PRODUCTS)
-// ==========================================
 export const useGetAllProducts = () => {
   return useQuery({
     queryKey: productKeys.lists(),
@@ -39,7 +29,7 @@ export const useGetProductStats = (productId) => {
       const res = await ProductService.getProductStatsById(productId);
       return res.data?.data || res.data;
     },
-    enabled: !!productId, // Chỉ gọi khi có ID
+    enabled: !!productId, 
   });
 };
 
@@ -64,9 +54,6 @@ export const useUpdateProductStatus = () => {
   });
 };
 
-// ==========================================
-// 3. HOOKS CHO THUỘC TÍNH (ATTRIBUTES)
-// ==========================================
 export const useGetProductAttributes = (productId) => {
   return useQuery({
     queryKey: productKeys.attributes(productId),
@@ -103,9 +90,6 @@ export const useDeleteProductAttribute = () => {
   });
 };
 
-// ==========================================
-// 4. HOOKS CHO BIẾN THỂ (VARIANTS)
-// ==========================================
 export const useGetProductVariants = (productId) => {
   return useQuery({
     queryKey: productKeys.variants(productId),
@@ -152,9 +136,6 @@ export const useDeleteVariant = () => {
   });
 };
 
-// ==========================================
-// 5. HOOKS CHO HÌNH ẢNH (IMAGES)
-// ==========================================
 export const useUploadVariantImages = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -180,17 +161,15 @@ export const useManageVariantImage = () => {
   });
 };
 
-///////////////////////////////////////////////
 //CLIENT
-// Hook
 export const useGetHomeProducts = (params) => {
   return useQuery({
     queryKey: ['shop-products', params],
     queryFn: async () => {
       const res = await ProductService.searchAndFilterProducts(params);
-      return res.data?.data; // Trả về đúng object chứa items, totalPages...
+      return res.data?.data;
     },
-    // keepPreviousData giúp màn hình không bị chớp trắng khi chuyển trang
+
     keepPreviousData: true,
     staleTime: 3 * 60 * 1000, 
   });
@@ -204,9 +183,7 @@ export const useGetProductDetail = (slug) => {
 
       return res.data?.data; 
     },
-    // Rất quan trọng: Chỉ gọi API nếu slug có giá trị
     enabled: !!slug, 
-    // Cache lại 5 phút, khách F5 hay bấm Back lại không bị chớp màn hình tải lại
     staleTime: 5 * 60 * 1000, 
   });
 };

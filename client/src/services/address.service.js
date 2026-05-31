@@ -2,16 +2,15 @@
 import API from '@/api/API';
 
 export const AddressService = {
-  getMyAddresses: () => API.get('/user/addresses'),
+  getMyAddresses: () => API.get('/api/user/addresses'),
   
-  createAddress: (data) => API.post('/user/addresses', data),
+  createAddress: (data) => API.post('/api/user/addresses', data),
   
   updateAddress: (id, data) => {
-    console.log(data);
     return  API.put(`/user/addresses/${id}`, data)
   },
   
-  deleteAddress: (id) => API.delete(`/user/addresses/${id}`),
+  deleteAddress: (id) => API.delete(`/api/user/addresses/${id}`),
   
-  setDefaultAddress: (id) => API.patch(`/user/addresses/${id}/default`),
+  setDefaultAddress: (id) => API.patch(`/api/user/addresses/${id}/default`),
 };

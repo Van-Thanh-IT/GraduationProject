@@ -9,10 +9,8 @@ export default function VoucherSelection({ subTotal, setVoucherDiscount, current
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Gọi API lấy danh sách
   const { data: availableVouchers = [], isLoading: isLoadingVouchers } = useGetAvailableVouchers();
   
-  // Gọi API áp dụng mã
   const { mutate: previewDiscount, isLoading: isApplying } = usePreviewDiscount();
 
   // Hàm xử lý áp mã

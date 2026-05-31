@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button as AntButton, message, Collapse, Popconfirm, Spin } from 'antd';
+import { Button as AntButton, Collapse, Popconfirm, Spin } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import { ProductService } from '@/services/product.service';
 import AddVariantForm from './AddVariantForm';
 import EditVariantAndImageForm from './EditVariantAndImageForm';
+import { toast } from 'react-toastify';
 
 export default function VariantList({ product }) {
   const [variants, setVariants] = useState([]);
@@ -18,7 +19,7 @@ export default function VariantList({ product }) {
       const res = await ProductService.getVariantsByProduct(product.id);
       setVariants(res.data?.data || []);
     } catch (error) {
-      message.error("Lỗi lấy danh sách biến thể!");
+      toast.error("Lỗi lấy danh sách biến thể!");
     } finally {
       setLoading(false);
     }
@@ -32,10 +33,10 @@ export default function VariantList({ product }) {
     e.stopPropagation(); 
     try {
       await ProductService.softDeleteVariant(variantId);
-      message.success("Xóa biến thể thành công!");
+      toast.success("Xóa biến thể thành công!");
       fetchVariants();
     } catch (error) {
-      message.error("Xóa biến thể thất bại!");
+      toast.error("Xóa biến thể thất bại!");
     }
   };
 

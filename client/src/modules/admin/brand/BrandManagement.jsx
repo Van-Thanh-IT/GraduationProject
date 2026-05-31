@@ -5,6 +5,7 @@ import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import BrandForm from './BrandFrom';
 import { useGetBrands, useUpdateBrandStatus } from '@/hooks/useBrands';
+import { toast } from 'react-toastify';
 
 export default function BrandManagement() {
   const [keyword, setKeyword] = useState('');
@@ -35,10 +36,10 @@ export default function BrandManagement() {
         // mutate nhận vào object {id, status} như đã định nghĩa trong Hook
         updateStatus({ id: record.id, status: newStatus }, {
           onSuccess: () => {
-            message.success("Cập nhật trạng thái thành công!");
+            toast.success("Cập nhật trạng thái thành công!");
           },
           onError: () => {
-            message.error("Cập nhật trạng thái thất bại!");
+            toast.error("Cập nhật trạng thái thất bại!");
           }
         });
       }

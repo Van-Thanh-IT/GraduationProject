@@ -2,7 +2,7 @@ import React from 'react';
 import { Empty } from 'antd';
 import { AlertTriangle, PackageMinus } from 'lucide-react';
 
-// Hàm bóc tách chuỗi để highlight Tên sản phẩm [...] và Số lượng (...)
+
 const formatAlertMessage = (msg) => {
   if (!msg) return null;
   const parts = msg.split(/(\[.*?\]|\(.*?\))/g);

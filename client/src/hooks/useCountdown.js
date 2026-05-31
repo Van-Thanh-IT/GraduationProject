@@ -6,7 +6,6 @@ export const useCountdown = (endTime) => {
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
-    // Nếu không có thời gian kết thúc, coi như đã hết hạn
     if (!endTime) {
       setIsExpired(true);
       return;
@@ -40,7 +39,6 @@ export const useCountdown = (endTime) => {
 
     }, 1000);
 
-    // Cleanup function để tránh rò rỉ bộ nhớ (memory leak) khi component unmount
     return () => clearInterval(interval);
   }, [endTime]);
 

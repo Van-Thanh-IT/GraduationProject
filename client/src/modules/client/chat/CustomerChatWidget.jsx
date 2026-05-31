@@ -20,7 +20,9 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
         return savedId;
     });
     const [customerName, setCustomerName] = useState("");
-    const [roomId, setRoomId] = useState(null);
+    const [roomId, setRoomId] = useState(() => {
+        return localStorage.getItem("chat_room_id");
+    });
     const [messages, setMessages] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
@@ -43,6 +45,7 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
         }
     }, [isAuthenticated, user, isOpen]);
 
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
@@ -61,20 +64,39 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    
+    useEffect(() => {
+        if (isOpen && roomId) {
+            loadOldChat(roomId);
+            connectWebSocket(roomId);
+            setStep("CHAT");
+        }
+    }, [isOpen]);
+
+
+    const loadOldChat = async (roomId) => {
+    try {
+        const res = await API.get(`/api/chat/${roomId}/history`);
+        setMessages(res.data || []);
+    } catch (err) {
+        console.error("Lỗi load chat cũ", err);
+    }
+    };
+
     const initializeChat = async (nameToUse) => {
         setErrorMsg("");
         setIsUploading(true);
 
         try {
-            const res = await API.post(`/chat/init?guestId=${guestId}&customerName=${encodeURIComponent(nameToUse)}`);
+            const res = await API.post(`/api/chat/init?guestId=${guestId}&customerName=${encodeURIComponent(nameToUse)}`);
             const conversation = res.data;
             const newRoomId = conversation.id;
             
             setRoomId(newRoomId);
+            localStorage.setItem("chat_room_id", newRoomId);
             setStep("CHAT");
 
-            const historyRes = await API.get(`/chat/${newRoomId}/history`);
-            setMessages(historyRes.data || []);
+           loadOldChat(newRoomId);
 
             connectWebSocket(newRoomId);
 
@@ -91,9 +113,9 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
         const token = getAccessToken();
     
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
+    
         const client = new Client({
-            webSocketFactory: () => new SockJS("http://localhost:8080/ws/chat"),
+            webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws/chat`),
             connectHeaders: headers,
             debug: () => {},
             onConnect: () => {
@@ -148,7 +170,7 @@ const CustomerChatWidget = ({isOpen, onOpen, onClose}) => {
             const formData = new FormData();
             selectedImages.forEach((file) => formData.append("files", file));
             try {
-                const res = await API.post("/chat/upload-images", formData, {
+                const res = await API.post("/api/chat/upload-images", formData, {
                     headers: { "Content-Type": "multipart/form-data" }
                 });
                 uploadedUrls = res.data;

@@ -6,7 +6,6 @@ export const homeKeys = {
   data: ['home-data'],
 };
 
-// Đổi tên thành useGetHomeData sẽ hợp lý hơn vì nó không chỉ chứa mỗi Products (còn có Categories)
 export const useGetHomeData = () => {
   return useQuery({
     queryKey: homeKeys.data,
@@ -21,11 +20,9 @@ export const useGetHomeData = () => {
         defaultProducts: [] 
       }; 
     },
-    // Quan trọng: Vì là trang chủ, lượng truy cập rất lớn, 
-    // ta nên cache lại dữ liệu trong 5 phút để giảm tải cho Backend.
+
     staleTime: 5 * 60 * 1000, 
     
-    // Tùy chọn: Không tự động gọi lại API khi người dùng chuyển tab trình duyệt
     refetchOnWindowFocus: false, 
   });
 };

@@ -5,15 +5,11 @@ import { ArrowLeft, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
 
 const AuthLayout = () => {
   return (
-    // Nền ngoài cùng chuyển sang màu xám nhạt mặc định để làm nổi bật hộp Auth ở giữa
     <div className="min-h-screen w-full bg-blue-300 flex items-center justify-center p-4 md:p-8 font-sans">
       
-      {/* KHUNG TRUNG TÂM: Thu gọn kích thước, không tràn toàn màn hình */}
       <div className="w-full max-w-[960px] min-h-[520px] bg-white rounded-2xl border border-gray-200/80 shadow-md flex overflow-hidden">
         
-        {/* ======================================================== */}
-        {/* NỬA BÊN TRÁI: BANNER MÀU XANH NAVY PHẲNG (Chỉ hiện trên Desktop) */}
-        {/* ======================================================== */}
+    
         <div className="hidden md:flex md:w-1/2 bg-slate-800/95 flex-col justify-between p-10 relative overflow-hidden">
           
           {/* Đường vát khối phẳng tinh tế đè góc tương tự như mẫu ảnh tham khảo */}
@@ -63,10 +59,7 @@ const AuthLayout = () => {
           </div>
 
         </div>
-        
-        {/* ======================================================== */}
-        {/* NỬA BÊN PHẢI: KHU VỰC CHỨA FORM NHẬP LIỆU (NỀN TRẮNG PHẲNG) */}
-        {/* ======================================================== */}
+
         <div className="w-full md:w-1/2 flex flex-col relative bg-white">
           
           {/* Nút quay lại trang chủ đặt khít khao ở góc trên bên trái */}

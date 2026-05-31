@@ -1,11 +1,12 @@
 // File: src/modules/admin/articles/components/ArticleModal.jsx
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, Upload, message, Spin } from 'antd';
+import { Modal, Form, Input, Select, Upload, Spin } from 'antd';
 import { PlusOutlined, PictureOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import ReactQuill from 'react-quill';
 
 import 'react-quill/dist/quill.snow.css'; // Import giao diện thanh công cụ chuẩn
+import { toast } from 'react-toastify';
 
 const STATUS_OPTIONS = [
   { label: 'Xuất bản (PUBLISHED)', value: 'PUBLISHED' },
@@ -67,7 +68,7 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       }
       if (backendError.errors) {
         const formFieldsError = Object.keys(backendError.errors).map((key) => ({
@@ -83,7 +84,7 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
     // Chặn trường hợp người dùng chỉ gõ vài dấu cách hoặc thẻ HTML rỗng trong trình soạn thảo
     const cleanContent = values.content ? values.content.replace(/<(.|\n)*?>/g, '').trim() : '';
     if (!cleanContent) {
-      return message.error('Nội dung chi tiết bài viết không được để trống!');
+      return toast.error('Nội dung chi tiết bài viết không được để trống!');
     }
 
     const formData = new FormData();
@@ -97,7 +98,7 @@ export default function ArticleModal({ isOpen, onClose, initialData, onSubmit, i
     if (newFile) {
       formData.append('thumbnail', newFile);
     } else if (!isEditing && fileList.length === 0) {
-      return message.error('Vui lòng chọn ảnh bìa cho bài viết!');
+      return toast.error('Vui lòng chọn ảnh bìa cho bài viết!');
     }
 
     onSubmit(formData);

@@ -13,7 +13,6 @@ export const useGetFlashSales = () => {
       const res = await flashSaleService.getAll();
       return res.data.data || [];
     },
-    // Tự động refetch mỗi 60s để cập nhật trạng thái "Đang diễn ra/Kết thúc"
     refetchInterval: 60000, 
   });
 };

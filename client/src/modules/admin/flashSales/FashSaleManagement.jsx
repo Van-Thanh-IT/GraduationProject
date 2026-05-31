@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { message, Switch, Tooltip } from 'antd';
+import { Switch, Tooltip } from 'antd';
 import { Plus, Edit2, Zap, Search } from 'lucide-react';
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
 import { FlashSaleForm } from './FlashSaleForm';
 import { useGetFlashSales, useToggleFlashSaleStatus } from '@/hooks/useFlashSales';
+import { toast } from 'react-toastify';
 
 const FlashSaleManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +18,7 @@ const FlashSaleManagement = () => {
 
   const handleToggleStatus = (checked, id) => {
     toggleStatus({ id, status: checked ? 1 : 0 }, {
-      onSuccess: () => message.success(checked ? 'Đã bật chương trình!' : 'Đã tắt chương trình!')
+      onSuccess: () => toast.success(checked ? 'Đã bật chương trình!' : 'Đã tắt chương trình!')
     });
   };
 

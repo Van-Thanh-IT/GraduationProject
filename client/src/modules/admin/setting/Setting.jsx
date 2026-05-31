@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Select, DatePicker, Upload, message, Spin } from 'antd';
+import { Form, Input, Button, Select, DatePicker, Upload, Spin } from 'antd';
 import { Camera, Mail, Phone, User, KeyRound, CalendarDays, ShieldAlert } from 'lucide-react';
 import dayjs from 'dayjs';
 
-// Vẫn sử dụng chung Hook gọi API vì Backend xử lý chung 1 luồng
 import { useGetProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { toast } from 'react-toastify';
 
 const { Option } = Select;
 
@@ -32,12 +32,12 @@ export default function AdminSettings() {
   const handleBeforeUpload = (file) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      message.error('Chỉ hỗ trợ định dạng hình ảnh!');
+      toast.error('Chỉ hỗ trợ định dạng hình ảnh!');
       return Upload.LIST_IGNORE;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error('Hình ảnh phải nhỏ hơn 2MB!');
+      toast.error('Hình ảnh phải nhỏ hơn 2MB!');
       return Upload.LIST_IGNORE;
     }
     
@@ -68,12 +68,12 @@ export default function AdminSettings() {
       { userId: profile.id, formData }, 
       {
         onSuccess: () => {
-          message.success('Cập nhật thông tin quản trị thành công!');
+          toast.success('Cập nhật thông tin quản trị thành công!');
           form.setFieldValue('password', '');
           form.setFieldValue('confirmPassword', '');
         },
         onError: (error) => {
-          message.error(error.response?.data?.messages || 'Có lỗi xảy ra, vui lòng thử lại!');
+          toast.error(error.response?.data?.messages || 'Có lỗi xảy ra, vui lòng thử lại!');
         }
       }
     );

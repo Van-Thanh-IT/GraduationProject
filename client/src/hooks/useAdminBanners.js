@@ -1,59 +1,46 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { message } from 'antd';
-import API from '@/api/API'; // File cấu hình axios của bạn
+import { toast } from 'react-toastify';
+import bannerService from '@/services/banner.service';
 
 export const useAdminBanners = (page = 0, size = 10) => {
   const queryClient = useQueryClient();
 
-  // 1. Lấy danh sách (GET)
+  // GET
   const getBanners = useQuery({
     queryKey: ['admin-banners', page, size],
-    queryFn: async () => {
-      const { data } = await API.get(`/admin/banners?page=${page}&size=${size}`);
-      return data.data; // Trả về Page<BannerResponse>
-    },
+    queryFn: () => bannerService.getBanners(page, size),
     keepPreviousData: true,
   });
 
-  // 2. Thêm mới (POST)
+  // CREATE
   const createBanner = useMutation({
-    mutationFn: async (formData) => {
-      // Dùng Content-Type: multipart/form-data
-      const { data } = await API.post('/admin/banners', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data;
-    },
+    mutationFn: bannerService.createBanner,
     onSuccess: () => {
-      message.success('Thêm banner thành công!');
-      queryClient.invalidateQueries(['admin-banners']);
+      toast.success('Thêm banner thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
     },
-    onError: (err) => message.error(err.response?.data?.message || 'Lỗi khi thêm banner'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || 'Lỗi khi thêm banner'),
   });
 
-  // 3. Cập nhật (PUT)
+  // UPDATE
   const updateBanner = useMutation({
-    mutationFn: async ({ id, formData }) => {
-      const { data } = await API.put(`/admin/banners/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return data;
-    },
+    mutationFn: ({ id, formData }) =>
+      bannerService.updateBanner(id, formData),
     onSuccess: () => {
-      message.success('Cập nhật banner thành công!');
-      queryClient.invalidateQueries(['admin-banners']);
+      toast.success('Cập nhật banner thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
     },
-    onError: (err) => message.error(err.response?.data?.message || 'Lỗi khi cập nhật banner'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || 'Lỗi khi cập nhật banner'),
   });
 
-  // 4. Xóa (DELETE)
+  // DELETE
   const deleteBanner = useMutation({
-    mutationFn: async (id) => {
-      await API.delete(`/admin/banners/${id}`);
-    },
+    mutationFn: bannerService.deleteBanner,
     onSuccess: () => {
-      message.success('Xóa banner thành công!');
-      queryClient.invalidateQueries(['admin-banners']);
+      toast.success('Xóa banner thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin-banners'] });
     },
   });
 

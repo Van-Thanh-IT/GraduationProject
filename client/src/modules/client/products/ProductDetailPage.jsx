@@ -18,11 +18,9 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   
   const { data: product, isLoading } = useGetProductDetail(slug);
-  
-  // GỌI API LẤY TỔNG QUAN ĐÁNH GIÁ
+
   const { data: reviewSummary, isLoading: isReviewLoading } = useGetProductReviewSummary(product?.id);
-  
-  // GỌI API LẤY DỮ LIỆU GỢI Ý (BÁN CHẠY NHẤT) TỪ TRANG CHỦ
+
   const { data: homeData } = useGetHomeData();
   const bestSellers = homeData?.bestSellers || [];
 

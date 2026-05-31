@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { message, Popconfirm } from 'antd';
+import { Popconfirm } from 'antd';
 import { Plus, Edit2, Trash2, Tag, Search } from 'lucide-react';
 import CustomTable from '@/components/ui/CustomTable';
 import Button from '@/components/ui/Button';
@@ -8,6 +8,7 @@ import { formatNumber } from '@/utils/format';
 
 // Import React Query Hooks
 import { useGetVouchers, useDeleteVoucher } from '@/hooks/useVouchers';
+import { toast } from 'react-toastify';
 
 const VoucherManagement = () => {
   // State UI
@@ -21,8 +22,8 @@ const VoucherManagement = () => {
 
   const handleDelete = (id) => {
     deleteVoucher(id, {
-      onSuccess: () => message.success('Đã xóa Voucher thành công!'),
-      onError: () => message.error('Không thể xóa Voucher này do đã có người sử dụng!')
+      onSuccess: () => toast.success('Đã xóa Voucher thành công!'),
+      onError: () => toast.error('Không thể xóa Voucher này do đã có người sử dụng!')
     });
   };
 

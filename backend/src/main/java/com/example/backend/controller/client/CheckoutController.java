@@ -57,10 +57,10 @@ public class CheckoutController {
         String responseCode = params.get("vnp_ResponseCode");
         String orderCode = params.get("vnp_TxnRef");
         if ("00".equals(responseCode)) {
-            response.sendRedirect("http://localhost:5173/payment/success?orderCode=" + orderCode);
+            response.sendRedirect("https://techstores-two.vercel.app/payment/success?orderCode=" + orderCode);
         } else {
             response.sendRedirect(
-                    "http://localhost:3000/payment/failed?orderCode=" + orderCode + "&error=" + responseCode);
+                    "https://techstores-two.vercel.app/payment/failed?orderCode=" + orderCode + "&error=" + responseCode);
         }
     }
 }

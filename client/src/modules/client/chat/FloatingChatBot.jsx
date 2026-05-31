@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useGetChatSessions, useGetChatMessages, useSendMessage } from '@/hooks/useChat';
+import { useGetChatSessions, useGetChatMessages, useSendMessage } from '@/hooks/useChatAI';
 
 import ChatHeader from './components/ChatHeader';
 import ChatMessageList from './components/ChatMessageList';
@@ -13,15 +12,13 @@ export default function FloatingChatBot({isOpen, onOpen, onClose }) {
   const [inputText, setInputText] = useState("");
   const [tempNewChatMsg, setTempNewChatMsg] = useState(null); 
   
-  // ==========================================
-  // LOGIC DRAG & DROP (KÉO THẢ)
-  // ==========================================
+
   const [pos, setPos] = useState({ x: 0, y: 0 }); 
   const isDragging = useRef(false);
   const dragInfo = useRef({ startX: 0, startY: 0, currentX: 0, currentY: 0, hasDragged: false });
 
   const handleMouseDown = (e) => {
-    if (e.button !== 0) return; // Chỉ kéo bằng chuột trái
+    if (e.button !== 0) return;
     isDragging.current = true;
     dragInfo.current = {
       startX: e.clientX,
@@ -146,7 +143,8 @@ export default function FloatingChatBot({isOpen, onOpen, onClose }) {
             onMouseDown={(e) => e.stopPropagation()} 
             className="flex-1 flex flex-col overflow-hidden cursor-default"
           >
-            <ChatMessageList 
+            <ChatMessageList
+              onClose={onClose} 
               messages={displayMessages} 
               isLoading={isLoadingMessages} 
               isSending={isSending} 

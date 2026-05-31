@@ -4,7 +4,6 @@
    BASE STYLE – GLOBAL
    ========================= */
 @layer base {
-  /* ---------- Root & Body ---------- */
   html {
     @apply scroll-smooth;
     

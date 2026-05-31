@@ -5,6 +5,7 @@ import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import { ProductService } from '@/services/product.service';
 import AttributeForm from './AttributeForm';
+import { toast } from 'react-toastify';
 
 export default function AttributeList({ productId }) {
   const [attributes, setAttributes] = useState([]);
@@ -19,7 +20,7 @@ export default function AttributeList({ productId }) {
       const res = await ProductService.getAttributesByProductId(productId);
       setAttributes(res.data?.data || []);
     } catch (error) {
-      message.error("Lỗi lấy danh sách thông số kỹ thuật!");
+      toast.error("Lỗi lấy danh sách thông số kỹ thuật!");
     } finally {
       setLoading(false);
     }
@@ -32,10 +33,11 @@ export default function AttributeList({ productId }) {
   const handleDelete = async (id) => {
     try {
       await ProductService.deleteProductAttribute(id);
-      message.success("Xóa thông số thành công!");
+      toast.success("Xóa thông số thành công!");
       fetchAttributes();
     } catch (error) {
-      message.error("Xóa thông số thất bại!");
+      console.error(error);
+      toast.error("Xóa thông số thất bại!");
     }
   };
 

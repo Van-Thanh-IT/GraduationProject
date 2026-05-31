@@ -1,12 +1,13 @@
 // File: src/pages/WarrantyPage.jsx
 import React, { useState } from 'react';
-import { Input, Button, Spin, message } from 'antd';
+import { Input, Button, Spin } from 'antd';
 import { 
   Search, ShieldCheck, ShieldAlert, Smartphone, 
   User, Calendar, FileText, Copy 
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useWarrantyLookup } from '@/hooks/useHome';
+import { toast } from 'react-toastify';
 
 const WarrantyPage = () => {
   const [keyword, setKeyword] = useState('');
@@ -25,7 +26,7 @@ const WarrantyPage = () => {
   const handleCopy = (text, typeLabel) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
-    message.success(`Đã sao chép ${typeLabel}!`);
+    toast.success(`Đã sao chép ${typeLabel}!`);
   };
 
   // Hàm tính toán % thời gian bảo hành

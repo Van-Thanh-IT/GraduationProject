@@ -2,14 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orderService } from '@/services/order.service';
 import { toast } from 'react-toastify';
 
-//Query Keys
 export const orderKeys = {
   all: ['orders'],
   detail: (id) => [...orderKeys.all, id],
 };
 
-
-//GET ORDERS
 export const useGetOrders = () => {
   return useQuery({
     queryKey: orderKeys.all,
@@ -25,8 +22,6 @@ export const useGetOrders = () => {
   });
 };
 
-
-//CONFIRM ORDER
 export const useConfirmOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -41,8 +36,6 @@ export const useConfirmOrder = () => {
   });
 };
 
-
-// PACK ORDER
 export const usePackOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -53,8 +46,6 @@ export const usePackOrder = () => {
   });
 };
 
-
-//CANCEL ORDER
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -69,7 +60,7 @@ export const useCancelOrder = () => {
   });
 };
 
-//PLACE ORDER (CLIENT)
+//CLIENT
 export const usePlaceOrder = () => {
   return useMutation({
     mutationFn: orderService.placeOrder,
@@ -111,7 +102,6 @@ export const useGetMyOrders = (filters) => {
   });
 };
 
-// Hook lấy chi tiết đơn hàng
 export const useGetOrderDetail = (orderId) => {
   return useQuery({
     queryKey: ['order-detail', orderId],
@@ -120,7 +110,6 @@ export const useGetOrderDetail = (orderId) => {
   });
 };
 
-// Hook Hủy đơn hàng
 export const useCancelOrderByUser = () => {
   const queryClient = useQueryClient();
   

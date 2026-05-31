@@ -1,10 +1,11 @@
 // File: src/modules/admin/products/components/tab/attribute/AttributeForm.jsx
 import React, { useState, useEffect } from 'react';
-import { message, Select, Spin, Form } from 'antd';
+import {Select, Spin, Form } from 'antd';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
 import { AttributeService } from '@/services/attribute.service';
+import { toast } from 'react-toastify';
 
 export default function AttributeForm({ productId, initialData, onSuccess, onCancel, backendError }) {
   const [form] = Form.useForm();
@@ -24,7 +25,7 @@ export default function AttributeForm({ productId, initialData, onSuccess, onCan
       setAttributeOptions(options);
     } catch (error) {
       console.error(error);
-      message.error("Lỗi lấy danh sách thông số từ hệ thống!");
+      toast.error("Lỗi lấy danh sách thông số từ hệ thống!");
     } finally {
       setLoadingAttributes(false);
     }
@@ -48,7 +49,7 @@ export default function AttributeForm({ productId, initialData, onSuccess, onCan
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       }
       if (backendError.errors) {
         const formFieldsError = Object.keys(backendError.errors).map((key) => ({
@@ -65,16 +66,16 @@ export default function AttributeForm({ productId, initialData, onSuccess, onCan
     try {
       if (initialData) {
         await ProductService.updateProductAttribute(initialData.id, values);
-        message.success("Sửa thông số thành công!");
+        toast.success("Sửa thông số thành công!");
       } else {
         await ProductService.addAttributeToProduct(productId, values);
-        message.success("Thêm thông số thành công!");
+        toast.success("Thêm thông số thành công!");
       }
       onSuccess();
     } catch (error) {
       const errData = error.response?.data;
       if (errData?.messages && errData.messages !== "Validation failed") {
-        message.error(errData.messages);
+        toast.error(errData.messages);
       }
       if (errData?.errors) {
         const formFieldsError = Object.keys(errData.errors).map((key) => ({

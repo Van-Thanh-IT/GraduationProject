@@ -1,9 +1,10 @@
 // File: src/modules/admin/banners/components/BannerModal.jsx
 import React, { useEffect, useState } from 'react';
-import { Modal, Form, Input, Select, InputNumber, Switch, DatePicker, Upload, message, Tooltip } from 'antd';
+import { Modal, Form, Input, Select, InputNumber, Switch, DatePicker, Upload, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import Button from '@/components/ui/Button';
+import { toast } from 'react-toastify';
 
 const { RangePicker } = DatePicker;
 
@@ -85,9 +86,9 @@ export default function BannerForm({ isOpen, onClose, initialData, onSubmit, isP
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       } else if (!backendError.errors && backendError.messages === "Validation failed") {
-        message.error("Dữ liệu nhập vào không hợp lệ, vui lòng kiểm tra lại!");
+        toast.error("Dữ liệu nhập vào không hợp lệ, vui lòng kiểm tra lại!");
       }
 
       if (backendError.errors) {
@@ -129,7 +130,7 @@ export default function BannerForm({ isOpen, onClose, initialData, onSubmit, isP
     if (newDesktopFile) {
       formData.append('desktopImage', newDesktopFile);
     } else if (!isEditing && desktopFileList.length === 0) {
-      return message.error('Vui lòng chọn ảnh Desktop!');
+      return toast.error('Vui lòng chọn ảnh Desktop!');
     }
 
     const newMobileFile = getOriginFile(mobileFileList);

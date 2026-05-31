@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cartService } from '@/services/cart.service';
-import { message } from 'antd';
+import { toast } from 'react-toastify';
 
 export const cartKeys = {
   all: ['cart'],
@@ -26,10 +26,10 @@ export const useAddToCart = () => {
     mutationFn: (data) => cartService.addToCart(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
-      message.success("Đã thêm vào giỏ hàng!");
+      toast.success("Đã thêm vào giỏ hàng!");
     },
     onError: (error) => {
-      message.error(error.response?.data?.messages || "Thêm thất bại!");
+      toast.error(error.response?.data?.messages || "Thêm thất bại!");
     }
   });
 };
@@ -45,7 +45,6 @@ export const useUpdateCartQuantity = () => {
   });
 };
 
-// 3. Hook XÓA item khỏi giỏ
 export const useDeleteCartItem = () => {
   const queryClient = useQueryClient();
 
@@ -53,7 +52,7 @@ export const useDeleteCartItem = () => {
     mutationFn: (cartItemId) => cartService.deleteCartItem(cartItemId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
-      message.success("Đã xóa sản phẩm!");
+      toast.success("Xóa giỏ hàng thành công!");
     }
   });
 };

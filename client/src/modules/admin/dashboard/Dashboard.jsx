@@ -48,8 +48,6 @@ export default function Dashboard() {
   } = data || {};
 
   return (
-    // THAY ĐỔI: Chỉnh sửa padding (p-4) và max-width để fit màn hình tốt hơn, 
-    // gap-4 để các hàng dọc sát lại với nhau
     <div className=" max-w-[1600px] mx-auto flex flex-col gap-4 bg-slate-50/30 min-h-[calc(100vh-64px)] font-sans">
       
       {/* ================= HEADER & LỌC ================= */}
@@ -67,8 +65,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ================= HÀNG 1: 4 KPI CARDS ================= */}
-      {/* THAY ĐỔI: Dùng gap-4 để khoảng cách chiều ngang hẹp lại, thẻ to ra */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard title="Tổng Doanh Thu" value={`${formatNumber(kpis.totalRevenue)} đ`} icon={<DollarSign size={20} strokeWidth={2.5} />} color="blue" trend={kpis.revenueGrowth} />
         <KpiCard title="Đơn Hàng Mới" value={formatNumber(kpis.newOrders)} icon={<ShoppingCart size={26} strokeWidth={2.5} />} color="emerald" />
@@ -76,8 +72,6 @@ export default function Dashboard() {
         <KpiCard title="Sản Phẩm Đã Bán" value={formatNumber(kpis.productsSold)} icon={<Package size={26} strokeWidth={2.5} />} color="orange" />
       </div>
 
-      {/* ================= HÀNG 2: 2 BIỂU ĐỒ ================= */}
-      {/* THAY ĐỔI: Biểu đồ cột chiếm 2 phần, tròn chiếm 1 phần. Dùng gap-4 */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2">
            <RevenueChart data={revenueChart} />
@@ -87,12 +81,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ================= HÀNG 3: BẢNG ĐƠN HÀNG (FULL CHIỀU RỘNG) ================= */}
       <div className="w-full">
          <RecentOrders orders={recentOrders} />
       </div>
 
-      {/* ================= HÀNG 4: ĐÁNH GIÁ & CẢNH BÁO (CHIA ĐÔI 50/50) ================= */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <RecentReviews reviews={recentReviews} />
         <InventoryAlerts alerts={alerts} />

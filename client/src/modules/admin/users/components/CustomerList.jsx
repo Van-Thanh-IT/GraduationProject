@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { message, Popconfirm, Image, Tooltip } from 'antd';
+import { Popconfirm, Image, Tooltip } from 'antd';
 import { 
   LockOutlined, 
   UnlockOutlined, 
@@ -12,6 +12,7 @@ import {
 
 import CustomTable from '@/components/ui/CustomTable';
 import { useGetUsers, useUpdateUserStatus } from '@/hooks/useUsers';
+import { toast } from 'react-toastify';
 
 // Cấu hình UI cho trạng thái
 const STATUS_CONFIG = {
@@ -31,8 +32,8 @@ export default function CustomerList() {
     const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     
     updateStatus({ userId, status: newStatus }, {
-      onSuccess: () => message.success(`Đã ${newStatus === 'ACTIVE' ? 'mở khóa' : 'khóa'} tài khoản thành công!`),
-      onError: (err) => message.error(err.response?.data?.message || "Cập nhật trạng thái thất bại!")
+      onSuccess: () => toast.success(`Đã ${newStatus === 'ACTIVE' ? 'mở khóa' : 'khóa'} tài khoản thành công!`),
+      onError: (err) => toast.error(err.response?.data?.message || "Cập nhật trạng thái thất bại!")
     });
   };
 

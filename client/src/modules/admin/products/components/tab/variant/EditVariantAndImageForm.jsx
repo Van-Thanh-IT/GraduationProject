@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { message, Spin, Popconfirm, Switch } from 'antd'; // Đã xóa Radio
+import { Spin, Popconfirm, Switch } from 'antd'; // Đã xóa Radio
 import { DeleteOutlined, StarFilled, UploadOutlined, InfoCircleOutlined } from '@ant-design/icons'; // Đã xóa BarcodeOutlined
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { ProductService } from '@/services/product.service';
 import { formatNumber, parseNumber } from '@/utils/format';
+import { toast } from 'react-toastify';
 
 export default function EditVariantAndImageForm({ variant, product, onRefresh }) {
   const hasOpt1 = !!product?.option1Name;
@@ -44,12 +45,12 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
     try {
        const payload = { ...formData, stockQuantity: variant.stockQuantity };
        await ProductService.updateVariant(variant.id, payload);
-       message.success("Cập nhật thông tin biến thể thành công!");
+       toast.success("Cập nhật thông tin biến thể thành công!");
        onRefresh();
     } catch (error) {
       console.log("CHI TIẾT LỖI TỪ BACKEND:", error.response?.data);
       const errorMessage = error.response?.data?.messages || error.response?.data?.message || "Cập nhật thất bại do dữ liệu không hợp lệ!"; 
-      message.error(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
+      toast.error(Array.isArray(errorMessage) ? errorMessage.join(', ') : errorMessage);
     } finally {
       setLoadingInfo(false);
     }
@@ -61,10 +62,10 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
     try {
        const payload = { ...formData, stockQuantity: variant.stockQuantity, isDefault: checked };
        await ProductService.updateVariant(variant.id, payload);
-       message.success("Đã cập nhật biến thể mặc định!");
+       toast.success("Đã cập nhật biến thể mặc định!");
        onRefresh();
     } catch (error) {
-       message.error("Lỗi cập nhật! Vui lòng thử lại.");
+       toast.error("Lỗi cập nhật! Vui lòng thử lại.");
        setFormData({ ...formData, isDefault: !checked }); 
     } finally {
        setLoadingInfo(false);
@@ -77,10 +78,10 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
     setLoadingImg(true);
     try {
       await ProductService.uploadVariantImages(variant.id, files);
-      message.success("Tải ảnh lên thành công!");
+      toast.success("Tải ảnh lên thành công!");
       onRefresh();
     } catch (error) {
-      message.error("Tải ảnh thất bại!");
+      toast.error("Tải ảnh thất bại!");
     } finally {
       setLoadingImg(false);
       e.target.value = null; 
@@ -90,20 +91,20 @@ export default function EditVariantAndImageForm({ variant, product, onRefresh })
   const handleDeleteImg = async (imageId) => {
     try {
       await ProductService.deleteVariantImage(imageId);
-      message.success("Xóa ảnh thành công!");
+      toast.success("Xóa ảnh thành công!");
       onRefresh();
     } catch (error) {
-      message.error("Xóa ảnh thất bại!");
+      toast.error("Xóa ảnh thất bại!");
     }
   };
 
   const handleSetThumbnail = async (imageId) => {
     try {
       await ProductService.setThumbnail(imageId);
-      message.success("Đã đặt làm ảnh đại diện!");
+      toast.success("Đã đặt làm ảnh đại diện!");
       onRefresh();
     } catch (error) {
-      message.error("Đặt ảnh đại diện thất bại!");
+      toast.error("Đặt ảnh đại diện thất bại!");
     }
   };
 

@@ -47,16 +47,13 @@ const AppRoute = () => {
        <Router>
         <Routes>
 
-            {/* ---------------- KHỐI AUTH (Bất kỳ ai cũng vào được) ---------------- */}
             <Route element={<AuthLayout/>}>
                 <Route path="/login" element={<LoginForm />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<PasswordReset/>}/>
             </Route>
             
-            {/* ---------------- KHỐI CLIENT (Trang chủ & Cửa hàng) ---------------- */}
             <Route path="/" element={<ClientLayout/>}>
-                {/* Ai cũng xem được */}
                 <Route index element={<HomePage/>}/>
                 <Route path='abouts' element={<AboutPage/>}/>
                 <Route path='warranty' element={<WarrantyPage/>}/>
@@ -67,12 +64,9 @@ const AppRoute = () => {
                 <Route path="/product/:id/reviews" element={<ReviewListPage />} />
                 <Route path="/articles" element={<ArticlePage />} />
                 <Route path="/articles/:slug" element={<ArticleDetailPage />} />
-
                 <Route path="payment/success" element={<PaymentResult />} />
                 <Route path="payment/failed" element={<PaymentResult />} />
 
-                {/* YÊU CẦU ĐĂNG NHẬP (USER THƯỜNG) */}
-                {/* Không truyền roles -> Chỉ cần có Token là vào được */}
                 <Route element={<ProtectedRoute />}>
                     <Route path="/user/profile" element={<UserProfile/>}/> 
                     <Route path="/user/orders" element={<OrderHistoryPage/>}/> 
@@ -81,7 +75,6 @@ const AppRoute = () => {
                 </Route>
             </Route>
             
-            {/* ---------------- KHỐI ADMIN & QUẢN TRỊ ---------------- */}
             <Route element={<ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}/>}>
                 <Route path="/admin" element={<AdminLayout/>}>
                     <Route index element={<Dashboard/>}/>
@@ -90,9 +83,8 @@ const AppRoute = () => {
                     <Route path="orders" element={<OrderManagement/>}/>
                     <Route path="inventory" element={<InventoryManagement/>}/>
                     <Route path='articles' element={<ArticleManagement/>}/>
-                      <Route path='chat' element={<ChatManagement/>}/>
+                    <Route path='chat' element={<ChatManagement/>}/>
 
-                    {/* Vòng trong: CHỈ ADMIN MỚI ĐƯỢC VÀO (Staff gõ link sẽ bị văng) */}
                     <Route element={<ProtectedRoute allowedRoles={["ADMIN"]}/>}>
                         <Route path='users' element={<UserManagement/>}/>
                         <Route path='brand' element={<BrandManagement/>}/>  

@@ -1,12 +1,13 @@
 // File: src/modules/admin/flash-sale/components/FlashSaleForm.jsx
 import React, { useEffect, useState, useRef } from 'react';
-import { Select, Spin, message } from 'antd';
+import { Select, Spin } from 'antd';
 import { X, Save, Zap, AlertCircle } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { useSaveFlashSale } from '@/hooks/useFlashSales';
 import { useSearchSimpleVariants } from '@/hooks/useProducts';
 import { formatNumber, parseNumber } from '@/utils/format';
+import { toast } from 'react-toastify';
 
 export const FlashSaleForm = ({ isOpen, onClose, onSuccess, initialData }) => {
   const { mutate: saveSale, isPending } = useSaveFlashSale();
@@ -75,7 +76,7 @@ export const FlashSaleForm = ({ isOpen, onClose, onSuccess, initialData }) => {
     : 0;
 
   const handleQuickPercentSelect = (percent) => {
-    if (!originalPrice) return message.warning("Vui lòng chọn sản phẩm trước!");
+    if (!originalPrice) return toast.warning("Vui lòng chọn sản phẩm trước!");
     const calculatedPrice = Math.round(originalPrice * (100 - percent) / 100);
     setFormData(prev => ({ ...prev, flashSalePrice: calculatedPrice }));
     if (errors.flashSalePrice) setErrors(prev => ({ ...prev, flashSalePrice: null }));
@@ -124,16 +125,16 @@ export const FlashSaleForm = ({ isOpen, onClose, onSuccess, initialData }) => {
 
     saveSale({ id: initialData?.id, data: payload }, {
       onSuccess: () => {
-        message.success(isEdit ? 'Cập nhật thành công!' : 'Tạo Flash Sale thành công!');
+        toast.success(isEdit ? 'Cập nhật thành công!' : 'Tạo Flash Sale thành công!');
         onSuccess();
       },
       onError: (error) => {
         const errData = error.response?.data;
         if (errData?.errors && Array.isArray(errData.errors)) {
-          errData.errors.forEach(err => message.error(`Lỗi: ${err.defaultMessage || err.message}`));
+          errData.errors.forEach(err => toast.error(`Lỗi: ${err.defaultMessage || err.message}`));
           return;
         }
-        message.error(errData?.messages || errData?.message || "Lỗi lưu dữ liệu!");
+        toast.error(errData?.messages || errData?.message || "Lỗi lưu dữ liệu!");
       }
     });
   };

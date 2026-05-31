@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Barcode } from 'lucide-react';
-import { Select, message } from 'antd';
+import { Select } from 'antd';
+import { toast } from 'react-toastify';
 
 export const OrderProductList = ({ itemsList, activeAction, packData, setPackData, formatCurrency }) => {
   return (
@@ -105,7 +106,7 @@ export const OrderProductList = ({ itemsList, activeAction, packData, setPackDat
                       value={packData.serials ? packData.serials[vId] : []}
                       onChange={(values) => {
                         if (values.length > item.quantity) {
-                          message.error(`❌ Khách chỉ đặt ${item.quantity} sản phẩm! Không được quét thừa!`);
+                          toast.error(`Khách chỉ đặt ${item.quantity} sản phẩm! Không được quét thừa!`);
                           return;
                         }
                         setPackData({

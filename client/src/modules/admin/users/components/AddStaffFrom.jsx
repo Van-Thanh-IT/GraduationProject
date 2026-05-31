@@ -1,23 +1,23 @@
 // File: src/modules/admin/users/components/AddStaffForm.jsx
 import React, { useState, useEffect } from 'react';
-import { Form, Select, Divider, Upload, Spin, message } from 'antd';
+import { Form, Select, Divider, Upload, Spin } from 'antd';
 import { UserOutlined, SafetyCertificateOutlined, PlusOutlined } from '@ant-design/icons';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useCreateStaff } from '@/hooks/useUsers';
+import { toast } from 'react-toastify';
 
 export default function AddStaffForm({ onSuccess, onCancel, backendError }) {
   const [form] = Form.useForm();
   const { mutate: createStaff, isPending } = useCreateStaff();
   const [fileList, setFileList] = useState([]);
 
-  // LẮNG NGHE VÀ MAPPING LỖI TỪ BACKEND XUỐNG CHÂN INPUT VÀ TOAST
   useEffect(() => {
     if (backendError) {
       if (backendError.messages && backendError.messages !== "Validation failed") {
-        message.error(backendError.messages);
+        toast.error(backendError.messages);
       } else if (!backendError.errors && backendError.messages === "Validation failed") {
-        message.error("Dữ liệu nhập vào không hợp lệ, vui lòng kiểm tra lại!");
+        toast.error("Dữ liệu nhập vào không hợp lệ, vui lòng kiểm tra lại!");
       }
 
       if (backendError.errors) {
@@ -47,13 +47,13 @@ export default function AddStaffForm({ onSuccess, onCancel, backendError }) {
 
     createStaff(payload, {
       onSuccess: () => {
-        message.success("Tạo tài khoản nhân viên thành công!");
+        toast.success("Tạo tài khoản nhân viên thành công!");
         onSuccess();
       },
       onError: (error) => {
         const errData = error.response?.data;
         if (errData?.messages && errData.messages !== "Validation failed") {
-          message.error(errData.messages);
+          toast.error(errData.messages);
         }
         if (errData?.errors) {
           const formFieldsError = Object.keys(errData.errors).map((key) => ({
