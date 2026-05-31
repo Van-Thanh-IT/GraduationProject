@@ -39,7 +39,7 @@ public class SecurityConfig {
     @Value("${spring.jwt.secret}")
     private String secret;
 
-    private static final String[] PUBLIC_ENDPOINT = {"/api/public/**", "/api/auth/**", "/ws/chat/**", "/api/chat/**"};
+    private static final String[] PUBLIC_ENDPOINT = {"/api/public/**", "/api/auth/**", "/ws/**", "/api/chat/**"};
 
     @Bean
     PasswordEncoder passwordEncoder() {
