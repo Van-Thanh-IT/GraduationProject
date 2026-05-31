@@ -124,7 +124,6 @@ export default function FloatingChatBot({isOpen, onOpen, onClose }) {
     // ĐẶT VỊ TRÍ GỐC: Cách Top 40% màn hình, sát mí phải
     <div className="fixed top-[50vh] right-6 z-[9999] font-sans">
       
-      {/* KHỐI KÉO THẢ TỔNG */}
       <div 
         style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }} 
         className="relative flex items-center justify-end"

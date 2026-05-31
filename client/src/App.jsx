@@ -12,7 +12,6 @@ function App() {
     closeOnClick
     pauseOnHover
     draggable
-    // theme="dark"
     theme="colored"
   />
     <AppRoute/>
