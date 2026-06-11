@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>In Phiếu Giao Hàng</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: white; padding: 0; margin: 0; font-size: 14px; }
+
+        /* Setup trang in PDF */
+        @page { size: A4; margin: 15mm; }
+        .page { page-break-after: always; width: 100%; }
+        .page:last-child { page-break-after: auto; }
+
+        /* Các bảng dùng để layout (Không viền) */
+        table.layout-table { width: 100%; border-collapse: collapse; border: none; }
+        table.layout-table td { border: none; padding: 0; vertical-align: top; }
+
+        /* Bảng hiển thị dữ liệu sản phẩm (Có viền) */
+        table.data-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+        table.data-table th, table.data-table td { border: 1px solid black; padding: 8px; }
+        table.data-table th { background-color: #f2f2f2; text-align: center; }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* Đường kẻ ngang */
+        hr.divider { border: 0; border-top: 2px solid #000; margin-bottom: 20px; }
+
+        /* Typography */
+        h2 { margin: 0 0 5px 0; font-size: 20px; color: #d32f2f; }
+        h1 { margin: 0 0 10px 0; font-size: 24px; }
+        p { margin: 4px 0; }
+    </style>
+</head>
+<body>
+
+<div class="page" th:each="order : ${orders}">
+
+    <table class="layout-table" style="margin-bottom: 10px;">
+        <tr>
+            <td style="width: 50%;">
+                <h2>CỬA HÀNG TECHSTORE</h2>
+                <p>Địa chỉ: 123 Đường Công Nghệ, Hà Nội</p>
+                <p>Hotline: 0912.345.678 - Web: techstore.vn</p>
+            </td>
+            <td style="width: 50%; text-align: right;">
+                <h1>PHIẾU GIAO HÀNG</h1>
+                <p>Mã đơn: <b th:text="${order.code}">ORD-123</b></p>
+                <p>Ngày lập: <span th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">12/12/2026</span></p>
+            </td>
+        </tr>
+    </table>
+
+    <hr class="divider" />
+
+    <div>
+        <p><b>Tên khách hàng:</b> <span th:text="${order.customerName}">Nguyễn Văn A</span></p>
+        <p><b>Số điện thoại:</b> <span th:text="${order.customerPhone}">0123456789</span></p>
+        <p><b>Địa chỉ nhận hàng:</b> <span th:text="${order.fullShippingAddress}">Hà Nội</span></p>
+        <p><b>Ghi chú:</b> <span th:text="${order.note != null ? order.note : 'Không có'}">Không</span></p>
+    </div>
+
+    <table class="data-table">
+        <thead>
+        <tr>
+            <th width="5%">STT</th>
+            <th width="40%">Tên hàng hóa</th>
+            <th width="15%">Đơn vị</th>
+            <th width="10%">SL</th>
+            <th width="15%">Đơn giá</th>
+            <th width="15%">Thành tiền</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item, iterStat : ${order.items}">
+            <td class="text-center" th:text="${iterStat.count}">1</td>
+            <td>
+                <b th:text="${item.productName}">iPhone</b>
+                <br />
+                <small th:text="${item.variantInfo}">Màu Đen</small>
+            </td>
+            <td class="text-center">Cái</td>
+            <td class="text-center" th:text="${item.quantity}">1</td>
+            <td class="text-right" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</td>
+            <td class="text-right" th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <table class="layout-table">
+        <tr>
+            <td style="width: 50%;"></td> <td style="width: 50%; text-align: right; line-height: 1.8;">
+            <p>Tổng tiền hàng: <span th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span></p>
+            <p>Phí vận chuyển: <span th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span></p>
+            <p>Giảm giá (Voucher): <span th:text="${'- ' + #numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span></p>
+            <h3 style="margin: 5px 0;">Tổng thanh toán: <span th:text="${#numbers.formatDecimal(order.finalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span></h3>
+        </td>
+        </tr>
+    </table>
+
+    <table class="layout-table" style="margin-top: 50px; text-align: center;">
+        <tr>
+            <td style="width: 50%;">
+                <b>Người nhận hàng</b>
+                <br />
+                <i>(Ký, ghi rõ họ tên)</i>
+            </td>
+            <td style="width: 50%;">
+                <b>Người lập phiếu</b>
+                <br />
+                <i>(Ký, ghi rõ họ tên)</i>
+                <br /><br /><br /><br />
+                <b>Admin TechStore</b>
+            </td>
+        </tr>
+    </table>
+
+</div>
+
+</body>
+</html>

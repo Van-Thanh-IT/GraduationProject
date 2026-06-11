@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    # URL của bạn có thể giữ nguyên
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    # 👇 SỬA DÒNG NÀY (Đổi Dialect sang H2)
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        # 👇 THÊM DÒNG NÀY ĐỂ TẮT TÍNH NĂNG ĐẶC THÙ CỦA POSTGRES
+        jdbc:
+          lob:
+            non_contextual_creation: true

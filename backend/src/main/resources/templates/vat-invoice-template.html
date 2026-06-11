@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Hóa Đơn Điện Tử</title>
+    <style>
+        @page { size: A4; margin: 20mm; }
+        body { font-family: 'Arial', sans-serif; font-size: 14px; line-height: 1.5; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .company-name { font-size: 20px; font-weight: bold; text-transform: uppercase; }
+        .invoice-title { font-size: 24px; font-weight: bold; text-align: center; margin: 20px 0; color: #b30000; }
+        .info-table { width: 100%; margin-bottom: 20px; }
+        .info-table td { padding: 4px 0; }
+        .item-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .item-table th, .item-table td { border: 1px solid #000; padding: 8px; text-align: center; }
+        .item-table th { background-color: #f2f2f2; }
+        .item-table .text-left { text-align: left; }
+        .item-table .text-right { text-align: right; }
+        .summary-table { width: 100%; margin-top: 20px; font-weight: bold; }
+        .summary-table td { padding: 6px; }
+        .signature { margin-top: 50px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="company-name">CÔNG TY CỔ PHẦN E-COMMERCE VN</div>
+    <div>Mã số thuế: 0101234567</div>
+    <div>Địa chỉ: Tòa nhà E-town, Quận Cầu Giấy, TP Hà Nội</div>
+    <div>Điện thoại: 1900 1560 | Website: ecom.vn</div>
+</div>
+
+<div class="invoice-title">HÓA ĐƠN GIÁ TRỊ GIA TĂNG (BẢN THỂ HIỆN)</div>
+
+<table class="info-table">
+    <tr>
+        <td width="20%"><strong>Tên khách hàng:</strong></td>
+        <td th:text="${order.customerName}">Nguyễn Văn A</td>
+    </tr>
+    <tr>
+        <td><strong>Tên đơn vị:</strong></td>
+        <td th:text="${order.companyName != null ? order.companyName : '..........................................................'}">Công ty ABC</td>
+    </tr>
+    <tr>
+        <td><strong>Mã số thuế:</strong></td>
+        <td th:text="${order.taxCode != null ? order.taxCode : '..........................................................'}">0123456789</td>
+    </tr>
+    <tr>
+        <td><strong>Địa chỉ:</strong></td>
+        <td th:text="${order.companyAddress != null ? order.companyAddress : order.shippingAddress}">Hà Nội</td>
+    </tr>
+    <tr>
+        <td><strong>Mã đơn hàng:</strong></td>
+        <td th:text="${order.code}">ORD-123456</td>
+    </tr>
+</table>
+
+<table class="item-table">
+    <thead>
+    <tr>
+        <th width="5%">STT</th>
+        <th width="40%">Tên hàng hóa, dịch vụ</th>
+        <th width="10%">ĐVT</th>
+        <th width="10%">SL</th>
+        <th width="15%">Đơn giá</th>
+        <th width="20%">Thành tiền</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="item, iterStat : ${order.orderItems}">
+        <td th:text="${iterStat.count}">1</td>
+        <td class="text-left" th:text="${item.productName}">iPhone 15 Pro Max</td>
+        <td>Cái</td>
+        <td th:text="${item.quantity}">1</td>
+        <td class="text-right" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'">30,000,000</td>
+        <td class="text-right" th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">30,000,000</td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="summary-table">
+    <tr>
+        <td width="70%" class="text-right">Cộng tiền hàng hóa, dịch vụ:</td>
+        <td width="30%" class="text-right" th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">30,000,000 đ</td>
+    </tr>
+    <tr>
+        <td class="text-right">Giảm giá / Voucher:</td>
+        <td class="text-right" th:text="'- ' + ${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+    </tr>
+    <tr>
+        <td class="text-right">Phí vận chuyển:</td>
+        <td class="text-right" th:text="${#numbers.formatDecimal(order.shippingFee, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+    </tr>
+    <tr style="color: #b30000; font-size: 16px;">
+        <td class="text-right"><strong>TỔNG CỘNG TIỀN THANH TOÁN:</strong></td>
+        <td class="text-right"><strong th:text="${#numbers.formatDecimal(order.finalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">30,000,000 đ</strong></td>
+    </tr>
+</table>
+
+<div class="signature">
+    <p><em>(Chữ ký số hợp lệ được tạo lập bởi Hệ thống E-commerce VN)</em></p>
+    <p th:text="'Ngày ' + ${#temporals.format(order.createdAt, 'dd')} + ' tháng ' + ${#temporals.format(order.createdAt, 'MM')} + ' năm ' + ${#temporals.format(order.createdAt, 'yyyy')}">Ngày ... tháng ... năm ...</p>
+</div>
+
+</body>
+</html>

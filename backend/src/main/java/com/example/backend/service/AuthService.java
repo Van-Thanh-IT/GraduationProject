@@ -1,0 +1,537 @@
+package com.example.backend.service;
+
+import java.security.SecureRandom;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import com.example.backend.enums.OtpType;
+import jakarta.transaction.Transactional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestTemplate;
+
+import com.example.backend.dto.request.*;
+import com.example.backend.dto.response.AuthenticationResponse;
+import com.example.backend.dto.response.IntrospectResponse;
+import com.example.backend.entity.InvalidatedToken;
+import com.example.backend.entity.OtpCode;
+import com.example.backend.entity.Role;
+import com.example.backend.entity.User;
+import com.example.backend.enums.AuthProvider;
+import com.example.backend.enums.RoleName;
+import com.example.backend.enums.UserStatus;
+import com.example.backend.exception.CustomException;
+import com.example.backend.exception.ErrorCode;
+import com.example.backend.mapper.UserMapper;
+import com.example.backend.repository.InvalidatedTokenRepository;
+import com.example.backend.repository.OtpCodeRepository;
+import com.example.backend.repository.RoleRepository;
+import com.example.backend.repository.UserRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int MAX_ATTEMPTS = 5;
+    private static final int OTP_VALID_MINUTES = 5;
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
+    private final OtpCodeRepository otpRepository;
+    private final JavaMailSender mailSender;
+
+    @Value("${spring.jwt.expiration}")
+    private long expiration;
+
+    @Value("${spring.jwt.refresh-expiration}")
+    private long refreshExpiration;
+
+    @Value("${spring.jwt.secret}")
+    private String secret;
+
+    @Value("${spring.jwt.google-client-id}")
+    private String googleClientId;
+
+    @Value("${spring.jwt.facebook.app-id}")
+    private String appId;
+
+    @Value("${spring.jwt.facebook.secret}")
+    private String facebookSecret;
+
+    @Transactional
+    public void register(RegisterRequest request) {
+        if (!(request.getPassword().equals(request.getConfirmPassword()))) {
+            throw new CustomException(ErrorCode.AUTH_PASSWORD_NOT_MATCH);
+        }
+
+        Optional<User> existingEmailUser = userRepository.findByEmail(request.getEmail());
+        User user;
+
+        if (existingEmailUser.isPresent()) {
+            user = existingEmailUser.get();
+
+            if (user.getStatus() == UserStatus.ACTIVE) {
+                throw new CustomException(ErrorCode.USER_EMAIL_EXISTED, "Email này đã được sử dụng và kích hoạt thành công.");
+            }
+            if (user.getStatus() == UserStatus.INACTIVE || user.getStatus() == UserStatus.TERMINATED) {
+                throw new CustomException(ErrorCode.USER_EMAIL_EXISTED, "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ Admin.");
+            }
+
+            Optional<User> existingPhoneUser = userRepository.findByPhone(request.getPhone());
+            if (existingPhoneUser.isPresent() && !existingPhoneUser.get().getId().equals(user.getId())) {
+                throw new CustomException(ErrorCode.USER_PHONE_EXISTED, "Số điện thoại đã được sử dụng bởi một tài khoản khác.");
+            }
+
+            user.setUsername(request.getUsername());
+            user.setPhone(request.getPhone());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        } else {
+
+            if (userRepository.existsByPhone(request.getPhone())) {
+                throw new CustomException(ErrorCode.USER_PHONE_EXISTED, "Số điện thoại đã được sử dụng.");
+            }
+
+            user = userMapper.toRegister(request);
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+            user.setStatus(UserStatus.PENDING);
+
+            Role defaultRole = getRoleNameOrThrow();
+            user.setRoles(Set.of(defaultRole));
+        }
+
+        userRepository.save(user);
+        sendOtp(user.getEmail(), OtpType.REGISTER);
+    }
+
+    private User findOrCreateSocialUser(String providerId, String email, String username, AuthProvider provider) {
+        return userRepository
+                .findUserByProviderId(providerId)
+                .or(() -> email != null ? userRepository.findByEmail(email) : Optional.empty())
+                .map(user -> {
+                    if (user.getProviderId() == null) {
+                        user.setProviderId(providerId);
+                        user.setProvider(provider);
+                    }
+
+                    if (user.getStatus() == UserStatus.PENDING) {
+                        user.setStatus(UserStatus.ACTIVE);
+                    }
+
+                    if (user.getStatus() == UserStatus.INACTIVE) {
+                        throw new CustomException(ErrorCode.USER_DISABLED, "Tài khoản của bạn đã bị khóa.");
+                    }
+
+                    return userRepository.save(user);
+                })
+                .orElseGet(() -> {
+                    Role defaultRole = getRoleNameOrThrow();
+
+                    User newUser = new User();
+                    newUser.setProviderId(providerId);
+                    newUser.setUsername(username);
+                    newUser.setProvider(provider);
+                    newUser.setStatus(UserStatus.ACTIVE);
+                    newUser.setEmail(email != null ? email : providerId + "@social.com");
+                    newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                    newUser.setRoles(Set.of(defaultRole));
+
+                    return userRepository.save(newUser);
+                });
+    }
+
+    public AuthenticationResponse login(AuthenticationRequest request) {
+        var user = userRepository
+                .findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Email hoặc mật khẩu không đúng!"));
+
+        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        if (!authenticated) {
+            throw new CustomException(ErrorCode.AUTH_PASSWORD_NOT_MATCH, "Email hoặc mật khẩu không đúng!");
+        }
+
+        var token = generateToken(user, expiration);
+        var refreshToken = generateToken(user, refreshExpiration);
+
+        AuthenticationResponse response = userMapper.toResponse(user);
+        response.setToken(token);
+        response.setRefreshToken(refreshToken);
+
+        return response;
+    }
+
+    public AuthenticationResponse loginWithGoogle(String idTokenString) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID);
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String username = (String) payload.get("name");
+            String googleId = payload.getSubject();
+
+            User user = findOrCreateSocialUser(googleId, email, username, AuthProvider.GOOGLE);
+
+            var token = generateToken(user, expiration);
+            var refreshToken = generateToken(user, refreshExpiration);
+
+            AuthenticationResponse response = userMapper.toResponse(user);
+            response.setToken(token);
+            response.setRefreshToken(refreshToken);
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("Lỗi xác thực Token Google từ Client: ", e);
+            throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public AuthenticationResponse loginWithFacebook(String userAccessToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            String debugUrl = "https://graph.facebook.com/debug_token" + "?input_token="
+                    + userAccessToken + "&access_token="
+                    + appId + "|" + facebookSecret;
+
+            Map<String, Object> debugResult = restTemplate.getForObject(debugUrl, Map.class);
+            if (debugResult == null) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID, "Không nhận được phản hồi kiểm tra token từ Facebook");
+            }
+
+            Map<String, Object> data = (Map<String, Object>) debugResult.get("data");
+
+            if (data == null || !(Boolean) data.get("is_valid")) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID);
+            }
+
+            String url = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + userAccessToken;
+            Map<String, Object> fbUser = restTemplate.getForObject(url, Map.class);
+
+            if (fbUser == null) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID, "Không lấy được thông tin từ Facebook");
+            }
+
+            String facebookId = (String) fbUser.get("id");
+            String name = (String) fbUser.get("name");
+            String email = (String) fbUser.get("email");
+
+            User user = findOrCreateSocialUser(facebookId, email, name, AuthProvider.FACEBOOK);
+
+            var token = generateToken(user, expiration);
+            var refreshToken = generateToken(user, refreshExpiration);
+
+            AuthenticationResponse response = userMapper.toResponse(user);
+            response.setToken(token);
+            response.setRefreshToken(refreshToken);
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("Lỗi xác thực Token facebook từ Client: ", e);
+            throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+    }
+
+    public IntrospectResponse introspect(IntrospectRequest request) {
+        var token = request.getToken();
+        boolean isValid = true;
+
+        try {
+            verifyToken(token);
+        } catch (CustomException e) {
+            isValid = false;
+        }
+
+        return IntrospectResponse.builder().valid(isValid).build();
+    }
+
+    public AuthenticationResponse refreshToken(String refreshToken) throws ParseException {
+        var signToken = verifyToken(refreshToken);
+
+        String jit = signToken.getJWTClaimsSet().getJWTID();
+        Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+
+        //blacklist
+        InvalidatedToken invalidateToken = InvalidatedToken.builder()
+                .id(jit)
+                .expiryTime(expiryTime)
+                .build();
+        invalidatedTokenRepository.save(invalidateToken);
+
+        String email = signToken.getJWTClaimsSet().getSubject();
+
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.USER_DISABLED);
+        }
+
+
+        String newAccessToken = generateToken(user, expiration);
+         String newRefreshToken = generateToken(user, refreshExpiration);
+
+        return AuthenticationResponse.builder()
+                .token(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
+    }
+
+    public void logout(String token) throws ParseException {
+        try {
+            var signToken = verifyToken(token);
+
+            String jit = signToken.getJWTClaimsSet().getJWTID();
+            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+
+            InvalidatedToken invalidateToken = InvalidatedToken.builder()
+                    .id(jit)
+                    .expiryTime(expiryTime)
+                    .build();
+
+            invalidatedTokenRepository.save(invalidateToken);
+        } catch (CustomException ex) {
+            log.info("Token đã hết hạn", ex);
+        }
+    }
+
+    private SignedJWT verifyToken(String token) {
+        try {
+            JWSVerifier verifier = new MACVerifier(secret.getBytes());
+            SignedJWT signedJWT = SignedJWT.parse(token);
+
+            boolean verified = signedJWT.verify(verifier);
+            if (!verified) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID);
+            }
+
+            Date expiryTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+            if (expiryTime == null || expiryTime.before(new Date())) {
+                throw new CustomException(ErrorCode.AUTH_TOKEN_EXPIRED);
+            }
+
+            String jwtId = signedJWT.getJWTClaimsSet().getJWTID();
+            if (jwtId == null || invalidatedTokenRepository.existsById(jwtId)) {
+                throw new CustomException(ErrorCode.AUTH_UNAUTHENTICATED);
+            }
+
+            return signedJWT;
+
+        } catch (ParseException | JOSEException e) {
+            log.error("Lỗi khi xác minh Token: {}", e.getMessage());
+            throw new CustomException(ErrorCode.AUTH_UNAUTHENTICATED);
+        }
+    }
+
+    private String generateToken(User user, long durationSeconds) {
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(user.getEmail())
+                .issuer("vanthanh.com")
+                .issueTime(Date.from(Instant.now()))
+                .expirationTime(new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(durationSeconds)))
+                .claim("userId", user.getId())
+                .claim("roles", buildScope(user))
+                .jwtID(UUID.randomUUID().toString())
+                .build();
+
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
+        JWSObject jwsObject = new JWSObject(header, payload);
+
+        try {
+            jwsObject.sign(new MACSigner(secret.getBytes()));
+            return jwsObject.serialize();
+        } catch (JOSEException ex) {
+            log.error("Lỗi sinh Access Token: ", ex);
+            throw new CustomException(ErrorCode.AUTH_TOKEN_INVALID, "Lỗi hệ thống khi sinh Token");
+        }
+    }
+
+    private String buildScope(User user) {
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        if (!CollectionUtils.isEmpty(user.getRoles())) {
+            user.getRoles().forEach(role -> stringJoiner.add(role.getName()));
+        }
+        return stringJoiner.toString();
+    }
+
+    @Transactional
+    public void sendOtp(String email, OtpType type) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (type == OtpType.REGISTER && user.getStatus() == UserStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.USER_ALREADY_VERIFIED, "Tài khoản này đã được kích hoạt.");
+        }
+        if (type == OtpType.RESET_PASSWORD && user.getStatus() != UserStatus.ACTIVE) {
+            throw new CustomException(ErrorCode.USER_DISABLED, "Tài khoản chưa được kích hoạt hoặc bị khóa.");
+        }
+
+        otpRepository.deleteByUserAndType(user, type);
+
+        String rawOtp = String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
+        String hashedOtp = passwordEncoder.encode(rawOtp);
+
+        OtpCode otpCode = OtpCode.builder()
+                .user(user)
+                .code(hashedOtp)
+                .type(type)
+                .expiredAt(LocalDateTime.now().plusMinutes(OTP_VALID_MINUTES))
+                .attempts(0)
+                .used(false)
+                .build();
+
+        otpRepository.save(otpCode);
+        sendMail(user.getEmail(), rawOtp, type);
+    }
+
+    @Transactional
+    public void verifyRegistrationOtp(String email, String otp) {
+        OtpCode validOtp = validateAndGetOtp(email, otp, OtpType.REGISTER);
+
+        User user = validOtp.getUser();
+        user.setStatus(UserStatus.ACTIVE);
+        userRepository.save(user);
+
+        validOtp.setUsed(true);
+        otpRepository.save(validOtp);
+    }
+
+    @Transactional
+    public void verifyOtp(String email, String otp) {
+        validateAndGetOtp(email, otp, OtpType.RESET_PASSWORD);
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new CustomException(ErrorCode.AUTH_PASSWORD_NOT_MATCH);
+        }
+
+        OtpCode resetCode = validateAndGetOtp(request.getEmail(), request.getOtp(), OtpType.RESET_PASSWORD);
+
+        User user = resetCode.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        resetCode.setUsed(true);
+        otpRepository.save(resetCode);
+    }
+    private OtpCode validateAndGetOtp(String email, String otp, OtpType type) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        OtpCode otpCode = otpRepository
+                .findFirstByUserAndTypeAndUsedFalseOrderByCreatedAtDesc(user, type)
+                .orElseThrow(() -> new CustomException(ErrorCode.AUTH_OTP_INVALID));
+
+        if (otpCode.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new CustomException(ErrorCode.AUTH_OTP_EXPIRED);
+        }
+
+        if (otpCode.getAttempts() >= MAX_ATTEMPTS) {
+            throw new CustomException(ErrorCode.AUTH_ACCOUNT_LOCKED);
+        }
+
+        if (!passwordEncoder.matches(otp, otpCode.getCode())) {
+            otpCode.setAttempts(otpCode.getAttempts() + 1);
+            otpRepository.save(otpCode);
+            throw new CustomException(ErrorCode.AUTH_OTP_INVALID);
+        }
+        return otpCode;
+    }
+
+    private void sendMail(String to, String otp, OtpType type) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("lovanthanh34523@gmail.com");
+        message.setTo(to);
+
+        String subject = "";
+        String contentText = "";
+
+        if (type == OtpType.REGISTER) {
+            subject = "[TECH STORE] Xác nhận đăng ký tài khoản";
+            contentText = "Chào mừng bạn đến với TECH STORE.\n\n"
+                    + "Mã xác thực (OTP) để kích hoạt tài khoản của bạn là: " + otp + "\n\n";
+        } else if (type == OtpType.RESET_PASSWORD) {
+            subject = "[TECH STORE] Mã OTP đặt lại mật khẩu";
+            contentText = "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n\n"
+                    + "Mã xác thực (OTP) của bạn là: " + otp + "\n\n";
+        }
+
+        message.setSubject(subject);
+        message.setText("Xin chào,\n\n"
+                + contentText
+                + "Mã OTP có hiệu lực trong " + OTP_VALID_MINUTES + " phút. Tuyệt đối KHÔNG chia sẻ mã này cho bất kỳ ai.\n\n"
+                + "Trân trọng,\n"
+                + "Đội ngũ TECH STORE");
+
+        mailSender.send(message);
+    }
+
+    private Role getRoleNameOrThrow(){
+        return roleRepository
+                .findByName(RoleName.USER.name())
+                .orElseThrow(() -> new CustomException(ErrorCode.ROLE_NOT_FOUND));
+    }
+
+    @Scheduled(cron = "0 0 1 * * ?")
+    @org.springframework.transaction.annotation.Transactional
+    public void cleanExpiredInactiveUsers() {
+        log.info("Bắt đầu tiến trình tự động dọn dẹp tài khoản đăng ký bỏ dở...");
+
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+
+        List<User> expiredUsers = userRepository.findByStatusAndCreatedAtBefore(UserStatus.PENDING, cutoffTime);
+
+        if (!expiredUsers.isEmpty()) {
+            for (User user : expiredUsers) {
+                otpRepository.deleteByUser(user);
+
+                userRepository.delete(user);
+                log.info("Đã xóa tài khoản rác chưa kích hoạt: {}", user.getEmail());
+            }
+            log.info("Dọn dẹp thành công. Tổng số tài khoản rác đã xóa: {}", expiredUsers.size());
+        } else {
+            log.info("Không có tài khoản rác nào hết hạn cần dọn dẹp.");
+        }
+
+    }
+
+}
