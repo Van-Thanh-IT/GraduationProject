@@ -189,7 +189,6 @@ export default function ProductManagement() {
           { key: 'ACTIVE', label: 'Đang bán' },
           { key: 'INACTIVE', label: 'Ngừng bán', danger: true },
           { type: 'divider' },
-          { key: 'OUT_OF_STOCK', label: 'Hết hàng', disabled: true },
         ];
 
         return (
