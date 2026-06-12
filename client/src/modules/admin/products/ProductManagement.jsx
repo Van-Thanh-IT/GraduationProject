@@ -26,7 +26,6 @@ import SEO from '@/components/SEO';
 const STATUS_CONFIG = {
   ACTIVE: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', label: 'Đang bán' },
   INACTIVE: { color: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500', label: 'Ngừng bán' },
-  OUT_OF_STOCK: { color: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500', label: 'Hết hàng' },
 };
 
 const ProductStatsCell = ({ productId }) => {

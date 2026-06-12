@@ -6,16 +6,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.example.backend.entity.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.example.backend.dto.response.AwaitingReviewResponse;
 import com.example.backend.dto.response.ReviewResponse;
 import com.example.backend.dto.response.ReviewSummaryResponse;
-import com.example.backend.entity.OrderItem;
-import com.example.backend.entity.ProductVariant;
-import com.example.backend.entity.Review;
-import com.example.backend.entity.ReviewImage;
 import com.example.backend.repository.projection.ReviewSummaryProjection;
 
 @Mapper(componentModel = "spring")
@@ -38,7 +35,7 @@ public interface ReviewMapper {
     @Mapping(source = "id", target = "orderItemId")
     @Mapping(source = "productVariant.product.id", target = "productId")
     @Mapping(source = "productVariant.product.name", target = "productName")
-    @Mapping(source = "productVariant.product.thumbnail", target = "thumbnail")
+    @Mapping(target = "thumbnail", expression = "java(getBestVariantImageUrl(item.getProductVariant()))")
     @Mapping(source = "order.createdAt", target = "orderDate")
     @Mapping(target = "variantSpecs", expression = "java(buildVariantSpecs(item.getProductVariant()))")
     AwaitingReviewResponse toAwaitingReviewResponse(OrderItem item);
@@ -59,5 +56,30 @@ public interface ReviewMapper {
                 .filter(Objects::nonNull)
                 .filter(s -> !s.trim().isEmpty())
                 .collect(Collectors.joining(" - "));
+    }
+
+    default String getBestVariantImageUrl(ProductVariant variant) {
+        if (variant == null) {
+            return "URL_ẢNH_MẶC_ĐỊNH";
+        }
+
+        // Nếu biến thể có ảnh riêng
+        if (variant.getImages() != null && !variant.getImages().isEmpty()) {
+            return variant.getImages().stream()
+                    .sorted((img1, img2) -> {
+                        if (Boolean.TRUE.equals(img1.getIsThumbnail()) && !Boolean.TRUE.equals(img2.getIsThumbnail())) return -1;
+                        if (!Boolean.TRUE.equals(img1.getIsThumbnail()) && Boolean.TRUE.equals(img2.getIsThumbnail())) return 1;
+                        return Integer.compare(img1.getSortOrder(), img2.getSortOrder());
+                    })
+                    .findFirst()
+                    .map(ProductVariantImage::getImageUrl)
+                    .orElse(variant.getImages().get(0).getImageUrl());
+        }
+
+        if (variant.getProduct() != null && variant.getProduct().getThumbnail() != null) {
+            return variant.getProduct().getThumbnail();
+        }
+
+        return "URL_ẢNH_MẶC_ĐỊNH";
     }
 }

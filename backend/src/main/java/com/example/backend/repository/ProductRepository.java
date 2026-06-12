@@ -89,7 +89,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 	@Query(
 			value = "SELECT * FROM (" + BASE_PRODUCT_CARD_SQL + ") v " +
 					"WHERE v.status = 'ACTIVE' AND v.deleted_at IS NULL " +
-					"AND v.\"soldCount\" > 4 " +
+					"AND v.\"soldCount\" >= 5 " +
 					"ORDER BY v.\"soldCount\" DESC, v.id DESC " +
 					"LIMIT 15",
 			nativeQuery = true
